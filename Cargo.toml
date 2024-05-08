@@ -1,0 +1,11 @@
+[package]
+name = "pong"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.5"
+boile-rs = { git = "https://github.com/m-lima/boile-rs", version = "0.1.1", features = ["log-spans", "rt-shutdown"] }
+clap = { version = "4.5.4", features = ["derive"] }
+tokio = "1.37.0"
+tracing = "0.1.40"

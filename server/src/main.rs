@@ -1,9 +1,33 @@
 mod args;
+mod auth;
+mod router;
+
+fn setup_tracing(
+    verbosity: args::Verbosity,
+) -> Result<(), tracing::subscriber::SetGlobalDefaultError> {
+    use tracing_subscriber::layer::SubscriberExt;
+
+    let subscriber = tracing_subscriber::registry()
+        .with(boile_rs::log::tracing::layer(boile_rs::log::Stdout))
+        .with(tracing::level_filters::LevelFilter::from_level(
+            verbosity.level,
+        ));
+
+    if verbosity.internal {
+        tracing::subscriber::set_global_default(subscriber)
+    } else {
+        let subscriber = subscriber.with(
+            tracing_subscriber::filter::Targets::new()
+                .with_target(env!("CARGO_CRATE_NAME"), verbosity.level),
+        );
+        tracing::subscriber::set_global_default(subscriber)
+    }
+}
 
 fn main() -> std::process::ExitCode {
     let args = args::parse();
 
-    if let Err(error) = boile_rs::log::setup(boile_rs::log::Stdout, args.verbosity.level) {
+    if let Err(error) = setup_tracing(args.verbosity) {
         eprintln!("{error:?}");
         return std::process::ExitCode::FAILURE;
     }

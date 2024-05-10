@@ -1,0 +1,52 @@
+-- CREATE TABLE users (
+--   id             INTEGER NOT NULL PRIMARY KEY,
+--   email          TEXT    NOT NULL UNIQUE CHECK(LENGTH(TRIM(email) > 0)),
+--   created_millis INTEGER NOT NULL DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4))
+-- );
+--
+-- -- To be recalculated every time a match is accepted
+-- CREATE TABLE rankings (
+--   user        INTEGER NOT NULL PRIMARY KEY,
+--   score       INTEGER NOT NULL,
+--   wins        INTEGER NOT NULL,
+--   losses      INTEGER NOT NULL,
+--   points_won  INTEGER NOT NULL,
+--   points_lost INTEGER NOT NULL,
+--
+--   FOREIGN KEY(user) REFERENCES users(id) ON DELETE CASCADE
+-- );
+--
+-- CREATE TABLE matches (
+--   id         INTEGER NOT NULL PRIMARY KEY,
+--   player_one INTEGER NOT NULL,
+--   player_two INTEGER NOT NULL CHECK(player_one <> player_two),
+--   score_one  INTEGER NOT NULL,
+--   score_two  INTEGER NOT NULL,
+--   accepted   BOOLEAN NOT NULL DEFAULT false,
+--   millis     INTEGER NOT NULL,
+--
+--   FOREIGN KEY(player_one) REFERENCES users(id) ON DELETE CASCADE,
+--   FOREIGN KEY(player_two) REFERENCES users(id) ON DELETE CASCADE
+-- );
+--
+-- CREATE TABLE challenges (
+--   id         INTEGER NOT NULL PRIMARY KEY,
+--   player_one INTEGER NOT NULL,
+--   player_two INTEGER NOT NULL CHECK(player_one <> player_two),
+--   match      INTEGER,
+--   refused    BOOLEAN NOT NULL DEFAULT false,
+--   millis     INTEGER NOT NULL,
+--
+--   FOREIGN KEY(player_one) REFERENCES users(id)   ON DELETE CASCADE,
+--   FOREIGN KEY(player_two) REFERENCES users(id)   ON DELETE CASCADE,
+--   FOREIGN KEY(match)      REFERENCES matches(id) ON DELETE SET NULL
+-- );
+--
+-- CREATE TABLE invites (
+--   id         INTEGER NOT NULL PRIMARY KEY,
+--   inviter    INTEGER NOT NULL,
+--   invitee    TEXT    NOT NULL UNIQUE CHECK(LENGTH(TRIM(invitee) > 0)),
+--   millis     INTEGER NOT NULL,
+--
+--   FOREIGN KEY(inviter) REFERENCES users(id) ON DELETE CASCADE
+-- );

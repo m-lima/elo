@@ -11,6 +11,7 @@ pub struct Args {
 #[derive(Debug, Copy, Clone)]
 pub struct Verbosity {
     pub level: tracing::Level,
+    pub internal: bool,
 }
 
 #[derive(Debug, clap::Parser)]
@@ -38,18 +39,27 @@ impl From<u8> for Verbosity {
         match value {
             0 => Self {
                 level: tracing::Level::ERROR,
+                internal: false,
             },
             1 => Self {
                 level: tracing::Level::WARN,
+                internal: false,
             },
             2 => Self {
                 level: tracing::Level::INFO,
+                internal: false,
             },
             3 => Self {
+                level: tracing::Level::INFO,
+                internal: true,
+            },
+            4 => Self {
                 level: tracing::Level::DEBUG,
+                internal: true,
             },
             _ => Self {
                 level: tracing::Level::TRACE,
+                internal: true,
             },
         }
     }

@@ -10,5 +10,6 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
+chrono = { version = "0.4.38", default-features = false }
 thiserror = "1.0.60"
 tracing = "0.1.40"

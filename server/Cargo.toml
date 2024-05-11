@@ -18,3 +18,4 @@ tracing = { workspace = true }
 
 store = { path = "../store" }
 types = { path = "../types" }
+tower = "0.4.13"

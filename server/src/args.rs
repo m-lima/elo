@@ -1,3 +1,11 @@
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("Path does not exist")]
+    PathDoesNotExist,
+    #[error("Path is not a file")]
+    PathNotFile,
+}
+
 pub fn parse() -> Args {
     <Inner as clap::Parser>::parse().into()
 }
@@ -6,6 +14,7 @@ pub fn parse() -> Args {
 pub struct Args {
     pub verbosity: Verbosity,
     pub port: u16,
+    pub db: std::path::PathBuf,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -23,6 +32,10 @@ struct Inner {
     /// Port on which to serve
     #[arg(short , long, default_value_t = 80, value_parser = clap::value_parser!(u16).range(1..))]
     port: u16,
+
+    /// Path to databases directory
+    #[arg(short, long, value_parser = parse_db)]
+    db: std::path::PathBuf,
 }
 
 impl From<Inner> for Args {
@@ -30,6 +43,7 @@ impl From<Inner> for Args {
         Self {
             verbosity: value.verbosity.into(),
             port: value.port,
+            db: value.db,
         }
     }
 }
@@ -62,5 +76,18 @@ impl From<u8> for Verbosity {
                 internal: true,
             },
         }
+    }
+}
+
+fn parse_db(input: &str) -> Result<std::path::PathBuf, Error> {
+    let input = input.strip_prefix("sqlite://").unwrap_or(input);
+    let path = std::path::PathBuf::from(input);
+
+    if !path.exists() {
+        Err(Error::PathDoesNotExist)
+    } else if !path.is_file() {
+        Err(Error::PathNotFile)
+    } else {
+        Ok(path)
     }
 }

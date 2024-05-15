@@ -47,7 +47,16 @@ fn main() -> std::process::ExitCode {
 }
 
 async fn async_main(args: args::Args) -> std::process::ExitCode {
-    let router = axum::Router::new().route("/", axum::routing::get(|| async { "I'm alive!" }));
+    let store = match store::Store::new(&args.db).await {
+        Ok(store) => store,
+        Err(error) => {
+            tracing::error!(?error, db = ?args.db, "Failed to open store");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+
+    let router = router::build().layer(auth::Auth::new(store));
+
     let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::new(0, 0, 0, 0), args.port);
 
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();

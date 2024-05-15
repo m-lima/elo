@@ -1352,6 +1352,7 @@ dependencies = [
  "clap",
  "hyper",
  "store",
+ "thiserror",
  "tokio",
  "tower",
  "tower-layer",

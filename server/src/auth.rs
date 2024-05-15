@@ -62,7 +62,7 @@ where
     }
 }
 
-#[tracing::instrument(skip_all, target = "auth")]
+#[tracing::instrument(target = "auth", skip_all)]
 async fn auth<B, I>(
     auth: Auth,
     request: hyper::Request<B>,
@@ -82,7 +82,7 @@ where
     inner.call(request).await
 }
 
-#[tracing::instrument(skip_all, target = "auth")]
+#[tracing::instrument(target = "auth", skip_all)]
 async fn from_header<B>(
     auth: &Auth,
     request: hyper::Request<B>,
@@ -90,14 +90,14 @@ async fn from_header<B>(
     let header = X_USER;
 
     let Some(user_header) = request.headers().get(&header) else {
-        tracing::warn!(%header, "Header is missing");
+        tracing::warn!(target: "auth", %header, "Header is missing");
         return None;
     };
 
     let user = match user_header.to_str() {
         Ok(user) => user,
         Err(error) => {
-            tracing::warn!(%header, %error, "Header is not parseable as a String");
+            tracing::warn!(target: "auth", %header, %error, "Header is not parseable as a String");
             return None;
         }
     };
@@ -105,11 +105,11 @@ async fn from_header<B>(
     match auth.store.users().id_for(user).await {
         Ok(user) => Some((user, request)),
         Err(store::Error::NotFound) => {
-            tracing::warn!(%header, %user, "User is not authorized");
+            tracing::warn!(target: "auth", %header, %user, "User is not authorized");
             None
         }
         Err(error) => {
-            tracing::warn!(%header, %user, %error, "Could not query for user");
+            tracing::warn!(target: "auth", %header, %user, %error, "Could not query for user");
             None
         }
     }

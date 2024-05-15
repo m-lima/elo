@@ -6,7 +6,7 @@ pub struct Users<'a> {
 }
 
 impl Users<'_> {
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn list(&self) -> Result<Vec<types::User>> {
         sqlx::query_as!(
             model::User,
@@ -25,7 +25,7 @@ impl Users<'_> {
         .map(|r| r.into_iter().map(types::User::from).collect())
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn get(&self, email: &str) -> Result<types::User> {
         let email = email.trim();
 
@@ -50,7 +50,7 @@ impl Users<'_> {
         .map(types::User::from)
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn id_for(&self, email: &str) -> Result<types::Id> {
         struct Id {
             id: types::Id,
@@ -77,7 +77,7 @@ impl Users<'_> {
         .map(|id| id.id)
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn create(&self, email: &str) -> Result<types::User> {
         let email = email.trim();
         if email.is_empty() {

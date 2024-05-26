@@ -344,6 +344,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
+name = "control"
+version = "0.1.0"
+dependencies = [
+ "hyper",
+ "serde",
+ "store",
+ "tokio",
+ "tracing",
+ "types",
+ "ws",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1382,11 +1395,8 @@ dependencies = [
  "axum",
  "boile-rs",
  "clap",
+ "control",
  "hyper",
- "rand",
- "rmp-serde",
- "serde",
- "serde_json",
  "store",
  "thiserror",
  "tokio",
@@ -1395,6 +1405,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "types",
+ "ws",
 ]
 
 [[package]]
@@ -2293,6 +2304,20 @@ name = "windows_x86_64_msvc"
 version = "0.52.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bec47e5bfd1bff0eeaf6d8b485cc1074891a197ab4225d504cb7a1ab88b02bf0"
+
+[[package]]
+name = "ws"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "hyper",
+ "rand",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "zerocopy"

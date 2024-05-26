@@ -39,7 +39,7 @@ impl Auth {
             }
         };
 
-        match self.store.users().get(user).await {
+        match self.store.users().by_email(user).await {
             Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }

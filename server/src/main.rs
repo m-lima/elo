@@ -1,7 +1,5 @@
 mod args;
 mod layer;
-mod service;
-mod ws;
 
 #[allow(clippy::declare_interior_mutable_const)]
 const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
@@ -22,7 +20,8 @@ fn setup_tracing(
     } else {
         let subscriber = subscriber.with(
             tracing_subscriber::filter::Targets::new()
-                .with_target(env!("CARGO_CRATE_NAME"), verbosity.level),
+                .with_target(env!("CARGO_CRATE_NAME"), verbosity.level)
+                .with_target("ws", verbosity.level),
         );
         tracing::subscriber::set_global_default(subscriber)
     }
@@ -94,10 +93,9 @@ fn route() -> axum::Router<store::Store> {
         axum::Extension(user): axum::Extension<types::User>,
     ) -> axum::response::Response {
         upgrade.on_upgrade(move |socket| {
-            let socket = ws::Socket::<M>::new(socket);
-            let service = service::Service::new(store, user);
-            let broadcast = service.subscribe();
-            socket.serve(service, broadcast)
+            let control = control::Control::new(store, user.id);
+            let socket = ws::Layer::<M, _>::new(socket, control, user.email);
+            socket.serve()
         })
     }
 

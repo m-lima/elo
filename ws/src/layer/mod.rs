@@ -1,8 +1,9 @@
-mod message;
 mod mode;
+mod payload;
 
-pub use message::Error;
 pub use mode::Mode;
+
+use super::service;
 
 enum FlowControl<T> {
     Break,
@@ -10,43 +11,38 @@ enum FlowControl<T> {
     Pass(T),
 }
 
-#[allow(clippy::struct_field_names)]
-pub struct Socket<M>
+pub struct Layer<M, S>
 where
     M: Mode,
+    S: service::Service,
 {
     id: String,
+    user: String,
+    service: S,
     socket: axum::extract::ws::WebSocket,
     _mode: std::marker::PhantomData<M>,
 }
 
-impl<M> Socket<M>
+impl<M, S> Layer<M, S>
 where
     M: Mode,
+    S: service::Service,
 {
-    pub fn new(socket: axum::extract::ws::WebSocket) -> Self {
+    pub fn new(socket: axum::extract::ws::WebSocket, service: S, user: String) -> Self {
         let id = format!("{id:04x}", id = rand::random::<u16>());
-        tracing::debug!(ws = %id, mode = %M::mode(), "Opening websocket");
+        tracing::debug!(ws = %id, %user, mode = %M::mode(), "Opening websocket");
 
         Self {
             id,
+            user,
             socket,
+            service,
             _mode: std::marker::PhantomData,
         }
     }
 
-    #[tracing::instrument(target = "ws", skip_all, fields(ws = %self.id, mode = %M::mode()))]
-    pub async fn serve<S, I, O, P>(
-        mut self,
-        mut service: S,
-        mut broadcast: tokio::sync::broadcast::Receiver<P>,
-    ) where
-        S: tower_service::Service<I, Response = O>,
-        S::Error: Into<message::Error>,
-        I: serde::de::DeserializeOwned,
-        O: serde::Serialize,
-        P: Clone + serde::Serialize,
-    {
+    #[tracing::instrument(level = tracing::Level::DEBUG, target = "ws", skip_all, fields(ws = %self.id, user = %self.user, mode = %M::mode()))]
+    pub async fn serve(mut self) {
         macro_rules! flow {
             ($flow_control: expr) => {
                 match $flow_control {
@@ -57,6 +53,8 @@ where
             };
         }
 
+        let mut broadcast = self.service.subscribe();
+
         loop {
             tokio::select! {
                 () = tokio::time::sleep(std::time::Duration::from_secs(30)) => self.heartbeat().await,
@@ -64,19 +62,34 @@ where
                     let push = match message {
                         Ok(push) => push,
                         Err(error) => {
-                            tracing::warn!(ws = %self.id, mode = %M::mode(), %error, "Failed to read from broadcaster");
+                            tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to read from broadcaster");
                             continue;
                         }
                     };
-                    tracing::debug!(ws = %self.id, mode = %M::mode(), "Pushing message");
+                    tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Pushing message");
                     flow!(self.send(None, push).await);
                 }
                 request = self.recv() => {
+                    use service::Request;
+                    use service::IntoError;
+
+                    let start = std::time::Instant::now();
                     let (id, payload) = flow!(request);
-                    match service.call(payload).await {
-                        Ok(response) => flow!(self.send(id, response).await),
-                        Err(err) => {
-                            let payload = message::ErrorPayload { error: err.into() };
+                    let action = payload.action();
+
+                    match self.service.call(payload).await {
+                        Ok(response) =>{
+                            tracing::info!(ws = %self.id, user = %self.user, mode = %M::mode(), latency = ?start.elapsed(), "{action}");
+                            flow!(self.send(id, response).await);
+                        }
+                        Err(error) => {
+                            if error.is_warn() {
+                                tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
+                            } else {
+                                tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
+                            }
+
+                            let payload = payload::Error::from(error);
                             flow!(self.send(id, payload).await);
                         },
                     }
@@ -96,13 +109,10 @@ where
         }
     }
 
-    async fn recv<T>(&mut self) -> FlowControl<(Option<message::Id>, T)>
-    where
-        T: serde::de::DeserializeOwned,
-    {
+    async fn recv(&mut self) -> FlowControl<(Option<payload::Id>, S::Request)> {
         // Closed socket
         let Some(message) = self.socket.recv().await else {
-            tracing::debug!(ws = %self.id, mode = %M::mode(), "Closing websocket");
+            tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Closing websocket");
             return FlowControl::Break;
         };
 
@@ -110,7 +120,7 @@ where
         let message = match message {
             Ok(message) => message,
             Err(error) => {
-                tracing::debug!(ws = %self.id, mode = %M::mode(), %error, "Closing broken websocket");
+                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Closing broken websocket");
                 return FlowControl::Break;
             }
         };
@@ -118,11 +128,11 @@ where
         let bytes = match message {
             // Control messages
             axum::extract::ws::Message::Ping(_) | axum::extract::ws::Message::Pong(_) => {
-                tracing::debug!(ws = %self.id, mode = %M::mode(), "Received ping");
+                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Received ping");
                 return FlowControl::Continue;
             }
             axum::extract::ws::Message::Close(_) => {
-                tracing::debug!(ws = %self.id, mode = %M::mode(), "Received close request");
+                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Received close request");
                 return FlowControl::Continue;
             }
 
@@ -132,47 +142,47 @@ where
         };
 
         match M::deserialize(&bytes) {
-            Ok(message::WithId { id, payload }) => FlowControl::Pass((id, payload)),
+            Ok(payload::WithId { id, payload }) => FlowControl::Pass((id, payload)),
             Err(error) => {
-                tracing::warn!(ws = %self.id, mode = %M::mode(), %error, "Failed to deserialize request");
-                let error = message::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string());
-                self.send(try_extract_id::<M>(&bytes), message::ErrorPayload { error })
+                tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to deserialize request");
+                let error = service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string());
+                self.send(try_extract_id::<M>(&bytes), payload::Error::from(error))
                     .await
             }
         }
     }
 
-    async fn send<T, R>(&mut self, id: Option<message::Id>, payload: T) -> FlowControl<R>
+    async fn send<T, R>(&mut self, id: Option<payload::Id>, payload: T) -> FlowControl<R>
     where
         T: serde::Serialize,
     {
-        match M::serialize(message::WithId { id, payload }) {
+        match M::serialize(payload::WithId { id, payload }) {
             Ok(message) => {
                 if let Err(error) = self.socket.send(message).await {
-                    tracing::error!(ws = %self.id, mode = %M::mode(), %error, "Failed to send message");
+                    tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to send message");
                     FlowControl::Break
                 } else {
                     FlowControl::Continue
                 }
             }
             Err(error) => {
-                tracing::error!(ws = %self.id, mode = %M::mode(), %error, "Failed to serialize message");
+                tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to serialize message");
                 FlowControl::Break
             }
         }
     }
 }
 
-fn try_extract_id<M>(bytes: &[u8]) -> Option<message::Id>
+fn try_extract_id<M>(bytes: &[u8]) -> Option<payload::Id>
 where
     M: Mode,
 {
-    M::deserialize::<message::WithId<()>>(bytes).map_or(None, |r| r.id)
+    M::deserialize::<payload::WithId<()>>(bytes).map_or(None, |r| r.id)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{message::WithId, Mode};
+    use super::{mode::sealed::Mode, payload::WithId};
 
     #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
     struct Payload {

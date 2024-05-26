@@ -1,18 +1,3 @@
-pub type Id = u32;
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct WithId<T> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<Id>,
-    #[serde(flatten)]
-    pub payload: T,
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
-pub struct ErrorPayload {
-    pub error: Error,
-}
-
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Error {
     #[serde(serialize_with = "to_u16")]
@@ -34,7 +19,7 @@ impl From<hyper::StatusCode> for Error {
     fn from(code: hyper::StatusCode) -> Self {
         Self {
             code,
-            message: None,
+            message: code.canonical_reason().map(String::from),
         }
     }
 }

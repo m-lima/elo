@@ -26,7 +26,7 @@ impl Users<'_> {
     }
 
     #[tracing::instrument(target = "store::user", skip(self), err)]
-    pub async fn get(&self, email: &str) -> Result<Option<types::User>> {
+    pub async fn by_email(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim();
 
         sqlx::query_as!(
@@ -42,6 +42,28 @@ impl Users<'_> {
                 email = $1
             "#,
             email
+        )
+        .fetch_optional(self.pool)
+        .await
+        .map_err(Error::Query)
+        .map(|r| r.map(types::User::from))
+    }
+
+    #[tracing::instrument(target = "store::user", skip(self), err)]
+    pub async fn by_id(&self, id: types::Id) -> Result<Option<types::User>> {
+        sqlx::query_as!(
+            model::User,
+            r#"
+            SELECT
+                id,
+                email,
+                created_ms AS "created_ms: model::Millis"
+            FROM
+                users
+            WHERE
+                id = $1
+            "#,
+            id
         )
         .fetch_optional(self.pool)
         .await

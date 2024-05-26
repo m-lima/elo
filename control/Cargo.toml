@@ -1,0 +1,14 @@
+[package]
+name = "control"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hyper = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+store = { path = "../store" }
+types = { path = "../types" }
+ws = { path = "../ws" }

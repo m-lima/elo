@@ -199,7 +199,7 @@ fn log_ok<F>(future: &Future<F>, response: &axum::response::Response) {
     }
 
     match status {
-        0..=399 => log!(tracing::Level::INFO),
+        0..=399 => log!(tracing::Level::DEBUG),
         400..=499 => log!(tracing::Level::WARN),
         500.. => log!(tracing::Level::ERROR),
     }

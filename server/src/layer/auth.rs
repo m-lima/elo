@@ -7,6 +7,52 @@ impl Auth {
     pub fn new(store: store::Store) -> Self {
         Self { store }
     }
+
+    #[tracing::instrument(target = "auth", skip_all)]
+    async fn auth<B, I>(
+        self,
+        mut request: hyper::Request<B>,
+        mut inner: I,
+    ) -> Result<I::Response, I::Error>
+    where
+        I: tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
+    {
+        macro_rules! forbid {
+            ($($arg: tt)*) => {
+                tracing::warn!(target: "auth", $($arg)*);
+                return Ok(axum::response::IntoResponse::into_response(
+                    hyper::StatusCode::FORBIDDEN,
+                ));
+            };
+        }
+
+        let header = crate::X_USER;
+
+        let Some(user_header) = request.headers().get(&header) else {
+            forbid!(%header, "Header is missing");
+        };
+
+        let user = match user_header.to_str() {
+            Ok(user) => user,
+            Err(error) => {
+                forbid!(%header, %error, "Header is not parseable as a String");
+            }
+        };
+
+        match self.store.users().get(user).await {
+            Ok(user) => {
+                request.extensions_mut().insert(user);
+            }
+            Err(store::Error::NotFound) => {
+                forbid!(%user, "User is not authorized");
+            }
+            Err(error) => {
+                forbid!(%user, %error, "Could not query for user");
+            }
+        };
+
+        inner.call(request).await
+    }
 }
 
 impl<I> tower_layer::Layer<I> for Auth {
@@ -56,59 +102,6 @@ where
             .take()
             .expect("Received a `call` in Auth without a `poll_ready`");
 
-        Box::pin(auth(self.auth.clone(), request, inner))
-    }
-}
-
-#[tracing::instrument(target = "auth", skip_all)]
-async fn auth<B, I>(
-    auth: Auth,
-    request: hyper::Request<B>,
-    mut inner: I,
-) -> Result<I::Response, I::Error>
-where
-    I: tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
-{
-    let Some((user_id, mut request)) = from_header(&auth, request).await else {
-        return Ok(axum::response::IntoResponse::into_response(
-            hyper::StatusCode::FORBIDDEN,
-        ));
-    };
-
-    request.extensions_mut().insert(user_id);
-
-    inner.call(request).await
-}
-
-#[tracing::instrument(target = "auth", skip_all)]
-async fn from_header<B>(
-    auth: &Auth,
-    request: hyper::Request<B>,
-) -> Option<(types::Id, hyper::Request<B>)> {
-    let header = crate::X_USER;
-
-    let Some(user_header) = request.headers().get(&header) else {
-        tracing::warn!(target: "auth", %header, "Header is missing");
-        return None;
-    };
-
-    let user = match user_header.to_str() {
-        Ok(user) => user,
-        Err(error) => {
-            tracing::warn!(target: "auth", %header, %error, "Header is not parseable as a String");
-            return None;
-        }
-    };
-
-    match auth.store.users().id_for(user).await {
-        Ok(user) => Some((user, request)),
-        Err(store::Error::NotFound) => {
-            tracing::warn!(target: "auth", %header, %user, "User is not authorized");
-            None
-        }
-        Err(error) => {
-            tracing::warn!(target: "auth", %header, %user, %error, "Could not query for user");
-            None
-        }
+        Box::pin(self.auth.clone().auth(request, inner))
     }
 }

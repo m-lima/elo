@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
   "server",
-  "store", "types",
+  "store",
+  "types",
 ]
 
 [workspace.package]

@@ -1,5 +1,3 @@
-const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
-
 #[derive(Debug, Clone)]
 pub struct Auth {
     store: store::Store,
@@ -87,7 +85,7 @@ async fn from_header<B>(
     auth: &Auth,
     request: hyper::Request<B>,
 ) -> Option<(types::Id, hyper::Request<B>)> {
-    let header = X_USER;
+    let header = crate::X_USER;
 
     let Some(user_header) = request.headers().get(&header) else {
         tracing::warn!(target: "auth", %header, "Header is missing");

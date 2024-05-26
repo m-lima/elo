@@ -1,6 +1,9 @@
 mod args;
-mod auth;
-mod router;
+mod layer;
+mod ws;
+
+#[allow(clippy::declare_interior_mutable_const)]
+const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
 
 fn setup_tracing(
     verbosity: args::Verbosity,
@@ -55,7 +58,10 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         }
     };
 
-    let router = router::build().layer(auth::Auth::new(store));
+    let router = route()
+        .with_state(store.clone())
+        .layer(layer::auth(store))
+        .layer(layer::logger());
 
     let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::new(0, 0, 0, 0), args.port);
 
@@ -78,4 +84,19 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         tracing::info!(duration = ?start.elapsed(), "Server gracefully shutdown");
         std::process::ExitCode::SUCCESS
     }
+}
+
+fn route() -> axum::Router<store::Store> {
+    #[tracing::instrument(skip_all)]
+    async fn upgrade<M: ws::mode::Mode>(
+        upgrade: axum::extract::WebSocketUpgrade,
+        axum::extract::State(store): axum::extract::State<store::Store>,
+        axum::Extension(user_id): axum::Extension<types::Id>,
+    ) -> String {
+        upgrade.on_upgrade(|socket| Socket::<M>::new(socket, store, user_id).serve())
+    }
+
+    axum::Router::new()
+        .route("/ws/text", axum::routing::get(upgrade::<String>))
+        .route("/ws/binary", axum::routing::get(upgrade::<Vec<u8>>))
 }

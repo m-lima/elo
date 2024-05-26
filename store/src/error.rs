@@ -4,6 +4,10 @@ pub enum Error {
     Connection(sqlx::Error),
     #[error("Failed to perform query: {0:?}")]
     Query(sqlx::Error),
+    #[error("Failed to acquire a transaction: {0:?}")]
+    Transaction(sqlx::Error),
     #[error("Attempted to store blank value for `{0}`")]
     BlankValue(&'static str),
+    #[error("Entry already exists")]
+    AlreadyExists,
 }

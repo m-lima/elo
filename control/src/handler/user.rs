@@ -1,4 +1,4 @@
-use super::super::message;
+use super::message;
 
 #[derive(Debug)]
 pub struct User<'a> {
@@ -11,27 +11,31 @@ impl<'a> User<'a> {
     }
 
     pub async fn handle(self, user: message::User) -> Result<message::Response, message::Error> {
+        let users = self.control.store.users();
+
         match user {
-            message::User::Info => {
-                match self.control.store.users().by_id(self.control.user_id).await {
-                    Ok(Some(user)) => Ok(message::Response::User(user)),
-                    Ok(None) => Err(message::Error::NotFound),
-                    Err(error) => Err(message::Error::Store(error)),
-                }
-            }
-            message::User::List => self
-                .control
-                .store
-                .users()
+            message::User::Info => users
+                .by_id(self.control.user_id)
+                .await
+                .map_err(message::Error::Store)
+                .and_then(|r| r.ok_or(message::Error::NotFound))
+                .map(message::Response::User),
+            message::User::List => users
                 .list()
                 .await
-                .map(message::Response::Users)
-                .map_err(message::Error::Store),
-            message::User::Get(email) => match self.control.store.users().by_email(&email).await {
-                Ok(Some(user)) => Ok(message::Response::User(user)),
-                Ok(None) => Err(message::Error::NotFound),
-                Err(error) => Err(message::Error::Store(error)),
-            },
+                .map_err(message::Error::Store)
+                .map(message::Response::Users),
+            message::User::Get(email) => users
+                .by_email(&email)
+                .await
+                .map_err(message::Error::Store)
+                .and_then(|r| r.ok_or(message::Error::NotFound))
+                .map(message::Response::User),
+            message::User::Invite(email) => users
+                .invite(self.control.user_id, &email)
+                .await
+                .map_err(message::Error::Store)
+                .map(message::Response::Id),
         }
     }
 }

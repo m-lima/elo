@@ -73,14 +73,10 @@ impl Users<'_> {
 
     #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
-        struct Id {
-            id: types::Id,
-        }
-
         let email = email.trim();
 
         sqlx::query_as!(
-            Id,
+            model::Id,
             r#"
             SELECT
                 id
@@ -95,6 +91,60 @@ impl Users<'_> {
         .await
         .map_err(Error::Query)
         .map(|r| r.map(|id| id.id))
+    }
+
+    #[tracing::instrument(target = "store::user", skip(self), err)]
+    pub async fn invite(&self, inviter: types::Id, email: &str) -> Result<types::Id> {
+        let email = email.trim();
+        if email.is_empty() {
+            return Err(Error::BlankValue("email"));
+        }
+
+        let mut tx = self.pool.begin().await.map_err(Error::Transaction)?;
+
+        if sqlx::query_as!(
+            model::Id,
+            r#"
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                email = $1
+            "#,
+            email
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(Error::Query)?
+        .is_some()
+        {
+            return Err(Error::AlreadyExists);
+        }
+
+        let id = sqlx::query_as!(
+            model::Id,
+            r#"
+            INSERT INTO invites (
+                inviter,
+                invitee
+            ) VALUES (
+                $1,
+                $2
+            ) RETURNING
+                id
+            "#,
+            inviter,
+            email
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(Error::Query)
+        .map(|r| r.id)?;
+
+        tx.commit().await.map_err(Error::Query)?;
+
+        Ok(id)
     }
 
     // #[tracing::instrument(target = "store::user", skip(self), err)]

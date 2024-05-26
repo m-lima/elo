@@ -1,3 +1,8 @@
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct Id {
+    pub id: types::Id,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub(crate) struct User {
     pub id: types::Id,

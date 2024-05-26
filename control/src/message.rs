@@ -7,6 +7,7 @@ pub enum Request {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Response {
+    Id(types::Id),
     User(types::User),
     Users(Vec<types::User>),
 }
@@ -17,6 +18,7 @@ pub enum User {
     Info,
     List,
     Get(String),
+    Invite(String),
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -65,6 +67,7 @@ impl ws::Request for Request {
                 User::Info => "User::Info",
                 User::List => "User::List",
                 User::Get(_) => "User::Get",
+                User::Invite(_) => "User::Invite",
             },
         }
     }

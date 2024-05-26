@@ -1,5 +1,6 @@
 mod args;
 mod layer;
+mod service;
 mod ws;
 
 #[allow(clippy::declare_interior_mutable_const)]
@@ -87,7 +88,6 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
 }
 
 fn route() -> axum::Router<store::Store> {
-    #[tracing::instrument(skip_all)]
     async fn upgrade<M: ws::Mode>(
         upgrade: axum::extract::WebSocketUpgrade,
         axum::extract::State(store): axum::extract::State<store::Store>,
@@ -95,7 +95,7 @@ fn route() -> axum::Router<store::Store> {
     ) -> axum::response::Response {
         upgrade.on_upgrade(move |socket| {
             let socket = ws::Socket::<M>::new(socket);
-            let service = Service { store, user };
+            let service = service::Service::new(store, user);
             let broadcast = service.subscribe();
             socket.serve(service, broadcast)
         })
@@ -104,33 +104,4 @@ fn route() -> axum::Router<store::Store> {
     axum::Router::new()
         .route("/ws/text", axum::routing::get(upgrade::<String>))
         .route("/ws/binary", axum::routing::get(upgrade::<Vec<u8>>))
-}
-
-struct Service {
-    store: store::Store,
-    user: types::User,
-}
-
-impl Service {
-    fn subscribe(&self) -> tokio::sync::broadcast::Receiver<String> {
-        todo!()
-    }
-}
-
-impl tower_service::Service<String> for Service {
-    type Response = String;
-    type Error = hyper::StatusCode;
-    type Future =
-        std::pin::Pin<Box<dyn Send + std::future::Future<Output = Result<String, Self::Error>>>>;
-
-    fn poll_ready(
-        &mut self,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        todo!()
-    }
-
-    fn call(&mut self, _req: String) -> Self::Future {
-        todo!()
-    }
 }

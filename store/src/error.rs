@@ -6,6 +6,4 @@ pub enum Error {
     Query(sqlx::Error),
     #[error("Attempted to store blank value for `{0}`")]
     BlankValue(&'static str),
-    #[error("Not found")]
-    NotFound,
 }

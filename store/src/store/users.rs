@@ -26,7 +26,7 @@ impl Users<'_> {
     }
 
     #[tracing::instrument(target = "store::user", skip(self), err)]
-    pub async fn get(&self, email: &str) -> Result<types::User> {
+    pub async fn get(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim();
 
         sqlx::query_as!(
@@ -46,12 +46,11 @@ impl Users<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .and_then(|r| r.ok_or(Error::NotFound))
-        .map(types::User::from)
+        .map(|r| r.map(types::User::from))
     }
 
     #[tracing::instrument(target = "store::user", skip(self), err)]
-    pub async fn id_for(&self, email: &str) -> Result<types::Id> {
+    pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
         struct Id {
             id: types::Id,
         }
@@ -73,36 +72,35 @@ impl Users<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .and_then(|r| r.ok_or(Error::NotFound))
-        .map(|id| id.id)
+        .map(|r| r.map(|id| id.id))
     }
 
-    #[tracing::instrument(target = "store::user", skip(self), err)]
-    pub async fn create(&self, email: &str) -> Result<types::User> {
-        let email = email.trim();
-        if email.is_empty() {
-            return Err(Error::BlankValue("email"));
-        }
-
-        sqlx::query_as!(
-            model::User,
-            r#"
-            INSERT INTO users (
-                email
-            ) VALUES (
-                $1
-            ) RETURNING
-                id,
-                email,
-                created_ms AS "created_ms: model::Millis"
-            "#,
-            email
-        )
-        .fetch_one(self.pool)
-        .await
-        .map_err(Error::Query)
-        .map(types::User::from)
-    }
+    // #[tracing::instrument(target = "store::user", skip(self), err)]
+    // pub async fn create(&self, email: &str) -> Result<types::User> {
+    //     let email = email.trim();
+    //     if email.is_empty() {
+    //         return Err(Error::BlankValue("email"));
+    //     }
+    //
+    //     sqlx::query_as!(
+    //         model::User,
+    //         r#"
+    //         INSERT INTO users (
+    //             email
+    //         ) VALUES (
+    //             $1
+    //         ) RETURNING
+    //             id,
+    //             email,
+    //             created_ms AS "created_ms: model::Millis"
+    //         "#,
+    //         email
+    //     )
+    //     .fetch_one(self.pool)
+    //     .await
+    //     .map_err(Error::Query)
+    //     .map(types::User::from)
+    // }
 }
 
 impl<'a> From<&'a Store> for Users<'a> {

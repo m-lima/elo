@@ -1,13 +1,14 @@
 pub type Id = i64;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct User {
     pub id: i64,
     pub email: String,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
     pub created: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Ranking {
     pub user: User,
     pub score: u32,

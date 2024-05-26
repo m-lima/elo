@@ -1,6 +1,7 @@
 mod message;
 mod mode;
 
+pub use message::Error;
 pub use mode::Mode;
 
 enum FlowControl<T> {
@@ -25,7 +26,7 @@ where
 {
     pub fn new(socket: axum::extract::ws::WebSocket) -> Self {
         let id = format!("{id:04x}", id = rand::random::<u16>());
-        tracing::debug!(ws = %id, mode = %M::mode(), "Opening websocket");
+        tracing::info!(ws = %id, mode = %M::mode(), "Opening websocket");
 
         Self {
             id,
@@ -34,7 +35,7 @@ where
         }
     }
 
-    #[tracing::instrument(skip_all, fields(ws = %self.id, mode = %M::mode()))]
+    #[tracing::instrument(target = "ws", skip_all, fields(ws = %self.id, mode = %M::mode()))]
     pub async fn serve<S, I, O, P>(
         mut self,
         mut service: S,
@@ -101,7 +102,7 @@ where
     {
         // Closed socket
         let Some(message) = self.socket.recv().await else {
-            tracing::debug!(ws = %self.id, mode = %M::mode(), "Closing websocket");
+            tracing::info!(ws = %self.id, mode = %M::mode(), "Closing websocket");
             return FlowControl::Break;
         };
 
@@ -109,7 +110,7 @@ where
         let message = match message {
             Ok(message) => message,
             Err(error) => {
-                tracing::warn!(ws = %self.id, mode = %M::mode(), %error, "Broken websocket");
+                tracing::info!(ws = %self.id, mode = %M::mode(), %error, "Closing broken websocket");
                 return FlowControl::Break;
             }
         };

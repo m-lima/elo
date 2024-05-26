@@ -40,10 +40,10 @@ impl Auth {
         };
 
         match self.store.users().get(user).await {
-            Ok(user) => {
+            Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }
-            Err(store::Error::NotFound) => {
+            Ok(None) => {
                 forbid!(%user, "User is not authorized");
             }
             Err(error) => {

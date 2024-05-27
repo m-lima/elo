@@ -20,6 +20,12 @@ impl<'a> User<'a> {
                 .map_err(message::Error::Store)
                 .and_then(|r| r.ok_or(message::Error::NotFound))
                 .map(message::Response::User),
+            message::User::Rename(name) => users
+                .rename(self.control.user_id, &name)
+                .await
+                .map_err(message::Error::Store)
+                .and_then(|r| r.ok_or(message::Error::NotFound))
+                .map(message::Response::Id),
             message::User::List => users
                 .list()
                 .await
@@ -32,33 +38,23 @@ impl<'a> User<'a> {
                 .and_then(|r| r.ok_or(message::Error::NotFound))
                 .map(message::Response::User),
             message::User::Invite(message::Invite { name, email }) => {
-                let (user, domain) = {
-                    let mut parts = email.split('@');
-                    let Some(user) = parts.next() else {
-                        return Err(message::Error::InvalidEmail);
-                    };
-                    let Some(domain) = parts.next() else {
-                        return Err(message::Error::InvalidEmail);
-                    };
-                    if parts.next().is_some() {
-                        return Err(message::Error::InvalidEmail);
-                    }
-                    (String::from(user), String::from(domain))
-                };
+                let mailbox =
+                    smtp::Mailbox::new(name, email).map_err(message::Error::InvalidEmail)?;
+
                 let id = users
-                    .invite(self.control.user_id, &email)
+                    .invite(self.control.user_id, mailbox.name(), mailbox.email())
                     .await
                     .map_err(message::Error::Store)
                     .map(message::Response::Id)?;
 
                 self.control
                     .broadcaster
-                    .send(message::Push::Invited(email.clone()));
+                    .send(message::Push::Invited(message::Invite {
+                        name: String::from(mailbox.name()),
+                        email: String::from(mailbox.email()),
+                    }));
 
-                self.control
-                    .smtp
-                    .send(smtp::Payload::Invite { name, user, domain })
-                    .await;
+                self.control.smtp.send(smtp::Payload::Invite(mailbox)).await;
 
                 Ok(id)
             }

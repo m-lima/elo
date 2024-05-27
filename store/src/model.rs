@@ -6,6 +6,7 @@ pub struct Id {
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub(crate) struct User {
     pub id: types::Id,
+    pub name: String,
     pub email: String,
     pub created_ms: Millis,
 }
@@ -35,6 +36,7 @@ impl From<User> for types::User {
     fn from(value: User) -> Self {
         Self {
             id: value.id,
+            name: value.name,
             email: value.email,
             created: value.created_ms.into(),
         }

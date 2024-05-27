@@ -16,37 +16,38 @@ pub enum Response {
 #[serde(rename_all = "camelCase")]
 pub enum User {
     Info,
+    Rename(String),
     List,
     Get(String),
     Invite(Invite),
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Invite {
-    pub name: Option<String>,
+    pub name: String,
     pub email: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Push {
-    Invited(String),
+    Invited(Invite),
 }
 
 #[derive(Debug)]
 pub enum Error {
     Store(store::Error),
     NotFound,
-    InvalidEmail,
+    InvalidEmail(smtp::mailbox::Error),
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Store(store) => store.fmt(f),
+            Error::Store(error) => error.fmt(f),
             Error::NotFound => f.write_str("Not found"),
-            Error::InvalidEmail => f.write_str("Invalid email"),
+            Error::InvalidEmail(error) => error.fmt(f),
         }
     }
 }
@@ -55,8 +56,7 @@ impl ws::IntoError for Error {
     fn is_warn(&self) -> bool {
         match self {
             Error::Store(_) => false,
-            Error::NotFound => true,
-            Error::InvalidEmail => true,
+            Error::NotFound | Error::InvalidEmail(_) => true,
         }
     }
 }
@@ -66,7 +66,7 @@ impl From<Error> for ws::Error {
         match value {
             Error::Store(_) => Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR),
             Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
-            Error::InvalidEmail => Self::from(hyper::StatusCode::BAD_REQUEST),
+            Error::InvalidEmail(_) => Self::from(hyper::StatusCode::BAD_REQUEST),
         }
     }
 }
@@ -76,6 +76,7 @@ impl ws::Request for Request {
         match self {
             Self::User(user) => match user {
                 User::Info => "User::Info",
+                User::Rename(_) => "User::Renmae",
                 User::List => "User::List",
                 User::Get(_) => "User::Get",
                 User::Invite(_) => "User::Invite",

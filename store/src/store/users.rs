@@ -13,6 +13,7 @@ impl Users<'_> {
             r#"
             SELECT
                 id,
+                name,
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
@@ -34,6 +35,7 @@ impl Users<'_> {
             r#"
             SELECT
                 id,
+                name,
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
@@ -56,6 +58,7 @@ impl Users<'_> {
             r#"
             SELECT
                 id,
+                name,
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
@@ -74,6 +77,9 @@ impl Users<'_> {
     #[tracing::instrument(target = "store::user", skip(self), err)]
     pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
         let email = email.trim();
+        if email.is_empty() {
+            return Err(Error::BlankValue("email"));
+        }
 
         sqlx::query_as!(
             model::Id,
@@ -94,7 +100,40 @@ impl Users<'_> {
     }
 
     #[tracing::instrument(target = "store::user", skip(self), err)]
-    pub async fn invite(&self, inviter: types::Id, email: &str) -> Result<types::Id> {
+    pub async fn rename(&self, id: types::Id, name: &str) -> Result<Option<types::Id>> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(Error::BlankValue("name"));
+        }
+
+        sqlx::query_as!(
+            model::Id,
+            r#"
+            UPDATE
+                users
+            SET
+                name = $2
+            WHERE
+                id = $1
+            RETURNING
+                id AS "id!: _"
+            "#,
+            id,
+            name
+        )
+        .fetch_optional(self.pool)
+        .await
+        .map_err(Error::Query)
+        .map(|r| r.map(|id| id.id))
+    }
+
+    #[tracing::instrument(target = "store::user", skip(self), err)]
+    pub async fn invite(&self, inviter: types::Id, name: &str, email: &str) -> Result<types::Id> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(Error::BlankValue("name"));
+        }
+
         let email = email.trim();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
@@ -127,14 +166,17 @@ impl Users<'_> {
             r#"
             INSERT INTO invites (
                 inviter,
-                invitee
+                name,
+                email
             ) VALUES (
                 $1,
-                $2
+                $2,
+                $3
             ) RETURNING
                 id
             "#,
             inviter,
+            name,
             email
         )
         .fetch_one(&mut *tx)
@@ -146,33 +188,6 @@ impl Users<'_> {
 
         Ok(id)
     }
-
-    // #[tracing::instrument(target = "store::user", skip(self), err)]
-    // pub async fn create(&self, email: &str) -> Result<types::User> {
-    //     let email = email.trim();
-    //     if email.is_empty() {
-    //         return Err(Error::BlankValue("email"));
-    //     }
-    //
-    //     sqlx::query_as!(
-    //         model::User,
-    //         r#"
-    //         INSERT INTO users (
-    //             email
-    //         ) VALUES (
-    //             $1
-    //         ) RETURNING
-    //             id,
-    //             email,
-    //             created_ms AS "created_ms: model::Millis"
-    //         "#,
-    //         email
-    //     )
-    //     .fetch_one(self.pool)
-    //     .await
-    //     .map_err(Error::Query)
-    //     .map(types::User::from)
-    // }
 }
 
 impl<'a> From<&'a Store> for Users<'a> {

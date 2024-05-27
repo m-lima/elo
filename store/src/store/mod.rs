@@ -45,11 +45,14 @@ mod tests {
                 crate::model::User,
                 r#"
                 INSERT INTO users (
+                    name,
                     email
                 ) VALUES (
+                    "name",
                     $1
                 ) RETURNING
                     id,
+                    name,
                     email,
                     created_ms AS "created_ms: crate::model::Millis"
                 "#,
@@ -90,11 +93,14 @@ mod tests {
                 crate::model::User,
                 r#"
                     INSERT INTO users (
+                        name,
                         email
                     ) VALUES (
+                        "bla",
                         NULL
                     ) RETURNING
                         id,
+                        name,
                         email,
                         created_ms AS "created_ms: crate::model::Millis"
                     "#

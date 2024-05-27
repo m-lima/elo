@@ -1,15 +1,20 @@
+// ALLOW(clippy::missing_errors_doc): It is internal
+#![allow(clippy::missing_errors_doc)]
+
+pub mod mailbox;
+
+pub use mailbox::Mailbox;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failed to build SMTP sender: {0:?}")]
-    Address(#[from] lettre::address::AddressError),
-    #[error("Failed to build SMTP sender: {0:?}")]
     Transport(#[from] lettre::transport::smtp::Error),
+    #[error("Failed to build SMTP sender: Could not connect")]
+    Connection,
 }
 
 #[derive(Debug, thiserror::Error)]
 enum LettreError {
-    #[error(transparent)]
-    Address(#[from] lettre::address::AddressError),
     #[error(transparent)]
     Transport(#[from] lettre::transport::smtp::Error),
     #[error(transparent)]
@@ -17,11 +22,7 @@ enum LettreError {
 }
 
 pub enum Payload {
-    Invite {
-        name: Option<String>,
-        user: String,
-        domain: String,
-    },
+    Invite(Mailbox),
     _Challenge(types::Id),
     _Match(types::Id),
 }
@@ -32,24 +33,9 @@ pub struct Smtp {
 }
 
 impl Smtp {
-    pub fn new(
-        host: String,
-        smtp_host: String,
-        smtp_port: u16,
-        from_name: String,
-        from_user: String,
-        from_domain: String,
-    ) -> Result<Self, Error> {
+    pub async fn new(link: hyper::Uri, host: String, from: Mailbox) -> Result<Self, Error> {
         let (tx, rx) = tokio::sync::mpsc::channel(16);
-        let worker = Worker::new(
-            host,
-            smtp_host,
-            smtp_port,
-            from_name,
-            from_user,
-            from_domain,
-            rx,
-        )?;
+        let worker = Worker::new(link, host, from, rx).await?;
         tokio::spawn(worker.listen());
 
         Ok(Self { tx: Some(tx) })
@@ -71,35 +57,31 @@ impl Smtp {
 }
 
 struct Worker {
-    host: String,
-    sender: lettre::message::Mailbox,
+    link: hyper::Uri,
+    from: Mailbox,
     transport: lettre::AsyncSmtpTransport<lettre::Tokio1Executor>,
     rx: tokio::sync::mpsc::Receiver<Payload>,
 }
 
 impl Worker {
-    fn new(
+    async fn new(
+        link: hyper::Uri,
         host: String,
-        smtp_host: String,
-        smtp_port: u16,
-        from_name: String,
-        from_user: String,
-        from_domain: String,
+        from: Mailbox,
         rx: tokio::sync::mpsc::Receiver<Payload>,
     ) -> Result<Self, Error> {
-        let sender = lettre::Address::new(from_user, from_domain)
-            .map(|addr| lettre::message::Mailbox::new(Some(from_name), addr))?;
-
         let transport =
-            lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::starttls_relay(&smtp_host)?
-                .port(smtp_port)
-                .build();
+            lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::from_url(&host)?.build();
 
-        tracing::info!(target: "elo::smtp", host = %smtp_host, port = %smtp_port, "Starting SMTP worker");
+        if !transport.test_connection().await? {
+            return Err(Error::Connection);
+        }
+
+        tracing::info!(target: "elo::smtp", %host, %from, "Starting SMTP worker");
 
         Ok(Self {
-            host,
-            sender,
+            link,
+            from,
             transport,
             rx,
         })
@@ -120,35 +102,30 @@ impl Worker {
 
     async fn send(&self, payload: Payload) -> Result<(), LettreError> {
         match payload {
-            Payload::Invite { name, user, domain } => {
-                if let Some(name) = name.as_ref() {
-                    tracing::info!(target: "elo::smtp", %name, %user, %domain, "Sending invite email");
-                } else {
-                    tracing::info!(target: "elo::smtp", %user, %domain, "Sending invite email");
-                }
+            Payload::Invite(recipient) => {
+                tracing::info!(target: "elo::smtp", %recipient, "Sending invite email");
 
-                let name = name.unwrap_or_else(|| String::from("Player"));
-                let recipient = lettre::Address::new(user, domain)
-                    .map(|addr| lettre::message::Mailbox::new(Some(name.clone()), addr))?;
+                let invitee = String::from(recipient.name());
+                let name = self.from.name();
+                let link = &self.link;
 
                 let message = lettre::Message::builder()
-                    .from(self.sender.clone())
-                    .to(recipient)
-                    .subject("Invitation to join PongElo")
+                    .from(self.from.clone().into())
+                    .to(recipient.into())
+                    .subject(format!("Invitation to join {name}"))
                     .multipart(
                         lettre::message::MultiPart::alternative()
                             .singlepart(
                                 lettre::message::SinglePart::builder()
                                     .header(lettre::message::header::ContentType::TEXT_PLAIN)
                                     .body(format!(
-                                        r#"Hi {name}!
+                                        r#"Hi {invitee}!
 
-You have been invited to join PongElo!
-Try it out at {host}
+You have been invited to join {name}!
+Try it out at {link}
 
 Happy gaming!
-"#,
-                                        host = self.host,
+"#
                                     )),
                             )
                             .singlepart(
@@ -160,19 +137,18 @@ Happy gaming!
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitation to join PongElo</title>
+    <title>Invitation to join {name}</title>
 </head>
 <body>
-Hi {name}!
+Hi {invitee}!
 
-You have been invited to join PongElo!
-Try it out at <a href={host}>{host}</a>
+You have been invited to join {name}!
+Try it out at <a href={link}>{link}</a>
 
 Happy gaming!
 </body>
 </html>
-"#,
-                                        host = self.host,
+"#
                                     )),
                             ),
                     )?;

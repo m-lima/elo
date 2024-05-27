@@ -14,9 +14,9 @@ CREATE TABLE invites (
   name       TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(name)) > 0),
   email      TEXT    NOT NULL UNIQUE
-    CHECK(LENGTH(TRIM(invitee) > 0)),
+    CHECK(LENGTH(TRIM(email) > 0)),
   created_ms INTEGER NOT NULL
-    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4))
+    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(inviter) REFERENCES users(id) ON DELETE CASCADE
 );

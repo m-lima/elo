@@ -34,16 +34,13 @@ impl Store {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(test)]
-    mod constraints {
-
-        async fn insert(
-            email: &str,
-            pool: &sqlx::sqlite::SqlitePool,
-        ) -> Result<crate::model::User, sqlx::Error> {
-            sqlx::query_as!(
-                crate::model::User,
-                r#"
+    async fn insert(
+        email: &str,
+        pool: &sqlx::sqlite::SqlitePool,
+    ) -> Result<crate::model::User, sqlx::Error> {
+        sqlx::query_as!(
+            crate::model::User,
+            r#"
                 INSERT INTO users (
                     name,
                     email
@@ -56,11 +53,14 @@ mod tests {
                     email,
                     created_ms AS "created_ms: crate::model::Millis"
                 "#,
-                email
-            )
-            .fetch_one(pool)
-            .await
-        }
+            email
+        )
+        .fetch_one(pool)
+        .await
+    }
+
+    mod constraints {
+        use super::insert;
 
         #[sqlx::test]
         async fn text_column_cannot_be_blank(pool: sqlx::sqlite::SqlitePool) {
@@ -265,6 +265,56 @@ mod tests {
             .await
             .unwrap()
             .is_empty());
+        }
+    }
+
+    mod behavior {
+        use super::insert;
+
+        #[sqlx::test]
+        async fn updates_dont_return_optional(pool: sqlx::sqlite::SqlitePool) {
+            let user = insert("email", &pool).await.unwrap();
+
+            let id = sqlx::query_as!(
+                crate::model::Id,
+                r#"
+                UPDATE
+                    users
+                SET
+                    name = "other"
+                WHERE
+                    id = $1
+                RETURNING
+                    id AS "id!: _"
+                "#,
+                user.id
+            )
+            .fetch_optional(&pool)
+            .await
+            .map(|r| r.map(|id| id.id))
+            .unwrap();
+
+            assert_eq!(id, Some(user.id));
+
+            let id = sqlx::query_as!(
+                crate::model::Id,
+                r#"
+                UPDATE
+                    users
+                SET
+                    name = "other"
+                WHERE
+                    id = 27
+                RETURNING
+                    id AS "id!: _"
+                "#
+            )
+            .fetch_optional(&pool)
+            .await
+            .map(|r| r.map(|id| id.id))
+            .unwrap();
+
+            assert_eq!(id, None);
         }
     }
 }

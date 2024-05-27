@@ -1,6 +1,6 @@
 CREATE TABLE users (
   id         INTEGER NOT NULL PRIMARY KEY,
-  name       TEXT    NOT NULL UNIQUE
+  name       TEXT    NOT NULL
     CHECK(LENGTH(TRIM(name)) > 0),
   email      TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0),
@@ -11,7 +11,7 @@ CREATE TABLE users (
 CREATE TABLE invites (
   id         INTEGER NOT NULL PRIMARY KEY,
   inviter    INTEGER NOT NULL,
-  name       TEXT    NOT NULL UNIQUE
+  name       TEXT    NOT NULL
     CHECK(LENGTH(TRIM(name)) > 0),
   email      TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email) > 0)),

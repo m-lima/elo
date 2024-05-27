@@ -24,7 +24,7 @@ pub enum User {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Push {
-    None,
+    Invited(String),
 }
 
 #[derive(Debug)]

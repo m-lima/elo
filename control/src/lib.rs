@@ -1,6 +1,7 @@
 mod broadcaster;
 mod handler;
 mod message;
+mod smtp;
 
 #[derive(Debug)]
 pub struct Control {

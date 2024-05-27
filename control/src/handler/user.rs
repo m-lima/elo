@@ -31,11 +31,20 @@ impl<'a> User<'a> {
                 .map_err(message::Error::Store)
                 .and_then(|r| r.ok_or(message::Error::NotFound))
                 .map(message::Response::User),
-            message::User::Invite(email) => users
-                .invite(self.control.user_id, &email)
-                .await
-                .map_err(message::Error::Store)
-                .map(message::Response::Id),
+            message::User::Invite(email) => {
+                let id = users
+                    .invite(self.control.user_id, &email)
+                    .await
+                    .map_err(message::Error::Store)
+                    .map(message::Response::Id)?;
+
+                self.control
+                    .broadcaster
+                    .send(message::Push::Invited(email.clone()));
+                tokio::spawn(crate::smtp::Payload::Invite(email).send());
+
+                Ok(id)
+            }
         }
     }
 }

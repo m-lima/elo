@@ -360,20 +360,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
-name = "control"
-version = "0.1.0"
-dependencies = [
- "hyper",
- "serde",
- "smtp",
- "store",
- "tokio",
- "tracing",
- "types",
- "ws",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -480,6 +466,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a47c1c47d2f5964e29c61246e81db715514cd532db6b5116a25ea3c03d6780a2"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "elo"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "boile-rs",
+ "chrono",
+ "clap",
+ "hyper",
+ "lettre",
+ "rand",
+ "rmp-serde",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1596,27 +1605,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "boile-rs",
- "clap",
- "control",
- "hyper",
- "smtp",
- "store",
- "thiserror",
- "tokio",
- "tower-layer",
- "tower-service",
- "tracing",
- "tracing-subscriber",
- "types",
- "ws",
-]
-
-[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,18 +1668,6 @@ name = "smallvec"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
-
-[[package]]
-name = "smtp"
-version = "0.1.0"
-dependencies = [
- "hyper",
- "lettre",
- "thiserror",
- "tokio",
- "tracing",
- "types",
-]
 
 [[package]]
 name = "socket2"
@@ -1946,17 +1922,6 @@ dependencies = [
  "libc",
  "psm",
  "winapi",
-]
-
-[[package]]
-name = "store"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "sqlx",
- "thiserror",
- "tracing",
- "types",
 ]
 
 [[package]]
@@ -2229,14 +2194,6 @@ name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
-
-[[package]]
-name = "types"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
-]
 
 [[package]]
 name = "unicode-bidi"
@@ -2579,20 +2536,6 @@ name = "windows_x86_64_msvc"
 version = "0.52.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bec47e5bfd1bff0eeaf6d8b485cc1074891a197ab4225d504cb7a1ab88b02bf0"
-
-[[package]]
-name = "ws"
-version = "0.1.0"
-dependencies = [
- "axum",
- "hyper",
- "rand",
- "rmp-serde",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
 
 [[package]]
 name = "zerocopy"

@@ -1,23 +1,26 @@
-[workspace]
-resolver = "2"
-members = [
-  "control",
-  "server",
-  "smtp",
-  "store",
-  "types",
-  "ws",
-]
-
-[workspace.package]
+[package]
+name = "elo"
 version = "0.1.0"
 edition = "2021"
 
-[workspace.dependencies]
+[features]
+log-spans = ["boile-rs/log-spans"]
+
+[dependencies]
 axum = { version = "0.7.5", features = ["ws"] }
+boile-rs = { git = "https://github.com/m-lima/boile-rs", version = "0.1.1", features = ["log", "rt-shutdown"] }
 chrono = { version = "0.4.38", default-features = false, features = ["serde"] }
+clap = { version = "4.5.4", features = ["derive"] }
 hyper = { version = "1.3.1", default-features = false }
+lettre = { version = "0.11.7", features = ["tracing", "tokio1-native-tls"] }
+rand = "0.8.5"
+rmp-serde = "1.3.0"
 serde = { version = "1.0.202", features = ["derive"] }
+serde_json = "1.0.117"
+sqlx = { version = "0.7.4", features = ["sqlite", "runtime-tokio-rustls"] }
 thiserror = "1.0.60"
 tokio = "1.37.0"
+tower-layer = "0.3.2"
+tower-service = "0.3.2"
 tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", default-features = false }

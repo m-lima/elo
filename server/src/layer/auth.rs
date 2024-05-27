@@ -8,7 +8,7 @@ impl Auth {
         Self { store }
     }
 
-    #[tracing::instrument(target = "auth", skip_all)]
+    #[tracing::instrument(target = "elo::auth", skip_all)]
     async fn auth<B, I>(
         self,
         mut request: hyper::Request<B>,
@@ -19,7 +19,7 @@ impl Auth {
     {
         macro_rules! forbid {
             ($($arg: tt)*) => {
-                tracing::warn!(target: "auth", $($arg)*);
+                tracing::warn!(target: "elo::auth", $($arg)*);
                 return Ok(axum::response::IntoResponse::into_response(
                     hyper::StatusCode::FORBIDDEN,
                 ));

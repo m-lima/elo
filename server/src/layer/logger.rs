@@ -43,7 +43,7 @@ where
             .map(String::from);
 
         let span = tracing::span!(
-            target: "layer",
+            target: "elo::server::layer",
             tracing::Level::INFO,
             "request",
             %method,
@@ -111,91 +111,70 @@ fn log_ok<F>(future: &Future<F>, response: &axum::response::Response) {
         ($level: expr) => {
             match (future.user.as_ref(), future.length, length) {
                 (Some(user), Some(incoming), Some(outgoing)) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         %user,
                         incoming,
                         outgoing,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (Some(user), None, Some(outgoing)) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         %user,
                         outgoing,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (None, Some(incoming), Some(outgoing)) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         incoming,
                         outgoing,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (None, None, Some(outgoing)) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         outgoing,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (Some(user), Some(incoming), None) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         %user,
                         incoming,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (Some(user), None, None) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         %user,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (None, Some(incoming), None) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
                         incoming,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
                 (None, None, None) => {
-                    tracing::event!(
+                    log!(
                         $level,
-                        method = %future.method,
-                        path = %future.path,
-                        ?latency,
-                        "{status}{spacer}{reason}"
                     );
                 }
             }
         };
+        ($level: expr, $($args: tt)*) => {
+            tracing::event!(
+                target: "elo::server",
+                $level,
+                method = %future.method,
+                path = %future.path,
+                $($args)*
+                ?latency,
+                "{status}{spacer}{reason}"
+            );
+        }
     }
 
     match status {
@@ -208,16 +187,16 @@ fn log_ok<F>(future: &Future<F>, response: &axum::response::Response) {
 fn log_err<F, E: std::fmt::Display>(future: &Future<F>, error: &E) {
     match (future.user.as_ref(), future.length) {
         (Some(user), Some(incoming)) => {
-            tracing::error!(method = future.method, path = future.path, user, incoming, %error, "Unexpected error while serving request");
+            tracing::error!(target: "elo::server", method = future.method, path = future.path, user, incoming, %error, "Unexpected error while serving request");
         }
         (Some(user), None) => {
-            tracing::error!(method = future.method, path = future.path, user, %error, "Unexpected error while serving request");
+            tracing::error!(target: "elo::server", method = future.method, path = future.path, user, %error, "Unexpected error while serving request");
         }
         (None, Some(incoming)) => {
-            tracing::error!(method = future.method, path = future.path, incoming, %error, "Unexpected error while serving request");
+            tracing::error!(target: "elo::server", method = future.method, path = future.path, incoming, %error, "Unexpected error while serving request");
         }
         (None, None) => {
-            tracing::error!(method = future.method, path = future.path, %error, "Unexpected error while serving request");
+            tracing::error!(target: "elo::server", method = future.method, path = future.path, %error, "Unexpected error while serving request");
         }
     }
 }

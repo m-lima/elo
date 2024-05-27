@@ -22,9 +22,9 @@ where
     pub fn send(&self, payload: T) {
         if let Ok(count) = self.sender.send(payload) {
             if count == 1 {
-                tracing::debug!("Broadcasting to 1 listener");
+                tracing::debug!(target: "elo::control", "Broadcasting to 1 listener");
             } else {
-                tracing::debug!("Broadcasting to {count} listeners");
+                tracing::debug!(target: "elo::control", "Broadcasting to {count} listeners");
             }
         }
     }

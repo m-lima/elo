@@ -3,11 +3,11 @@ use crate::smtp;
 
 #[derive(Debug)]
 pub struct User<'a> {
-    control: &'a crate::Control,
+    control: &'a mut crate::Control,
 }
 
 impl<'a> User<'a> {
-    pub fn new(control: &'a crate::Control) -> Self {
+    pub fn new(control: &'a mut crate::Control) -> Self {
         Self { control }
     }
 
@@ -58,7 +58,8 @@ impl<'a> User<'a> {
 
                 self.control
                     .smtp
-                    .send(smtp::Payload::Invite { name, user, domain });
+                    .send(smtp::Payload::Invite { name, user, domain })
+                    .await;
 
                 Ok(id)
             }

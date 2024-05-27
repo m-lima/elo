@@ -30,7 +30,7 @@ where
 {
     pub fn new(socket: axum::extract::ws::WebSocket, service: S, user: String) -> Self {
         let id = format!("{id:04x}", id = rand::random::<u16>());
-        tracing::debug!(ws = %id, %user, mode = %M::mode(), "Opening websocket");
+        tracing::debug!(target: "elo::ws", ws = %id, %user, mode = %M::mode(), "Opening websocket");
 
         Self {
             id,
@@ -41,7 +41,7 @@ where
         }
     }
 
-    #[tracing::instrument(level = tracing::Level::DEBUG, target = "ws", skip_all, fields(ws = %self.id, user = %self.user, mode = %M::mode()))]
+    #[tracing::instrument(target = "elo::ws", skip_all, fields(ws = %self.id, user = %self.user, mode = %M::mode()))]
     pub async fn serve(mut self) {
         macro_rules! flow {
             ($flow_control: expr) => {
@@ -62,11 +62,11 @@ where
                     let push = match message {
                         Ok(push) => push,
                         Err(error) => {
-                            tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to read from broadcaster");
+                            tracing::warn!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to read from broadcaster");
                             continue;
                         }
                     };
-                    tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Pushing message");
+                    tracing::debug!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), "Pushing message");
                     flow!(self.send(None, push).await);
                 }
                 request = self.recv() => {
@@ -79,14 +79,14 @@ where
 
                     match self.service.call(payload).await {
                         Ok(response) =>{
-                            tracing::info!(ws = %self.id, user = %self.user, mode = %M::mode(), latency = ?start.elapsed(), "{action}");
+                            tracing::info!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), latency = ?start.elapsed(), "{action}");
                             flow!(self.send(id, response).await);
                         }
                         Err(error) => {
                             if error.is_warn() {
-                                tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
+                                tracing::warn!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
                             } else {
-                                tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
+                                tracing::error!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, latency = ?start.elapsed(), "{action}");
                             }
 
                             let payload = payload::Error::from(error);
@@ -99,20 +99,20 @@ where
     }
 
     async fn heartbeat(&mut self) {
-        tracing::debug!("Sending heartbeat");
+        tracing::debug!(target: "elo::ws", "Sending heartbeat");
         if let Err(error) = self
             .socket
             .send(axum::extract::ws::Message::Ping(Vec::new()))
             .await
         {
-            tracing::warn!(%error, "Failed to send heartbeat");
+            tracing::warn!(target: "elo::ws", %error, "Failed to send heartbeat");
         }
     }
 
     async fn recv(&mut self) -> FlowControl<(Option<payload::Id>, S::Request)> {
         // Closed socket
         let Some(message) = self.socket.recv().await else {
-            tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Closing websocket");
+            tracing::debug!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), "Closing websocket");
             return FlowControl::Break;
         };
 
@@ -120,7 +120,7 @@ where
         let message = match message {
             Ok(message) => message,
             Err(error) => {
-                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Closing broken websocket");
+                tracing::debug!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Closing broken websocket");
                 return FlowControl::Break;
             }
         };
@@ -128,11 +128,11 @@ where
         let bytes = match message {
             // Control messages
             axum::extract::ws::Message::Ping(_) | axum::extract::ws::Message::Pong(_) => {
-                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Received ping");
+                tracing::debug!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), "Received ping");
                 return FlowControl::Continue;
             }
             axum::extract::ws::Message::Close(_) => {
-                tracing::debug!(ws = %self.id, user = %self.user, mode = %M::mode(), "Received close request");
+                tracing::debug!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), "Received close request");
                 return FlowControl::Continue;
             }
 
@@ -144,7 +144,7 @@ where
         match M::deserialize(&bytes) {
             Ok(payload::WithId { id, payload }) => FlowControl::Pass((id, payload)),
             Err(error) => {
-                tracing::warn!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to deserialize request");
+                tracing::warn!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to deserialize request");
                 let error = service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string());
                 self.send(try_extract_id::<M>(&bytes), payload::Error::from(error))
                     .await
@@ -159,14 +159,14 @@ where
         match M::serialize(payload::WithId { id, payload }) {
             Ok(message) => {
                 if let Err(error) = self.socket.send(message).await {
-                    tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to send message");
+                    tracing::error!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to send message");
                     FlowControl::Break
                 } else {
                     FlowControl::Continue
                 }
             }
             Err(error) => {
-                tracing::error!(ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to serialize message");
+                tracing::error!(target: "elo::ws", ws = %self.id, user = %self.user, mode = %M::mode(), %error, "Failed to serialize message");
                 FlowControl::Break
             }
         }

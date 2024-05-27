@@ -60,15 +60,12 @@ impl Smtp {
         Self { tx: None }
     }
 
-    pub fn send(&self, payload: Payload) {
-        if let Some(tx) = self.tx.clone() {
-            tokio::spawn(Self::send_inner(tx, payload));
-        }
-    }
-
-    async fn send_inner(tx: tokio::sync::mpsc::Sender<Payload>, payload: Payload) {
-        if tx.send(payload).await.is_err() {
-            tracing::error!("SMTP channel closed");
+    pub async fn send(&mut self, payload: Payload) {
+        if let Some(tx) = self.tx.as_ref() {
+            if tx.send(payload).await.is_err() {
+                tracing::error!(target: "elo::smtp", "SMTP channel closed");
+                self.tx = None;
+            }
         }
     }
 }
@@ -98,7 +95,7 @@ impl Worker {
                 .port(smtp_port)
                 .build();
 
-        tracing::info!(target: "smtp", host = %smtp_host, port = %smtp_port, "Starting SMTP service");
+        tracing::info!(target: "elo::smtp", host = %smtp_host, port = %smtp_port, "Starting SMTP worker");
 
         Ok(Self {
             host,
@@ -111,11 +108,12 @@ impl Worker {
     async fn listen(mut self) {
         loop {
             let Some(payload) = self.rx.recv().await else {
+                tracing::error!(target: "elo::smtp", "Stopping SMTP worker due to lack of senders");
                 break;
             };
 
             if let Err(error) = self.send(payload).await {
-                tracing::error!(target: "smtp", %error, "Failed to send email");
+                tracing::error!(target: "elo::smtp", %error, "Failed to send email");
             }
         }
     }
@@ -124,9 +122,9 @@ impl Worker {
         match payload {
             Payload::Invite { name, user, domain } => {
                 if let Some(name) = name.as_ref() {
-                    tracing::info!(target: "smtp", %name, %user, %domain, "Sending invite email");
+                    tracing::info!(target: "elo::smtp", %name, %user, %domain, "Sending invite email");
                 } else {
-                    tracing::info!(target: "smtp", %user, %domain, "Sending invite email");
+                    tracing::info!(target: "elo::smtp", %user, %domain, "Sending invite email");
                 }
 
                 let name = name.unwrap_or_else(|| String::from("Player"));

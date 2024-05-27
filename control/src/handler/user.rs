@@ -1,4 +1,5 @@
-use super::message;
+use crate::message;
+use crate::smtp;
 
 #[derive(Debug)]
 pub struct User<'a> {
@@ -31,7 +32,20 @@ impl<'a> User<'a> {
                 .map_err(message::Error::Store)
                 .and_then(|r| r.ok_or(message::Error::NotFound))
                 .map(message::Response::User),
-            message::User::Invite(email) => {
+            message::User::Invite(message::Invite { name, email }) => {
+                let (user, domain) = {
+                    let mut parts = email.split('@');
+                    let Some(user) = parts.next() else {
+                        return Err(message::Error::InvalidEmail);
+                    };
+                    let Some(domain) = parts.next() else {
+                        return Err(message::Error::InvalidEmail);
+                    };
+                    if parts.next().is_some() {
+                        return Err(message::Error::InvalidEmail);
+                    }
+                    (String::from(user), String::from(domain))
+                };
                 let id = users
                     .invite(self.control.user_id, &email)
                     .await
@@ -41,7 +55,10 @@ impl<'a> User<'a> {
                 self.control
                     .broadcaster
                     .send(message::Push::Invited(email.clone()));
-                tokio::spawn(crate::smtp::Payload::Invite(email).send());
+
+                self.control
+                    .smtp
+                    .send(smtp::Payload::Invite { name, user, domain });
 
                 Ok(id)
             }

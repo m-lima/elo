@@ -1,23 +1,25 @@
 mod broadcaster;
 mod handler;
 mod message;
-mod smtp;
+pub mod smtp;
 
 #[derive(Debug)]
 pub struct Control {
     store: store::Store,
     user_id: types::Id,
+    smtp: smtp::Smtp,
     broadcaster: broadcaster::Broadcaster<message::Push>,
 }
 
 impl Control {
     #[must_use]
-    pub fn new(store: store::Store, user_id: types::Id) -> Self {
+    pub fn new(store: store::Store, user_id: types::Id, smtp: smtp::Smtp) -> Self {
         let broadcaster = broadcaster::Broadcaster::new();
 
         Self {
             store,
             user_id,
+            smtp,
             broadcaster,
         }
     }

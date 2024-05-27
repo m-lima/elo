@@ -58,8 +58,22 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         }
     };
 
-    let router = route()
-        .with_state(store.clone())
+    let service = match control::smtp::Smtp::new(
+        String::new(),
+        String::new(),
+        0,
+        String::new(),
+        String::new(),
+        String::new(),
+    ) {
+        Ok(service) => service,
+        Err(error) => {
+            tracing::error!(?error, "Failed to create SMTP service");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+
+    let router = route(store.clone(), service)
         .layer(layer::auth(store))
         .layer(layer::logger());
 
@@ -86,20 +100,24 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
     }
 }
 
-fn route() -> axum::Router<store::Store> {
-    async fn upgrade<M: ws::Mode>(
-        upgrade: axum::extract::WebSocketUpgrade,
-        axum::extract::State(store): axum::extract::State<store::Store>,
-        axum::Extension(user): axum::Extension<types::User>,
-    ) -> axum::response::Response {
-        upgrade.on_upgrade(move |socket| {
-            let control = control::Control::new(store, user.id);
-            let socket = ws::Layer::<M, _>::new(socket, control, user.email);
-            socket.serve()
-        })
+fn route(store: store::Store, smtp: control::smtp::Smtp) -> axum::Router {
+    fn upgrade<M: ws::Mode>(
+        store: store::Store,
+        smtp: control::smtp::Smtp,
+    ) -> axum::routing::MethodRouter<()> {
+        axum::routing::get(
+            |upgrade: axum::extract::WebSocketUpgrade,
+             axum::Extension(user): axum::Extension<types::User>| async move {
+                upgrade.on_upgrade(move |socket| {
+                    let control = control::Control::new(store, user.id, smtp);
+                    let socket = ws::Layer::<M, _>::new(socket, control, user.email);
+                    socket.serve()
+                })
+            },
+        )
     }
 
     axum::Router::new()
-        .route("/ws/text", axum::routing::get(upgrade::<String>))
-        .route("/ws/binary", axum::routing::get(upgrade::<Vec<u8>>))
+        .route("/ws/text", upgrade::<String>(store.clone(), smtp.clone()))
+        .route("/ws/binary", upgrade::<Vec<u8>>(store, smtp))
 }

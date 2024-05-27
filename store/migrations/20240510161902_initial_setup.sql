@@ -1,5 +1,7 @@
 CREATE TABLE users (
   id         INTEGER NOT NULL PRIMARY KEY,
+  name       TEXT    NOT NULL UNIQUE
+    CHECK(LENGTH(TRIM(name)) > 0),
   email      TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0),
   created_ms INTEGER NOT NULL
@@ -9,9 +11,12 @@ CREATE TABLE users (
 CREATE TABLE invites (
   id         INTEGER NOT NULL PRIMARY KEY,
   inviter    INTEGER NOT NULL,
-  invitee    TEXT    NOT NULL UNIQUE
+  name       TEXT    NOT NULL UNIQUE
+    CHECK(LENGTH(TRIM(name)) > 0),
+  email      TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(invitee) > 0)),
-  created_ms INTEGER NOT NULL,
+  created_ms INTEGER NOT NULL
+    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4))
 
   FOREIGN KEY(inviter) REFERENCES users(id) ON DELETE CASCADE
 );

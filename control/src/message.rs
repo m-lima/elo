@@ -18,7 +18,14 @@ pub enum User {
     Info,
     List,
     Get(String),
-    Invite(String),
+    Invite(Invite),
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Invite {
+    pub name: Option<String>,
+    pub email: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -31,6 +38,7 @@ pub enum Push {
 pub enum Error {
     Store(store::Error),
     NotFound,
+    InvalidEmail,
 }
 
 impl std::fmt::Display for Error {
@@ -38,6 +46,7 @@ impl std::fmt::Display for Error {
         match self {
             Error::Store(store) => store.fmt(f),
             Error::NotFound => f.write_str("Not found"),
+            Error::InvalidEmail => f.write_str("Invalid email"),
         }
     }
 }
@@ -47,6 +56,7 @@ impl ws::IntoError for Error {
         match self {
             Error::Store(_) => false,
             Error::NotFound => true,
+            Error::InvalidEmail => true,
         }
     }
 }
@@ -56,6 +66,7 @@ impl From<Error> for ws::Error {
         match value {
             Error::Store(_) => Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR),
             Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
+            Error::InvalidEmail => Self::from(hyper::StatusCode::BAD_REQUEST),
         }
     }
 }

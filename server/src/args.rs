@@ -15,6 +15,7 @@ pub struct Args {
     pub verbosity: Verbosity,
     pub port: u16,
     pub db: std::path::PathBuf,
+    pub smtp: Option<Smtp>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -36,14 +37,55 @@ struct Inner {
     /// Path to databases directory
     #[arg(short, long, value_parser = parse_db)]
     db: std::path::PathBuf,
+
+    #[command(flatten)]
+    smtp: SmtpInner,
+}
+
+#[derive(Debug)]
+pub struct Smtp {
+    pub link: hyper::Uri,
+    pub from: smtp::Mailbox,
+    #[allow(clippy::struct_field_names)]
+    pub smtp: hyper::Uri,
+}
+
+#[derive(Debug, clap::Args)]
+#[group(required = false)]
+struct SmtpInner {
+    /// Link to hosted website
+    #[arg(short, long, requires = "smtp")]
+    link: Option<hyper::Uri>,
+
+    /// Address to send emails from
+    ///
+    /// Example: Name <user@domain.com>
+    #[arg(short, long, requires = "link")]
+    from: Option<smtp::Mailbox>,
+
+    /// SMTP server to send emails
+    ///
+    /// Example: smtp://example.com:587?tls=required
+    #[allow(clippy::doc_markdown)]
+    #[arg(short, long, requires = "from")]
+    smtp: Option<hyper::Uri>,
 }
 
 impl From<Inner> for Args {
     fn from(value: Inner) -> Self {
+        let smtp = value.smtp;
+
+        let smtp = match (smtp.link, smtp.from, smtp.smtp) {
+            (Some(link), Some(from), Some(smtp)) => Some(Smtp { link, from, smtp }),
+            (None, None, None) => None,
+            _ => unreachable!(),
+        };
+
         Self {
             verbosity: value.verbosity.into(),
             port: value.port,
             db: value.db,
+            smtp,
         }
     }
 }

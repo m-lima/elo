@@ -33,7 +33,7 @@ pub struct Smtp {
 }
 
 impl Smtp {
-    pub async fn new(link: hyper::Uri, host: String, from: Mailbox) -> Result<Self, Error> {
+    pub async fn new(link: hyper::Uri, host: hyper::Uri, from: Mailbox) -> Result<Self, Error> {
         let (tx, rx) = tokio::sync::mpsc::channel(16);
         let worker = Worker::new(link, host, from, rx).await?;
         tokio::spawn(worker.listen());
@@ -66,12 +66,14 @@ struct Worker {
 impl Worker {
     async fn new(
         link: hyper::Uri,
-        host: String,
+        host: hyper::Uri,
         from: Mailbox,
         rx: tokio::sync::mpsc::Receiver<Payload>,
     ) -> Result<Self, Error> {
-        let transport =
-            lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::from_url(&host)?.build();
+        let transport = lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::from_url(
+            host.to_string().as_str(),
+        )?
+        .build();
 
         if !transport.test_connection().await? {
             return Err(Error::Connection);

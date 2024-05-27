@@ -27,9 +27,6 @@ fn setup_tracing(
 fn main() -> std::process::ExitCode {
     let args = args::parse();
 
-    let u: hyper::Uri = "https://bla:555".parse().unwrap();
-    println!("{u}");
-
     if let Err(error) = setup_tracing(args.verbosity) {
         eprintln!("{error:?}");
         return std::process::ExitCode::FAILURE;
@@ -54,22 +51,19 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         }
     };
 
-    let service = match smtp::Smtp::new(
-        "smtp".parse().unwrap(),
-        "smtp".parse().unwrap(),
-        "smtp".parse().unwrap(),
-    )
-    .await
-    {
-        Ok(service) => service,
-        Err(error) => {
-            tracing::error!(target: "elo", ?error, "Failed to create SMTP service");
-            return std::process::ExitCode::FAILURE;
+    let smtp = if let Some(smtp) = args.smtp {
+        match smtp::Smtp::new(smtp.link, smtp.smtp, smtp.from).await {
+            Ok(smtp) => smtp,
+            Err(error) => {
+                tracing::error!(target: "elo", ?error, "Failed to create SMTP service");
+                return std::process::ExitCode::FAILURE;
+            }
         }
+    } else {
+        smtp::Smtp::empty()
     };
-    // let service = smtp::Smtp::empty();
 
-    let router = route(store.clone(), service)
+    let router = route(store.clone(), smtp)
         .layer(layer::auth(store))
         .layer(layer::logger());
 

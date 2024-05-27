@@ -18,6 +18,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 control = { path = "../control" }
+smtp = { path = "../smtp" }
 store = { path = "../store" }
 types = { path = "../types" }
 ws = { path = "../ws" }

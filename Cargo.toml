@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "control",
   "server",
+  "smtp",
   "store",
   "types",
   "ws",

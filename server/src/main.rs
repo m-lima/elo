@@ -51,7 +51,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         }
     };
 
-    // let service = match control::smtp::Smtp::new(
+    // let service = match smtp::Smtp::new(
     //     String::new(),
     //     String::new(),
     //     0,
@@ -65,7 +65,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
     //         return std::process::ExitCode::FAILURE;
     //     }
     // };
-    let service = control::smtp::Smtp::empty();
+    let service = smtp::Smtp::empty();
 
     let router = route(store.clone(), service)
         .layer(layer::auth(store))
@@ -94,10 +94,10 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
     }
 }
 
-fn route(store: store::Store, smtp: control::smtp::Smtp) -> axum::Router {
+fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
     fn upgrade<M: ws::Mode>(
         store: store::Store,
-        smtp: control::smtp::Smtp,
+        smtp: smtp::Smtp,
     ) -> axum::routing::MethodRouter<()> {
         axum::routing::get(
             |upgrade: axum::extract::WebSocketUpgrade,

@@ -1,5 +1,4 @@
 use crate::message;
-use crate::smtp;
 
 #[derive(Debug)]
 pub struct User<'a> {

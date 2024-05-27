@@ -1,15 +1,13 @@
 [package]
-name = "control"
+name = "smtp"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-hyper = { workspace = true }
-serde = { workspace = true }
+lettre = { version = "0.11.7", features = ["tracing", "tokio1-native-tls"] }
+
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-smtp = { path = "../smtp" }
-store = { path = "../store" }
 types = { path = "../types" }
-ws = { path = "../ws" }

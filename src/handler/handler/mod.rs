@@ -1,36 +1,35 @@
-mod broadcaster;
-mod handler;
-mod message;
+mod user;
 
+use super::{broadcaster, model};
 use crate::{smtp, store, types, ws};
 
 #[derive(Debug)]
-pub struct Control {
-    store: store::Store,
+pub struct Handler {
     user_id: types::Id,
+    store: store::Store,
     smtp: smtp::Smtp,
-    broadcaster: broadcaster::Broadcaster<message::Push>,
+    broadcaster: broadcaster::Broadcaster<model::Push>,
 }
 
-impl Control {
+impl Handler {
     #[must_use]
-    pub fn new(store: store::Store, user_id: types::Id, smtp: smtp::Smtp) -> Self {
+    pub fn new(user_id: types::Id, store: store::Store, smtp: smtp::Smtp) -> Self {
         let broadcaster = broadcaster::Broadcaster::new();
 
         Self {
-            store,
             user_id,
+            store,
             smtp,
             broadcaster,
         }
     }
 }
 
-impl ws::Service for Control {
-    type Request = message::Request;
-    type Response = message::Response;
-    type Error = message::Error;
-    type Push = message::Push;
+impl ws::Service for Handler {
+    type Request = model::Request;
+    type Response = model::Response;
+    type Error = model::Error;
+    type Push = model::Push;
 
     fn subscribe(&self) -> tokio::sync::broadcast::Receiver<Self::Push> {
         self.broadcaster.subscribe()
@@ -38,7 +37,7 @@ impl ws::Service for Control {
 
     async fn call(&mut self, request: Self::Request) -> Result<Self::Response, Self::Error> {
         match request {
-            message::Request::User(user) => handler::user(self).handle(user).await,
+            model::Request::User(user) => user::User::new(self).handle(user).await,
         }
     }
 }

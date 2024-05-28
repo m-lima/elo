@@ -1,6 +1,6 @@
 mod layer;
 
-use crate::{control, smtp, store, types, ws};
+use crate::{handler, smtp, store, types, ws};
 
 pub async fn start(port: u16, store: store::Store, smtp: smtp::Smtp) -> std::process::ExitCode {
     let router = route(store.clone(), smtp)
@@ -39,8 +39,8 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
             |upgrade: axum::extract::WebSocketUpgrade,
              axum::Extension(user): axum::Extension<types::User>| async move {
                 upgrade.on_upgrade(move |socket| {
-                    let control = control::Control::new(store, user.id, smtp);
-                    let socket = ws::Layer::<M, _>::new(socket, control, user.email);
+                    let handler = handler::Handler::new(user.id, store, smtp);
+                    let socket = ws::Layer::<M, _>::new(socket, handler, user.email);
                     socket.serve()
                 })
             },

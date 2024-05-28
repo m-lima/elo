@@ -1,4 +1,4 @@
-use crate::smtp;
+use crate::mailbox;
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -47,7 +47,7 @@ struct Inner {
 #[derive(Debug)]
 pub struct Smtp {
     pub link: hyper::Uri,
-    pub from: smtp::Mailbox,
+    pub from: mailbox::Mailbox,
     #[allow(clippy::struct_field_names)]
     pub smtp: hyper::Uri,
 }
@@ -63,7 +63,7 @@ struct SmtpInner {
     ///
     /// Example: Name <user@domain.com>
     #[arg(short, long, requires = "link")]
-    from: Option<smtp::Mailbox>,
+    from: Option<mailbox::Mailbox>,
 
     /// SMTP server to send emails
     ///

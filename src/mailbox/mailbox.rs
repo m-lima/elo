@@ -1,10 +1,4 @@
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Address(#[from] lettre::address::AddressError),
-    #[error("Missing name for mailbox")]
-    MissingName,
-}
+use super::error::Error;
 
 #[derive(Clone)]
 pub struct Mailbox(lettre::message::Mailbox);

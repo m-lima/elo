@@ -1,5 +1,6 @@
 mod args;
 mod handler;
+mod mailbox;
 mod server;
 mod smtp;
 mod store;

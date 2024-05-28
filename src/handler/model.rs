@@ -1,4 +1,4 @@
-use crate::{smtp, store, types, ws};
+use crate::{mailbox, store, types, ws};
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +41,7 @@ pub enum Push {
 pub enum Error {
     Store(store::Error),
     NotFound,
-    InvalidEmail(smtp::mailbox::Error),
+    InvalidEmail(mailbox::Error),
 }
 
 impl std::fmt::Display for Error {

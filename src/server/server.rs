@@ -1,4 +1,5 @@
-use super::{error, layer};
+use super::error::Error;
+use super::layer;
 use crate::{handler, smtp, store, types, ws};
 
 pub struct Server {
@@ -6,11 +7,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(
-        port: u16,
-        store: store::Store,
-        smtp: smtp::Smtp,
-    ) -> Result<Self, error::Error> {
+    pub async fn new(port: u16, store: store::Store, smtp: smtp::Smtp) -> Result<Self, Error> {
         let router = route(store.clone(), smtp)
             .layer(layer::auth(store))
             .layer(layer::logger());

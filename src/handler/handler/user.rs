@@ -1,5 +1,5 @@
 use super::super::model;
-use crate::smtp;
+use crate::{mailbox, smtp};
 
 #[derive(Debug)]
 pub struct User<'a> {
@@ -40,7 +40,7 @@ impl<'a> User<'a> {
                 .map(model::Response::User),
             model::User::Invite(model::Invite { name, email }) => {
                 let mailbox =
-                    smtp::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
+                    mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
 
                 let id = users
                     .invite(self.handler.user_id, mailbox.name(), mailbox.email())

@@ -57,11 +57,10 @@ impl std::fmt::Display for Error {
 impl ws::IntoError for Error {
     fn is_warn(&self) -> bool {
         match self {
-            Error::Store(error) => match error {
-                store::Error::Query(_) => true,
-                store::Error::BlankValue(_) | store::Error::AlreadyExists => false,
-            },
-            Error::NotFound | Error::InvalidEmail(_) => true,
+            Error::Store(store::Error::Query(_)) => false,
+            Error::Store(store::Error::BlankValue(_) | store::Error::AlreadyExists)
+            | Error::NotFound
+            | Error::InvalidEmail(_) => true,
         }
     }
 }

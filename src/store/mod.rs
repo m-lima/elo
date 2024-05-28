@@ -2,7 +2,8 @@ mod error;
 mod model;
 mod store;
 
-pub type Result<T = ()> = std::result::Result<T, error::Error>;
+#[cfg(test)]
+mod tests;
 
 pub use error::Error;
 pub use store::Store;

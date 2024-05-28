@@ -58,9 +58,7 @@ impl ws::IntoError for Error {
     fn is_warn(&self) -> bool {
         match self {
             Error::Store(error) => match error {
-                store::Error::Connection(_)
-                | store::Error::Query(_)
-                | store::Error::Transaction(_) => true,
+                store::Error::Query(_) => true,
                 store::Error::BlankValue(_) | store::Error::AlreadyExists => false,
             },
             Error::NotFound | Error::InvalidEmail(_) => true,
@@ -72,11 +70,7 @@ impl From<Error> for ws::Error {
     fn from(value: Error) -> Self {
         match value {
             Error::Store(error) => match error {
-                store::Error::Connection(_)
-                | store::Error::Query(_)
-                | store::Error::Transaction(_) => {
-                    Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR)
-                }
+                store::Error::Query(_) => Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR),
                 store::Error::BlankValue(error) => {
                     Self::new(hyper::StatusCode::BAD_REQUEST, error.to_string())
                 }

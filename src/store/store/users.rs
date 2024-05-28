@@ -1,12 +1,20 @@
-use super::{model, Error, Result, Store};
+use super::super::{error::Error, model};
 use crate::types;
+
+type Result<T = ()> = std::result::Result<T, Error>;
 
 pub struct Users<'a> {
     pool: &'a sqlx::sqlite::SqlitePool,
 }
 
+impl<'a> From<&'a super::Store> for Users<'a> {
+    fn from(value: &'a super::Store) -> Self {
+        Self { pool: &value.pool }
+    }
+}
+
 impl Users<'_> {
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::User>> {
         sqlx::query_as!(
             model::User,
@@ -26,7 +34,7 @@ impl Users<'_> {
         .map(|r| r.into_iter().map(types::User::from).collect())
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn by_email(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim();
 
@@ -51,7 +59,7 @@ impl Users<'_> {
         .map(|r| r.map(types::User::from))
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn by_id(&self, id: types::Id) -> Result<Option<types::User>> {
         sqlx::query_as!(
             model::User,
@@ -74,7 +82,7 @@ impl Users<'_> {
         .map(|r| r.map(types::User::from))
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
         let email = email.trim();
         if email.is_empty() {
@@ -99,7 +107,7 @@ impl Users<'_> {
         .map(|r| r.map(|id| id.id))
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn rename(&self, id: types::Id, name: &str) -> Result<Option<types::Id>> {
         let name = name.trim();
         if name.is_empty() {
@@ -127,7 +135,7 @@ impl Users<'_> {
         .map(|r| r.map(|id| id.id))
     }
 
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self))]
     pub async fn invite(&self, inviter: types::Id, name: &str, email: &str) -> Result<types::Id> {
         let name = name.trim();
         if name.is_empty() {
@@ -139,7 +147,7 @@ impl Users<'_> {
             return Err(Error::BlankValue("email"));
         }
 
-        let mut tx = self.pool.begin().await.map_err(Error::Transaction)?;
+        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         if sqlx::query_as!(
             model::Id,
@@ -187,11 +195,5 @@ impl Users<'_> {
         tx.commit().await.map_err(Error::Query)?;
 
         Ok(id)
-    }
-}
-
-impl<'a> From<&'a Store> for Users<'a> {
-    fn from(value: &'a Store) -> Self {
-        Self { pool: &value.pool }
     }
 }

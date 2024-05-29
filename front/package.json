@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@msgpack/msgpack": "^3.0.0-beta2",
     "solid-js": "^1.8.15"
   },
   "devDependencies": {

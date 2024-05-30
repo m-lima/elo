@@ -1,10 +1,12 @@
 import { createSignal, createEffect, onCleanup } from 'solid-js'
+import type { ParentProps } from 'solid-js';
+
 import solidLogo from '../assets/solid.svg'
 import viteLogo from '/vite.svg'
 
 import './main.css'
 
-export const Main = () => {
+export const Main = (props: ParentProps) => {
   const [count, setCount] = createSignal(0);
   const [prev, setPrev] = createSignal(0);
   const [bla, setBla] = useBla();
@@ -41,6 +43,7 @@ export const Main = () => {
       <p class='read-the-docs'>
         Click on the Vite and Solid logos to learn more
       </p>
+      {props.children}
     </div>
   )
 };

@@ -87,24 +87,23 @@ export class Socket {
   private state: SocketState;
   private attempts: number;
 
-  public constructor(url: string | URL, checkUrl?: string | URL) {
+  public constructor(url: string | URL) {
     this.requests = [];
     this.handlers = [];
     this.stateListeners = [];
 
     this.state = SocketState.Closed;
     this.attempts = 0;
-    this.socket = this.connect(url, checkUrl);
+    this.socket = this.connect(url);
   }
 
-  private connect(url: string | URL, checkUrl?: string | URL) {
+  private connect(url: string | URL) {
     this.setState(SocketState.Connecting);
 
     const socket = new WebSocket(url);
     socket.binaryType = 'arraybuffer';
 
     socket.addEventListener('error', () => {
-      this.tryCheckAuthorized(checkUrl);
       this.setState(SocketState.Error);
     }, false);
 
@@ -113,7 +112,7 @@ export class Socket {
         this.setState(SocketState.Closed);
       }
 
-      this.tryReconnect(url, checkUrl);
+      this.tryReconnect(url);
     }, false);
 
     socket.addEventListener('open', () => {
@@ -146,20 +145,7 @@ export class Socket {
     }
   }
 
-  private tryCheckAuthorized(checkUrl?: string | URL) {
-    // Check only in the first failure
-    if (this.attempts === 0 && !!checkUrl) {
-      fetch(checkUrl, { credentials: 'include', redirect: 'manual' })
-        .then(r => {
-          if (!r.ok) {
-            this.setState(SocketState.Unauthorized);
-          }
-        })
-        .catch(() => { });
-    }
-  }
-
-  private tryReconnect(url: string | URL, checkUrl?: string | URL) {
+  private tryReconnect(url: string | URL) {
     const timeout = this.nextAttempt();
 
     if (timeout === undefined) {
@@ -167,7 +153,7 @@ export class Socket {
     }
 
     this.attempts += 1;
-    setTimeout(() => this.connect(url, checkUrl), timeout);
+    setTimeout(() => this.connect(url), timeout);
   }
 
   private setState(state: SocketState) {

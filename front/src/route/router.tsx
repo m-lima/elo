@@ -1,8 +1,12 @@
+import { HashRouter, Route } from '@solidjs/router';
+
 import { Main } from './main';
 
 import './router.css';
 
-export const Router = () =>
+export const Root = () =>
   <div class='router'>
-    <Main />
+    <HashRouter root={Main}>
+      <Route path='/' component={Main} />
+    </HashRouter>;
   </div>;

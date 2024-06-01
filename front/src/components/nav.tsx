@@ -8,7 +8,7 @@ import './nav.css';
 export const Nav = () => {
   const self = useSelf();
 
-  return <div style={{ "margin-top": '200px' }}>
+  return <div class='components nav'>
     <Suspense fallback={<h1>Loading</h1>} >
       <div>
         <h1>User</h1>

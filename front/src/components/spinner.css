@@ -1,0 +1,22 @@
+.components.spinner {
+  display: inline-block;
+  box-sizing: border-box;
+
+  border: 5px solid #ffffff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+
+  aspect-ratio: 1;
+  height: 100%;
+
+  animation: components-spinner 1s linear infinite;
+}
+
+@keyframes components-spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

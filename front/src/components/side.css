@@ -1,0 +1,7 @@
+.components.side.root {
+  background-color: #202020;
+}
+
+.components.side.root > * {
+  display: block;
+}

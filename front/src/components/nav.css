@@ -1,6 +1,13 @@
 .components.nav.root {
-  margin-left: 32px;
-  margin-right: 32px;
+  width: 100%;
+  background-color: #333333;
+
+  display: flex;
+  justify-content: space-between;
+}
+
+.components.nav.root > * {
+  padding: 16px;
 }
 
 .components.nav.name {
@@ -10,9 +17,4 @@
 .components.nav.name:hover {
   filter: drop-shadow(0 0 8px var(--pico-primary));
   text-decoration: none;
-}
-
-.components.nav.logo {
-  height: 1em;
-  podding: 1em;
 }

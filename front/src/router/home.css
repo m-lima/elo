@@ -1,6 +1,9 @@
 .router.home.root {
   display: flex;
   place-items: center;
+
+  width: 100%;
+  height: 100%;
 }
 
 .router.home.inner {

@@ -24,6 +24,7 @@ CREATE TABLE invites (
 -- To be recalculated every time a match is accepted
 CREATE TABLE rankings (
   user        INTEGER NOT NULL PRIMARY KEY,
+  position    INTEGER NOT NULL,
   score       INTEGER NOT NULL,
   wins        INTEGER NOT NULL,
   losses      INTEGER NOT NULL,

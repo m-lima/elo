@@ -1,10 +1,8 @@
 import { createSignal, createEffect, onCleanup, Suspense } from 'solid-js'
 
-import solidLogo from '../assets/solid.svg'
-import viteLogo from '/vite.svg'
+import { useSelf, useStore } from '../store';
 
 import './home.css'
-import { useSelf, useStore } from '../store';
 
 export const Home = () => {
   const [count, setCount] = createSignal(0);
@@ -18,14 +16,6 @@ export const Home = () => {
   return (
     <div class='router home container'>
       <div class='router home inner'>
-        <div>
-          <a href='https://vitejs.dev' target='_blank'>
-            <img src={viteLogo} class='router home logo' alt='Vite logo' />
-          </a>
-          <a href='https://solidjs.com' target='_blank'>
-            <img src={solidLogo} class='router home logo solid' alt='Solid logo' />
-          </a>
-        </div>
         <h1>Vite + Solid</h1>
         <div class='router home card'>
           <button onClick={() => { setPrev(count()); setCount((count) => count + 1) }}>

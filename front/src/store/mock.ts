@@ -16,6 +16,7 @@ export class Mock implements Backend {
             id: 27,
             name: 'My Name',
             email: 'email@domain.com',
+            position: 3,
             score: 2000,
             wins: 10,
             losses: 7,

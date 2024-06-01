@@ -1,6 +1,12 @@
-.components.nav {
-  position: sticky;
-  top: 0;
+.components.nav.name {
+  will-change: filter;
+  transition: filter 300ms;
+}
+.components.nav.name:hover {
+  filter: drop-shadow(0 0 1em #fff);
+}
 
-  background-color: #202020;
+.components.nav.logo {
+  height: 1em;
+  podding: 1em;
 }

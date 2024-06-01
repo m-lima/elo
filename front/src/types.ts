@@ -81,7 +81,7 @@
 //   return { id, user };
 // })();
 
-type User = {
+export type User = {
   readonly id: number;
   readonly name: string;
   readonly email: string;
@@ -93,14 +93,18 @@ type User = {
   readonly created: Date;
 }
 
-type UserTuple = ObjV
-
-// type NewUser = Partial<Pick<User, 'name' | 'email'>>;
-type New<T, N extends keyof T> = Partial<Pick<T, N>>;
-
-function a(a: number, b: string) {
+export interface UserI {
+  readonly id: number,
+  readonly name: string,
+  readonly email: string,
+  readonly score: number,
+  readonly wins: number,
+  readonly losses: number,
+  readonly pointsWon: number,
+  readonly pointsLost: number,
+  readonly created: Date,
 }
 
-type A = Parameters<User>;
-
-const b: A = [1, ''];
+// type CreateUser = Partial<Pick<User, 'name' | 'email'>>;
+type Create<T> = Omit<T, 'id' | 'created'>;
+type Edit<T, N extends keyof T> = Partial<Pick<T, N>>;

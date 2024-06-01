@@ -1,20 +1,21 @@
 /* @refresh reload */
 import { render } from 'solid-js/web'
-import { Show, DEV } from 'solid-js'
+import { Show, DEV, ParentProps } from 'solid-js'
 
-import { Ribbon } from './components/mod';
-import { Root } from './route/mod';
+import { Ribbon, Nav } from './components';
+import { Router } from './router';
 
 import './index.css'
 
 const root = document.getElementById('root')
 
-const App = () =>
+const App = (props: ParentProps) =>
   <>
     <Show when={DEV}>
       <Ribbon text='Development' />
     </Show>
-    <Root />
+    <Nav />
+    {props.children}
   </>;
 
-render(() => <App />, root!)
+render(() => <Router root={App} />, root!)

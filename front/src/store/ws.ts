@@ -9,11 +9,13 @@ export class Ws implements Backend {
     this.socket = new Socket(url);
   }
 
-  info(): Promise<User> {
-    throw new Error("Method not implemented.");
-  }
+  readonly users = {
+    self(): Promise<User> {
+      throw new Error("Method not implemented.");
+    },
 
-  userList(): Promise<User[]> {
-    throw new Error("Method not implemented.");
-  }
+    list(): Promise<User[]> {
+      throw new Error("Method not implemented.");
+    },
+  };
 }

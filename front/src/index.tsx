@@ -4,9 +4,11 @@ import { Show, DEV, ParentProps } from 'solid-js'
 
 import { Ribbon, Nav } from './components';
 import { Router } from './router';
+import { Store, WithStore } from './store';
 
 import './index.css'
 
+const store = new Store();
 const root = document.getElementById('root')
 
 const App = (props: ParentProps) =>
@@ -18,4 +20,9 @@ const App = (props: ParentProps) =>
     {props.children}
   </>;
 
-render(() => <Router root={App} />, root!)
+render(() =>
+  <WithStore store={store}>
+    <Router root={App} />
+  </WithStore>,
+  root!
+);

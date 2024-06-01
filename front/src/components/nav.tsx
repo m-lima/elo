@@ -1,19 +1,12 @@
 import { A } from '@solidjs/router';
-import { Resource, Suspense, createMemo } from 'solid-js';
-
-import logo from '/logo.svg';
+import { Suspense, createMemo } from 'solid-js';
 
 import { useSelf } from '../store';
-import { User } from '../types';
 
 import './nav.css';
 
 export const Nav = () => {
   const self = useSelf();
-
-  const toSummary = (resource: Resource<User>): Resource<string> => {
-    resource.call
-  }
 
   const medal = createMemo(() => {
     switch (self()?.position) {
@@ -28,11 +21,10 @@ export const Nav = () => {
   });
 
   return (
-    <nav>
+    <nav class='components nav root'>
       <ul>
         <li>
           <A class='components nav name' href='/'>
-            <img class='components nav logo' src={logo} />
             <strong>PongElo</strong>
           </A>
         </li>

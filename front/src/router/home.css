@@ -1,4 +1,4 @@
-.router.home.container {
+.router.home.root {
   display: flex;
   place-items: center;
 }

@@ -14,7 +14,7 @@ export const Home = () => {
   const self = useSelf(store);
 
   return (
-    <div class='router home container'>
+    <div class='router home root'>
       <div class='router home inner'>
         <h1>Vite + Solid</h1>
         <div class='router home card'>
@@ -34,9 +34,6 @@ export const Home = () => {
             Edit <code>src/App.tsx</code> and save to test HMR
           </p>
         </div>
-        <p class='router home read-the-docs'>
-          Click on the Vite and Solid logos to learn more
-        </p>
         <Suspense fallback={<h1>Loading</h1>} >
           <div>
             <h1>User</h1>

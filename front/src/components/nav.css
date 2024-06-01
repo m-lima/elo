@@ -1,9 +1,15 @@
+.components.nav.root {
+  margin-left: 32px;
+  margin-right: 32px;
+}
+
 .components.nav.name {
   will-change: filter;
   transition: filter 300ms;
 }
 .components.nav.name:hover {
-  filter: drop-shadow(0 0 1em #fff);
+  filter: drop-shadow(0 0 8px var(--pico-primary));
+  text-decoration: none;
 }
 
 .components.nav.logo {

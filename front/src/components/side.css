@@ -1,5 +1,6 @@
 .components.side.root {
   background-color: #202020;
+  padding: 8px;
 }
 
 .components.side.root > * {

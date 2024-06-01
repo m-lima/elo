@@ -41,7 +41,8 @@ CREATE TABLE matches (
   score_one  INTEGER NOT NULL,
   score_two  INTEGER NOT NULL,
   accepted   BOOLEAN NOT NULL DEFAULT false,
-  created_ms INTEGER NOT NULL,
+  created_ms INTEGER NOT NULL
+    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(player_one) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY(player_two) REFERENCES users(id) ON DELETE CASCADE
@@ -54,7 +55,8 @@ CREATE TABLE challenges (
     CHECK(player_one <> player_two),
   match      INTEGER,
   refused    BOOLEAN NOT NULL DEFAULT false,
-  created_ms INTEGER NOT NULL,
+  created_ms INTEGER NOT NULL
+    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(player_one) REFERENCES users(id)   ON DELETE CASCADE,
   FOREIGN KEY(player_two) REFERENCES users(id)   ON DELETE CASCADE,

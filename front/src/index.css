@@ -64,4 +64,8 @@ button:focus-visible {
   & > :first-child {
     grid-column: 1 / 3;
   }
+
+  & > :last-child {
+    overflow: scroll;
+  }
 }

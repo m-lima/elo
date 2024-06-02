@@ -57,8 +57,8 @@ button:focus-visible {
   height: 100%;
 
   display: grid;
-  grid-template-rows: 48px 1fr;
-  grid-template-columns: 16px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: auto 1fr;
   place-items: stretch;
 
   & > :first-child {

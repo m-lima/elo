@@ -2,10 +2,7 @@ import { A } from '@solidjs/router';
 import { ComponentProps } from 'solid-js';
 
 import { useSelf } from '../store';
-import { Icon } from '.';
-
-import trophy from '../assets/trophy.svg';
-import user from '../assets/user.svg';
+import { icon } from '.';
 
 import './side.css';
 
@@ -14,8 +11,8 @@ export const Side = (props: ComponentProps<'aside'>) => {
 
   return (
     <aside class='components_side' {...props}>
-      <A href='/'><Icon src={trophy} /></A>
-      <A href={self() ? `/user'${self()!.id}` : window.location}><Icon src={user} /></A>
+      <A href='/'><icon.Trophy /></A>
+      <A href={self() ? `/user'${self()!.id}` : window.location}><icon.User /></A>
       <A href='/'>h</A>
     </aside >
   );

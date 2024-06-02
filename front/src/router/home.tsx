@@ -1,9 +1,7 @@
 import { createSignal, createEffect, onCleanup, Suspense } from 'solid-js'
 
-import { Icon } from '../components';
+import { icon } from '../components';
 import { useSelf, useStore } from '../store';
-
-import spinner from '../assets/spinner.svg';
 
 import './home.css'
 
@@ -19,7 +17,7 @@ export const Home = () => {
   return (
     <div class='router_home_root'>
       <h1>Vite + Solid</h1>
-      <Icon src={spinner} />
+      <icon.User /> user
       <div>
         <button onClick={() => { setPrev(count()); setCount((count) => count + 1) }}>
           count is {count()}
@@ -27,6 +25,9 @@ export const Home = () => {
         <button onClick={() => { setBla(bla() + 1) }}>
           bla is {bla()}
         </button>
+        <p>
+          <icon.Spinner />loading
+        </p>
         <p>
           But was {prev()}
         </p>
@@ -38,8 +39,9 @@ export const Home = () => {
         </p>
       </div>
       <h1>
-        <Icon src={spinner} />
-        Bla
+        <icon.Trophy /> Bla
+        <br />
+        <icon.Spinner /> Loading
       </h1>
       <Suspense fallback={<h1>Loading</h1>} >
         <div>

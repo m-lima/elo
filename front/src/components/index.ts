@@ -1,4 +1,3 @@
-export { Icon } from './icon';
+export * as icon from './icon';
 export { Nav } from './nav';
 export { Side } from './side';
-export { Spinner } from './spinner';

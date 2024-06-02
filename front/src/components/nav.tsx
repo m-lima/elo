@@ -1,7 +1,7 @@
 import { Suspense } from 'solid-js';
 
 import { useSelf } from '../store';
-import { Spinner } from '.';
+import { icon } from '.';
 
 import './nav.css';
 
@@ -23,7 +23,7 @@ export const Nav = () => {
   return (
     <nav class='components_nav'>
       <strong>PongElo</strong>
-      <Suspense fallback={<span><Spinner /> Loading</span>}>
+      <Suspense fallback={<span><icon.Spinner /> Loading</span>}>
         <span>
           #{self()?.position} ({self()?.score} pts)
         </span>

@@ -6,5 +6,21 @@
 
   width: 0.7em;
   height: 0.7em;
-  padding-right: 0.3ch;
+
+  fill: currentColor;
+}
+
+.components_icon_spin {
+  & > svg {
+    animation: components_icon_spin 1s linear infinite;
+  }
+}
+
+@keyframes components_icon_spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

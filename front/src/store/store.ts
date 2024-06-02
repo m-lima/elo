@@ -27,7 +27,7 @@ export class Store implements Backend {
     };
   }
 
-  readonly users = {
+  public readonly users = {
     self: async () => {
       const self = this.data.self;
       if (!!self) {
@@ -65,7 +65,7 @@ export class Store implements Backend {
     },
   };
 
-  readonly listener = {
+  public readonly listener = {
     register: {
       self: (handler: (data: User) => void): Listener<User> => {
         const listener = new Listener(handler);

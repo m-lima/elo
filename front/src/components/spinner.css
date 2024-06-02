@@ -1,18 +1,18 @@
-.components.spinner {
+.components_spinner {
   display: inline-block;
-  box-sizing: border-box;
-
-  border: 5px solid #ffffff;
-  border-bottom-color: transparent;
-  border-radius: 50%;
+  /* box-sizing: border-box; */
+  /**/
+  /* border: 5px solid #ffffff; */
+  /* border-bottom-color: transparent; */
+  /* border-radius: 50%; */
 
   aspect-ratio: 1;
   height: 100%;
 
-  animation: components-spinner 1s linear infinite;
+  animation: components_spinner 1s linear infinite;
 }
 
-@keyframes components-spinner {
+@keyframes components_spinner {
   0% {
     transform: rotate(0deg);
   }

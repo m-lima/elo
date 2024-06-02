@@ -1,6 +1,8 @@
 import './spinner.css';
+import spinner from '../assets/spinner.svg';
 
-const Inner = () => <span class='components spinner' />;
+const Inner = () => <img src={spinner} class='components_spinner' />;
+
 export const Spinner = (props: { size?: string }) =>
   props.size
     ? <div

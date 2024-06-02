@@ -1,13 +1,5 @@
-.router.home.root {
-  display: flex;
+.router_home_root {
+  display: grid;
   place-items: center;
-
-  width: 100%;
-  height: 100%;
-}
-
-.router.home.inner {
-  margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }

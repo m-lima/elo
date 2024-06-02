@@ -12,13 +12,11 @@ const store = new Store();
 const root = document.getElementById('root')
 
 const App = (props: ParentProps) =>
-  <div class='app holder nav'>
+  <>
     <Nav />
-    <div class='app holder side'>
-      <Side />
-      {props.children}
-    </div>
-  </div>;
+    <Side />
+    <div>{props.children}</div>
+  </>;
 
 render(() =>
   <WithStore store={store}>

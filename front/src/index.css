@@ -19,11 +19,6 @@ html, body {
   height: 100vh;
 }
 
-#root {
-  width: 100%;
-  height: 100%;
-}
-
 a {
   font-weight: 500;
   color: #646cff;
@@ -57,18 +52,16 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-.app.holder {
+#root {
   width: 100%;
   height: 100%;
 
-  display: flex;
-  align-items: stretch;
-}
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  grid-template-columns: 16px 1fr;
+  place-items: stretch;
 
-.app.holder.nav {
-  flex-direction: column;
-}
-
-.app.holder.side {
-  flex-direction: row;
+  & > :first-child {
+    grid-column: 1 / 3;
+  }
 }

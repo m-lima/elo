@@ -2,21 +2,26 @@
   display: flex;
   flex-direction: column;
 
-  background-color: #202020;
+  background-color: var(--this-color-background);
 
   font-size: 3em;
 
-  will-change: width;
-  transition: width 300ms;
+  @media (orientation: landscape) {
+    &::after {
+      margin-top: auto;
+      content: '';
+      border-top: solid var(--this-color-background-bright);
+    }
 
-  &::after {
-    margin-top: auto;
-    content: '';
-    border-top: solid #333333;
+    & > :last-child {
+      order: 1;
+    }
   }
 
-  & > :last-child {
-    order: 1;
+  @media (orientation: portrait) {
+    & > :last-child {
+      display: none;
+    }
   }
 
   & > * {
@@ -25,36 +30,38 @@
     color: currentColor;
     font-weight: bold;
 
+    box-sizing: border-box;
     padding-left: 0.4em;
     padding-right: 0.4em;
 
+    will-change: background-color;
+    transition: background-color var(--duration-hover);
+
     &:hover {
+      background-color: var(--this-color-background-bright);
+    }
+
+    &.active {
+      color: var(--this-color-background);
+      background-color: var(--color-accent);
+    }
+
+    &.inactive {
       color: currentColor;
-      filter: drop-shadow(0 0 10px currentColor);
     }
   }
 
   & .components_side_text {
+    display: none;
+
     font-size: 1rem;
     vertical-align: middle;
 
-    display: none;
-    opacity: 0%;
-
-    will-change: opacity;
-    transition: opacity 1500ms 1300ms;
-
     &#visible {
-      display: inline-block;
-      opacity: 100%;
+      display: unset;
     }
   }
 
-  & .active {
-    border-right: solid orange;
-  }
-
-  & .inactive {
-    color: #808080;
-  }
+  --this-color-background: #202020;
+  --this-color-background-bright: #404040;
 }

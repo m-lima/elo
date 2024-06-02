@@ -6,9 +6,9 @@ import { icon } from '.';
 
 import './side.css';
 
-const Item = (props: { path: string, icon: JSXElement, text?: false | string }) =>
+const Item = (props: { path: string, icon: JSXElement, text: string, visible: boolean }) =>
   <A href={props.path}>
-    {props.icon} <span class='components_side_text' id={props.text ? 'visible' : undefined}>{props.text}</span>
+    {props.icon} <span class='components_side_text' id={props.visible ? 'visible' : ''}>{props.text}</span>
   </A>;
 
 export const Side = () => {
@@ -17,20 +17,18 @@ export const Side = () => {
 
   return (
     <aside class='components_side'>
-      <Item path='/' icon={<icon.Trophy />} text={expanded() && 'Leaderboard'} />
-      <Item path={self() ? `/user/${self()!.id}` : `${window.location}`} icon={<icon.User />} text={expanded() && 'User'} />
-      <Switch>
-        <Match when={expanded()}>
-          <span onClick={() => setExpanded(false)}>
-            <icon.DoubleLeft /> <span class='components_side_text' id='visible'>Collapse</span>
-          </span>
-        </Match>
-        <Match when={!expanded()}>
-          <span onClick={() => setExpanded(true)}>
+      <Item path='/' icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
+      <Item path={self() ? `/user/${self()!.id}` : window.location.toString()} icon={<icon.User />} text='User' visible={expanded()} />
+      <span onClick={() => setExpanded(e => !e)}>
+        <Switch>
+          <Match when={expanded()}>
+            <icon.DoubleLeft />
+          </Match>
+          <Match when={!expanded()}>
             <icon.DoubleRight />
-          </span>
-        </Match>
-      </Switch>
+          </Match>
+        </Switch> <span class='components_side_text' id={expanded() ? 'visible' : ''}>Collapse</span>
+      </span>
     </aside >
   );
 }

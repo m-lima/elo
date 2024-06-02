@@ -38,6 +38,8 @@ export const Home = () => {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
+      <a href='https://www.google.com'>Skull</a>
+      <a href='https://unviseted.place.pongelo'>Skull</a>
       <h1>
         <icon.Trophy /> Bla
         <br />

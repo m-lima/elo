@@ -1,7 +1,7 @@
-import { createSignal, createEffect, onCleanup, Suspense } from 'solid-js'
+import { createSignal, createEffect, onCleanup } from 'solid-js'
 
 import { icon } from '../components';
-import { useSelf, useStore } from '../store';
+import { useSelf } from '../store';
 
 import './home.css'
 
@@ -11,11 +11,10 @@ export const Home = () => {
   const [bla, setBla] = useBla();
   bloink();
 
-  const store = useStore();
-  const self = useSelf(store);
+  const self = useSelf();
 
   return (
-    <div class='router_home_root'>
+    <div class='router_home'>
       <h1>Vite + Solid</h1>
       <icon.User /> user
       <div>
@@ -45,19 +44,17 @@ export const Home = () => {
         <br />
         <icon.Spinner /> Loading
       </h1>
-      <Suspense fallback={<h1>Loading</h1>} >
-        <div>
-          <h1>User</h1>
-          <h3>Id</h3>
-          {self()?.id}
-          <h3>Name</h3>
-          {self()?.name}
-          <h3>Email</h3>
-          {self()?.email}
-        </div>
-      </Suspense>
+      <div>
+        <h1>User</h1>
+        <h3>Id</h3>
+        {self.id}
+        <h3>Name</h3>
+        {self.name}
+        <h3>Email</h3>
+        {self.email}
+      </div>
     </div>
-  )
+  );
 };
 
 const useBla = () => {

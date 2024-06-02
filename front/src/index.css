@@ -82,7 +82,6 @@ button {
   height: 100%;
 
   display: grid;
-  place-items: stretch;
 
   @media (orientation: landscape) {
     grid-template-columns: auto 1fr;

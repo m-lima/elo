@@ -59,6 +59,7 @@
 
   & .components_side_text {
     display: none;
+    margin-left: 1ch;
 
     @media (orientation: portrait) and (min-width: 800px) {
       display: unset;

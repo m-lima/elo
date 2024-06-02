@@ -1,6 +1,8 @@
 export { Store } from './store';
 export {
+  WithSelf,
+  WithStore,
+  useAsyncSelf,
   useSelf,
   useStore,
-  WithStore,
 } from './hooks';

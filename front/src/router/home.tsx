@@ -1,7 +1,7 @@
 import { createSignal, createEffect, onCleanup } from 'solid-js'
 
 import { icon } from '../components';
-import { useSelf } from '../store';
+import { useSelf, useStore } from '../store';
 
 import './home.css'
 
@@ -11,7 +11,9 @@ export const Home = () => {
   const [bla, setBla] = useBla();
   bloink();
 
+  const store = useStore();
   const self = useSelf();
+  console.log('building home');
 
   return (
     <div class='router_home'>
@@ -21,7 +23,7 @@ export const Home = () => {
         <button onClick={() => { setPrev(count()); setCount((count) => count + 1) }}>
           count is {count()}
         </button>
-        <button onClick={() => { setBla(bla() + 1) }}>
+        <button onClick={() => { setBla(bla() + 1); store.increment(); }}>
           bla is {bla()}
         </button>
         <p>

@@ -93,6 +93,16 @@ export class Store implements Backend {
       },
     },
   };
+
+  public increment() {
+    if (!this.data.self) {
+      return;
+    }
+
+    const self = { ...this.data.self, id: this.data.self.id + 1 };
+    this.data.self = self;
+    this.listeners.self.forEach(l => l.handler(self));
+  }
 }
 
 export interface Backend {

@@ -1,6 +1,6 @@
-import { ParentProps, createContext, createEffect, createResource, onCleanup, useContext } from "solid-js";
+import { ParentProps, createContext, createEffect, createResource, onCleanup, useContext } from 'solid-js';
 
-import { Store } from "./store";
+import { Store } from './store';
 
 const StoreContext = createContext<Store>();
 

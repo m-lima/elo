@@ -1,9 +1,11 @@
-import { A } from "@solidjs/router";
-import { ComponentProps } from "solid-js";
+import { A } from '@solidjs/router';
+import { ComponentProps } from 'solid-js';
+
+import { useSelf } from '../store';
+import { Icon } from '.';
 
 import trophy from '../assets/trophy.svg';
 import user from '../assets/user.svg';
-import { useSelf } from "../store";
 
 import './side.css';
 

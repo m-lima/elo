@@ -11,7 +11,7 @@ export class Store implements Backend {
 
   public constructor(url?: string | URL) {
     if (!!url) {
-      throw new Error("Remote backend not implemented");
+      throw new Error('Remote backend not implemented');
     }
     this.backend = new Mock();
 

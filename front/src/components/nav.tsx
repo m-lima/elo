@@ -23,9 +23,9 @@ export const Nav = () => {
   return (
     <nav class='components_nav'>
       <strong>PongElo</strong>
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<span><Spinner /> Loading</span>}>
         <span>
-          <Spinner />#{self()?.position} ({self()?.score} pts)
+          #{self()?.position} ({self()?.score} pts)
         </span>
       </Suspense>
     </nav>

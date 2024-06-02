@@ -1,15 +1,17 @@
 .components_spinner {
   display: inline-block;
-  /* box-sizing: border-box; */
-  /**/
-  /* border: 5px solid #ffffff; */
-  /* border-bottom-color: transparent; */
-  /* border-radius: 50%; */
 
-  aspect-ratio: 1;
-  height: 100%;
+  margin: 0;
+  padding: 0;
 
-  animation: components_spinner 1s linear infinite;
+  width: 0.7em;
+  height: 0.7em;
+  padding-right: 0.3ch;
+
+  & > svg {
+    fill: currentColor;
+    animation: components_spinner 1s linear infinite;
+  }
 }
 
 @keyframes components_spinner {

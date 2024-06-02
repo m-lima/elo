@@ -14,8 +14,8 @@ export const Side = (props: ComponentProps<'aside'>) => {
 
   return (
     <aside class='components_side' {...props}>
-      <A href='/'><img src={trophy} /></A>
-      <A href={self() ? `/user'${self()!.id}` : window.location}><img src={user} /></A>
+      <A href='/'><Icon src={trophy} /></A>
+      <A href={self() ? `/user'${self()!.id}` : window.location}><Icon src={user} /></A>
       <A href='/'>h</A>
     </aside >
   );

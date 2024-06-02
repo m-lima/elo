@@ -1,7 +1,9 @@
 import { createSignal, createEffect, onCleanup, Suspense } from 'solid-js'
 
-import { Spinner } from '../components';
+import { Icon } from '../components';
 import { useSelf, useStore } from '../store';
+
+import spinner from '../assets/spinner.svg';
 
 import './home.css'
 
@@ -17,7 +19,7 @@ export const Home = () => {
   return (
     <div class='router_home_root'>
       <h1>Vite + Solid</h1>
-      <Spinner />
+      <Icon src={spinner} />
       <div>
         <button onClick={() => { setPrev(count()); setCount((count) => count + 1) }}>
           count is {count()}
@@ -35,7 +37,10 @@ export const Home = () => {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
-      <Spinner size='48px' />
+      <h1>
+        <Icon src={spinner} />
+        Bla
+      </h1>
       <Suspense fallback={<h1>Loading</h1>} >
         <div>
           <h1>User</h1>

@@ -1,12 +1,13 @@
 .components_side {
   display: flex;
-  flex-direction: column;
 
   background-color: var(--this-color-background);
 
   font-size: 3em;
 
   @media (orientation: landscape) {
+    flex-direction: column;
+
     &::after {
       margin-top: auto;
       content: '';
@@ -19,6 +20,11 @@
   }
 
   @media (orientation: portrait) {
+    & > * {
+      flex-grow: 1;
+      text-align: center;
+    }
+
     & > :last-child {
       display: none;
     }
@@ -54,11 +60,17 @@
   & .components_side_text {
     display: none;
 
+    @media (orientation: portrait) and (min-width: 800px) {
+      display: unset;
+    }
+
     font-size: 1rem;
     vertical-align: middle;
 
     &#visible {
-      display: unset;
+      @media (orientation: landscape) or (min-width: 800px) {
+        display: unset;
+      }
     }
   }
 

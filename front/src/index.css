@@ -82,12 +82,14 @@ button {
   height: 100%;
 
   display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: auto 1fr;
   place-items: stretch;
 
-  & > :first-child {
-    grid-column: 1 / 3;
+  @media (orientation: landscape) {
+    grid-template-columns: auto 1fr;
+  }
+
+  @media (orientation: portrait) {
+    grid-template-rows: auto 1fr;
   }
 
   & > :last-child {

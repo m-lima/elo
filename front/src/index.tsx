@@ -2,7 +2,7 @@
 import { render } from 'solid-js/web'
 import { ParentProps } from 'solid-js'
 
-import { Nav, Side } from './components';
+import { Side } from './components';
 import { Router } from './router';
 import { Store, WithStore } from './store';
 
@@ -13,7 +13,6 @@ const root = document.getElementById('root')
 
 const App = (props: ParentProps) =>
   <>
-    <Nav />
     <Side />
     <div>{props.children}</div>
   </>;

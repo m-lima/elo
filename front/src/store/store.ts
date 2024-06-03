@@ -1,12 +1,14 @@
 import type { User } from '../types';
+
 import { Mock } from './mock';
+import type { Backend, Data, Debouncers, Listener, Listeners } from './types';
 
 export class Store implements Backend {
   private readonly backend: Backend;
 
   private readonly data: Data;
 
-  private readonly promises: Promises;
+  private readonly debouncers: Debouncers;
   private readonly listeners: Listeners;
 
   public constructor(url?: string | URL) {
@@ -17,7 +19,7 @@ export class Store implements Backend {
 
     this.data = {};
 
-    this.promises = {
+    this.debouncers = {
       users: {},
     };
 
@@ -34,16 +36,16 @@ export class Store implements Backend {
         return self;
       }
 
-      if (!this.promises.users.self) {
-        this.promises.users.self = this.backend.users.self()
+      if (!this.debouncers.users.self) {
+        this.debouncers.users.self = this.backend.users.self()
           .then(self => {
             this.data.self = self;
             return self;
           })
-          .finally(() => this.promises.users.self = undefined);
+          .finally(() => this.debouncers.users.self = undefined);
       }
 
-      return await this.promises.users.self;
+      return await this.debouncers.users.self;
     },
 
     list: async () => {
@@ -52,30 +54,28 @@ export class Store implements Backend {
         return list;
       }
 
-      if (!this.promises.users.list) {
-        this.promises.users.list = this.backend.users.list()
+      if (!this.debouncers.users.list) {
+        this.debouncers.users.list = this.backend.users.list()
           .then(users => {
             this.data.users = users;
             return users;
           })
-          .finally(() => this.promises.users.list = undefined);
+          .finally(() => this.debouncers.users.list = undefined);
       }
 
-      return await this.promises.users.list;
+      return await this.debouncers.users.list;
     },
   };
 
   public readonly listener = {
     register: {
-      self: (handler: (data: User) => void): Listener<User> => {
-        const listener = new Listener(handler);
-        this.listeners.self.push(listener);
-        return listener;
+      self: (handler: Listener<User>): Listener<User> => {
+        this.listeners.self.push(handler);
+        return handler;
       },
-      users: (handler: (data: User[]) => void): Listener<User[]> => {
-        const listener = new Listener(handler);
-        this.listeners.users.push(listener);
-        return listener;
+      users: (handler: Listener<User[]>): Listener<User[]> => {
+        this.listeners.users.push(handler);
+        return handler;
       },
     },
     unregister: {
@@ -94,45 +94,18 @@ export class Store implements Backend {
     },
   };
 
+  // TODO: This is just a cheeky test
   public increment() {
     if (!this.data.self) {
       return;
     }
 
     const self = { ...this.data.self, id: this.data.self.id + 1 };
-    this.data.self = self;
-    this.listeners.self.forEach(l => l.handler(self));
+    this.setSelf(self);
   }
-}
 
-export interface Backend {
-  users: {
-    self(): Promise<User>,
-    list(): Promise<User[]>,
-  },
-}
-
-type Data = {
-  self?: User;
-  users?: User[];
-};
-
-type Listeners = {
-  self: Listener<User>[];
-  users: Listener<User[]>[];
-};
-
-type Promises = {
-  users: {
-    self?: Promise<User>,
-    list?: Promise<User[]>,
-  },
-};
-
-class Listener<T> {
-  readonly handler: (data: T) => void;
-
-  constructor(handler: (data: T) => void) {
-    this.handler = handler;
+  private setSelf(self: User) {
+    this.data.self = self;
+    this.listeners.self.forEach(l => l(self));
   }
 }

@@ -87,39 +87,49 @@ export class Socket {
   private state: SocketState;
   private attempts: number;
 
-  public constructor(url: string | URL) {
+  public constructor(url: string | URL, checkUrl?: string | URL) {
     this.requests = [];
     this.handlers = [];
     this.stateListeners = [];
 
     this.state = SocketState.Closed;
     this.attempts = 0;
-    this.socket = this.connect(url);
+    this.socket = this.connect(url, checkUrl);
   }
 
-  private connect(url: string | URL) {
+  private connect(url: string | URL, checkUrl?: string | URL) {
     this.setState(SocketState.Connecting);
 
     const socket = new WebSocket(url);
-    socket.binaryType = 'arraybuffer';
 
-    socket.addEventListener('error', () => {
+    socket.onerror = () => {
+      // Check only in the first failure
+      if (this.attempts === 0 && !!checkUrl) {
+        fetch(checkUrl, { credentials: 'include', redirect: 'manual' })
+          .then(r => {
+            if ((r.status >= 300 && r.status < 400) || (r.status === 401 || r.status === 403)) {
+              this.setState(SocketState.Unauthorized);
+            }
+          })
+          .catch(() => { });
+      }
+
       this.setState(SocketState.Error);
-    }, false);
+    };
 
-    socket.addEventListener('close', () => {
+    socket.onclose = () => {
       if (this.state !== SocketState.Error) {
         this.setState(SocketState.Closed);
       }
 
-      this.tryReconnect(url);
-    }, false);
+      this.tryReconnect(url, checkUrl);
+    };
 
-    socket.addEventListener('open', () => {
-      this.setState(SocketState.Open);
-    }, false);
+    socket.onopen = () => this.setState(SocketState.Open);
 
     socket.onmessage = this.onMessage.bind(this);
+
+    socket.binaryType = 'arraybuffer';
 
     this.socket = socket;
     return socket;
@@ -145,7 +155,7 @@ export class Socket {
     }
   }
 
-  private tryReconnect(url: string | URL) {
+  private tryReconnect(url: string | URL, checkUrl?: string | URL) {
     const timeout = this.nextAttempt();
 
     if (timeout === undefined) {
@@ -153,7 +163,7 @@ export class Socket {
     }
 
     this.attempts += 1;
-    setTimeout(() => this.connect(url), timeout);
+    setTimeout(() => this.connect(url, checkUrl), timeout);
   }
 
   private setState(state: SocketState) {

@@ -1,6 +1,6 @@
 import { Socket } from '../socket';
 import type { User } from '../types';
-import { Backend } from './store';
+import { Backend } from './types';
 
 export class Ws implements Backend {
   private readonly socket: Socket;
@@ -9,13 +9,11 @@ export class Ws implements Backend {
     this.socket = new Socket(url);
   }
 
-  readonly users = {
-    self(): Promise<User> {
-      throw new Error('Method not implemented.');
-    },
+  public getSelf(): Promise<User> {
+    throw new Error('Method not implemented.');
+  }
 
-    list(): Promise<User[]> {
-      throw new Error('Method not implemented.');
-    },
-  };
+  public getUsers(): Promise<User[]> {
+    throw new Error('Method not implemented.');
+  }
 }

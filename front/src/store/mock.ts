@@ -59,7 +59,7 @@ export class Mock implements Backend {
     this.listCount += 1;
     console.log(`Called list() ${this.listCount} times`);
 
-    return new Promise<User[]>((accept, reject) => {
+    return new Promise<User[]>((accept, _reject) => {
       setTimeout(() => accept(users), 1000);
     });
   }

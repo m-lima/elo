@@ -1,15 +1,13 @@
 import type { User } from '../types';
 
 import { Mock } from './mock';
-import type { Backend, Data, Debouncers, Listener, Listeners } from './types';
+import type { Backend, Listener } from './types';
 
 export class Store implements Backend {
   private readonly backend: Backend;
 
-  private readonly data: Data;
-
-  private readonly debouncers: Debouncers;
-  private readonly listeners: Listeners;
+  readonly self: Resource<User>;
+  readonly users: Resource<User[]>;
 
   public constructor(url?: string | URL) {
     if (!!url) {
@@ -17,95 +15,98 @@ export class Store implements Backend {
     }
     this.backend = new Mock();
 
-    this.data = {};
-
-    this.debouncers = {
-      users: {},
-    };
-
-    this.listeners = {
-      self: [],
-      users: [],
-    };
+    this.self = new Resource(this.backend.getSelf);
+    this.users = new Resource(this.backend.getUsers);
   }
 
-  public readonly users = {
-    self: async () => {
-      const self = this.data.self;
-      if (!!self) {
-        return self;
-      }
+  public getSelf() {
+    return this.self.get();
+  }
 
-      if (!this.debouncers.users.self) {
-        this.debouncers.users.self = this.backend.users.self()
-          .then(self => {
-            this.data.self = self;
-            return self;
-          })
-          .finally(() => this.debouncers.users.self = undefined);
-      }
-
-      return await this.debouncers.users.self;
-    },
-
-    list: async () => {
-      const list = this.data.users;
-      if (!!list) {
-        return list;
-      }
-
-      if (!this.debouncers.users.list) {
-        this.debouncers.users.list = this.backend.users.list()
-          .then(users => {
-            this.data.users = users;
-            return users;
-          })
-          .finally(() => this.debouncers.users.list = undefined);
-      }
-
-      return await this.debouncers.users.list;
-    },
-  };
-
-  public readonly listener = {
-    register: {
-      self: (handler: Listener<User>): Listener<User> => {
-        this.listeners.self.push(handler);
-        return handler;
-      },
-      users: (handler: Listener<User[]>): Listener<User[]> => {
-        this.listeners.users.push(handler);
-        return handler;
-      },
-    },
-    unregister: {
-      self: (listener: Listener<User>) => {
-        const index = this.listeners.self.indexOf(listener);
-        if (index >= 0) {
-          this.listeners.self.splice(index, 1);
-        }
-      },
-      users: (listener: Listener<User[]>) => {
-        const index = this.listeners.users.indexOf(listener);
-        if (index >= 0) {
-          this.listeners.self.splice(index, 1);
-        }
-      },
-    },
-  };
+  public getUsers() {
+    return this.users.get();
+  }
 
   // TODO: This is just a cheeky test
   public increment() {
-    if (!this.data.self) {
-      return;
+    const self = this.self.getRaw();
+    if (self) {
+      this.self.set({ ...self, id: self.id + 1 });
     }
-
-    const self = { ...this.data.self, id: this.data.self.id + 1 };
-    this.setSelf(self);
   }
 
-  private setSelf(self: User) {
-    this.data.self = self;
-    this.listeners.self.forEach(l => l(self));
+  private refresh() {
+    if (this.self.isPresent()) {
+      this.self.get();
+    }
+
+    if (this.users.isPresent()) {
+      this.users.get();
+    }
+  }
+}
+
+class Resource<T> {
+  private readonly fetcher: () => Promise<T>;
+
+  private data?: T;
+  private debouncer?: Promise<T>;
+  private listeners: Listener<T>[];
+
+  constructor(fetcher: () => Promise<T>) {
+    this.fetcher = fetcher;
+
+    this.listeners = [];
+  }
+
+  public isPresent(): boolean {
+    return !!this.data;
+  }
+
+  public getRaw(): T | undefined {
+    return this.data;
+  }
+
+  public get(): Promise<T> {
+    if (!!this.data) {
+      this.debouncer = undefined;
+      return Promise.resolve(this.data);
+    }
+
+    if (!this.debouncer) {
+      this.debouncer = this.fetcher()
+        .then(data => {
+          this.set(data);
+          return data;
+        })
+        .finally(() => this.debouncer = undefined);
+    }
+
+    return this.debouncer;
+  }
+
+  // TODO: Maybe do a deeper compare?
+  // TODO: If doing deep compare, set only fields that don't match?
+  public set(data: T) {
+    if (!!this.debouncer) {
+      // TODO: Cancel debouncer from updating after setting
+    }
+
+    if (this.data !== data) {
+      this.data = data;
+      this.listeners.forEach(l => l(data));
+    }
+  }
+
+  public registerListener(listener: Listener<T>): Listener<T> {
+    this.listeners.push(listener);
+    return listener;
+  }
+
+  public unregisterListener(listener: Listener<T>) {
+    const index = this.listeners.indexOf(listener);
+    if (index >= 0) {
+      this.listeners.splice(index, 1);
+    }
   }
 }

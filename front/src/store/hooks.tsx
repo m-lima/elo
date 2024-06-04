@@ -20,11 +20,11 @@ export const WithSelf = (props: ParentProps<{ self: User }>) =>
   </UserContext.Provider>;
 
 export const useAsyncSelf = (store: Store) => {
-  const [self, { mutate }] = createResource(() => store.users.self());
+  const [self, { mutate }] = createResource(() => store.self.get());
 
   createEffect(() => {
-    const listener = store.listener.register.self(mutate);
-    onCleanup(() => store.listener.unregister.self(listener));
+    const listener = store.self.registerListener(mutate);
+    onCleanup(() => store.self.unregisterListener(listener));
   });
 
   return self;

@@ -15,8 +15,8 @@ export class Store implements Backend {
     }
     this.backend = new Mock();
 
-    this.self = new Resource(this.backend.getSelf);
-    this.players = new Resource(this.backend.getPlayers);
+    this.self = new Resource(() => this.backend.getSelf());
+    this.players = new Resource(() => this.backend.getPlayers());
   }
 
   public getSelf() {

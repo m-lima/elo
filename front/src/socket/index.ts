@@ -127,7 +127,7 @@ export class Socket {
 
     socket.onopen = () => this.setState(SocketState.Open);
 
-    socket.onmessage = this.onMessage.bind(this);
+    socket.onmessage = (evt) => this.onMessage(evt);
 
     socket.binaryType = 'arraybuffer';
 

@@ -1,9 +1,9 @@
-import { createSignal, createEffect, onCleanup } from 'solid-js'
+import { createSignal, createEffect, onCleanup } from 'solid-js';
 
 import { icon } from '../components';
 import { useSelf, useStore } from '../store';
 
-import './home.css'
+import './home.css';
 
 export const Home = () => {
   const [count, setCount] = createSignal(0);
@@ -20,21 +20,28 @@ export const Home = () => {
       <h1>Vite + Solid</h1>
       <icon.User /> user
       <div>
-        <button onClick={() => { setPrev(count()); setCount((count) => count + 1) }}>
+        <button
+          onClick={() => {
+            setPrev(count());
+            setCount(count => count + 1);
+          }}
+        >
           count is {count()}
         </button>
-        <button onClick={() => { setBla(bla() + 1); store.increment(); }}>
+        <button
+          onClick={() => {
+            setBla(bla() + 1);
+            store.increment();
+          }}
+        >
           bla is {bla()}
         </button>
         <p>
-          <icon.Spinner />loading
+          <icon.Spinner />
+          loading
         </p>
-        <p>
-          But was {prev()}
-        </p>
-        <p>
-          And bla {bla()}
-        </p>
+        <p>But was {prev()}</p>
+        <p>And bla {bla()}</p>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
@@ -63,7 +70,7 @@ const useBla = () => {
   const signal = createSignal(3);
 
   createEffect(() => {
-    console.log('Register', signal[0]())
+    console.log('Register', signal[0]());
     onCleanup(() => console.log('Clean'));
   });
 
@@ -79,5 +86,5 @@ const bloink = () => {
 
   let { id, ...rest } = data;
 
-  console.log(id, rest)
+  console.log(id, rest);
 };

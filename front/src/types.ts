@@ -9,7 +9,7 @@ export type User = {
   readonly pointsWon: number;
   readonly pointsLost: number;
   readonly created: Date;
-}
+};
 
 export const byPosition = (a: User, b: User) => {
   const position = a.position - b.position;

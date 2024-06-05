@@ -29,7 +29,7 @@ class SocketStateListener {
 }
 
 export interface Handler<Message> {
-  handle(message: Message): boolean,
+  handle(message: Message): boolean;
 }
 
 class GlobalHandler<Message> implements Handler<Message> {
@@ -107,11 +107,11 @@ export class Socket {
       if (this.attempts === 0 && !!checkUrl) {
         fetch(checkUrl, { credentials: 'include', redirect: 'manual' })
           .then(r => {
-            if ((r.status >= 300 && r.status < 400) || (r.status === 401 || r.status === 403)) {
+            if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
               this.setState(SocketState.Unauthorized);
             }
           })
-          .catch(() => { });
+          .catch(() => {});
       }
 
       this.setState(SocketState.Error);
@@ -127,7 +127,7 @@ export class Socket {
 
     socket.onopen = () => this.setState(SocketState.Open);
 
-    socket.onmessage = (evt) => this.onMessage(evt);
+    socket.onmessage = evt => this.onMessage(evt);
 
     socket.binaryType = 'arraybuffer';
 
@@ -217,7 +217,7 @@ export class Socket {
   public async request<Message, Response, Request>(
     request: Request,
     handler: (message: Message) => Response | undefined,
-    timeout: number = 30000
+    timeout: number = 30000,
   ): Promise<Response> {
     const payload = encode(request);
     const id = Math.random();

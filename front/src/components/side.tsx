@@ -6,11 +6,14 @@ import { icon } from '.';
 
 import './side.css';
 
-const Item = (props: { path: string, icon: JSXElement, text: string, visible: boolean }) =>
+const Item = (props: { path: string; icon: JSXElement; text: string; visible: boolean }) => (
   <A href={props.path}>
     {props.icon}
-    <span class='components_side_text' id={props.visible ? 'visible' : ''}>{props.text}</span>
-  </A>;
+    <span class='components_side_text' id={props.visible ? 'visible' : ''}>
+      {props.text}
+    </span>
+  </A>
+);
 
 export const Side = () => {
   const self = useSelf();
@@ -24,8 +27,10 @@ export const Side = () => {
         <Show when={expanded()} fallback={<icon.DoubleRight />}>
           <icon.DoubleLeft />
         </Show>
-        <span class='components_side_text' id={expanded() ? 'visible' : ''}>Collapse</span>
+        <span class='components_side_text' id={expanded() ? 'visible' : ''}>
+          Collapse
+        </span>
       </span>
-    </aside >
+    </aside>
   );
-}
+};

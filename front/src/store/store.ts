@@ -79,7 +79,7 @@ class Resource<T> {
           this.set(data);
           return data;
         })
-        .finally(() => this.debouncer = undefined);
+        .finally(() => (this.debouncer = undefined));
     }
 
     return this.debouncer;

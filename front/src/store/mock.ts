@@ -53,7 +53,9 @@ export class Mock implements Backend {
       pointsLost: 10 * 5 + 7 * 11,
       created: new Date(),
     };
-    let users = Array(10).fill(undefined).map((_, i) => i === 0 ? self : makeUser(i));
+    let users = Array(10)
+      .fill(undefined)
+      .map((_, i) => (i === 0 ? self : makeUser(i)));
     users.sort(byPosition);
 
     this.listCount += 1;

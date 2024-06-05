@@ -1,3 +1,5 @@
+// TODO: Move into types/index.ts
+
 export type User = {
   readonly id: number;
   readonly name: string;
@@ -30,6 +32,14 @@ export const byPosition = (a: User, b: User) => {
   return a.created.getTime() - b.created.getTime();
 };
 
-// type CreateUser = Partial<Pick<User, 'name' | 'email'>>;
+// TODO: Use these
+/* eslint-disable-next-line
+   @typescript-eslint/no-unused-vars
+*/
 type Create<T> = Omit<T, 'id' | 'created'>;
+/* eslint-disable-next-line
+   @typescript-eslint/no-unused-vars
+*/
 type Edit<T, N extends keyof T> = Partial<Pick<T, N>>;
+
+// type CreateUser = Partial<Pick<User, 'name' | 'email'>>;

@@ -4,12 +4,12 @@ import { User, byPosition } from '../types';
 import { Backend } from './types';
 
 export class Mock implements Backend {
-  private selfCount = 0;
-  private listCount = 0;
+  private getSelfCount = 0;
+  private getPlayersCount = 0;
 
   public getSelf() {
-    this.selfCount += 1;
-    console.log(`Called self() ${this.selfCount} times`);
+    this.getSelfCount += 1;
+    console.log(`Called self() ${this.getSelfCount} times`);
     return this.getPlayers().then(u => u.filter(u => u.id === 27)[0]);
   }
 
@@ -41,7 +41,7 @@ export class Mock implements Backend {
       };
     };
 
-    let self = {
+    const self = {
       id: 27,
       name: 'My Name',
       email: 'email@domain.com',
@@ -53,16 +53,18 @@ export class Mock implements Backend {
       pointsLost: 10 * 5 + 7 * 11,
       created: new Date(),
     };
-    let users = Array(10)
+    const users = Array(10)
       .fill(undefined)
       .map((_, i) => (i === 0 ? self : makeUser(i)));
     users.sort(byPosition);
 
-    this.listCount += 1;
-    console.log(`Called list() ${this.listCount} times`);
+    this.getPlayersCount += 1;
+    console.log(`Called list() ${this.getPlayersCount} times`);
 
     return new Promise<User[]>((accept, _reject) => {
-      setTimeout(() => accept(users), 1000);
+      setTimeout(() => {
+        accept(users);
+      }, 1000);
     });
   }
 }

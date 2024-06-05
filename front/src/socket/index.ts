@@ -20,52 +20,42 @@ export enum SocketState {
   Unauthorized,
 }
 
-class SocketStateListener {
-  readonly update: (state: SocketState) => void;
+type SocketStateListener = (state: SocketState) => void;
+type Handler<Message> = (message: Message) => boolean;
+type RequestHandler<Message, Response> = (message: Message) => Response | undefined;
 
-  constructor(handler: (state: SocketState) => void) {
-    this.update = handler;
-  }
-}
+type Accept<Response> = (response: Response | PromiseLike<Response>) => void;
+// Allowed to match the Promise signature
+/* eslint-disable-next-line
+   @typescript-eslint/no-explicit-any
+*/
+type Reject = (reason?: any) => void;
 
-export interface Handler<Message> {
-  handle(message: Message): boolean;
-}
-
-class GlobalHandler<Message> implements Handler<Message> {
-  readonly handle: (message: Message) => boolean;
-
-  constructor(handler: (message: Message) => boolean) {
-    this.handle = handler;
-  }
-}
-
-class RequestHandler<Message, Response> implements Handler<Message> {
-  readonly id: number;
-  readonly handleInner: (message: Message) => Response | undefined;
-  readonly accept: (response: Response | PromiseLike<Response>) => void;
-  readonly reject: (reason?: any) => void;
+class RequestHandlerInner<Message, Response> {
+  readonly handler: RequestHandler<Message, Response>;
+  readonly accept: Accept<Response>;
+  readonly reject: Reject;
 
   constructor(
-    id: number,
-    handler: (message: Message) => Response | undefined,
-    accept: (response: Response | PromiseLike<Response>) => void,
-    reject: (reason?: any) => void,
+    handler: RequestHandler<Message, Response>,
+    accept: Accept<Response>,
+    reject: Reject,
     timeout: number,
   ) {
-    this.id = id;
-    this.handleInner = handler;
+    this.handler = handler;
     this.accept = accept;
     this.reject = reject;
 
-    setTimeout(() => reject(new Timeout(timeout)), timeout);
+    setTimeout(() => {
+      reject(new Timeout(timeout));
+    }, timeout);
   }
 
   handle(message: Message): boolean {
     try {
-      const response = this.handleInner(message);
+      const response = this.handler(message);
 
-      if (!!response) {
+      if (response !== undefined) {
         this.accept(response);
         return true;
       } else {
@@ -78,9 +68,9 @@ class RequestHandler<Message, Response> implements Handler<Message> {
   }
 }
 
-export class Socket {
-  private readonly requests: RequestHandler<any, any>[];
-  private readonly handlers: Handler<any>[];
+export class Socket<Message, Response> {
+  private readonly requests: RequestHandlerInner<Message, Response>[];
+  private readonly handlers: Handler<Message>[];
   private readonly stateListeners: SocketStateListener[];
 
   private socket: WebSocket;
@@ -105,13 +95,11 @@ export class Socket {
     socket.onerror = () => {
       // Check only in the first failure
       if (this.attempts === 0 && !!checkUrl) {
-        fetch(checkUrl, { credentials: 'include', redirect: 'manual' })
-          .then(r => {
-            if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
-              this.setState(SocketState.Unauthorized);
-            }
-          })
-          .catch(() => {});
+        void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
+          if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
+            this.setState(SocketState.Unauthorized);
+          }
+        });
       }
 
       this.setState(SocketState.Error);
@@ -125,9 +113,13 @@ export class Socket {
       this.tryReconnect(url, checkUrl);
     };
 
-    socket.onopen = () => this.setState(SocketState.Open);
+    socket.onopen = () => {
+      this.setState(SocketState.Open);
+    };
 
-    socket.onmessage = evt => this.onMessage(evt);
+    socket.onmessage = evt => {
+      this.onMessage(evt);
+    };
 
     socket.binaryType = 'arraybuffer';
 
@@ -186,7 +178,7 @@ export class Socket {
     }
 
     for (const listener of this.stateListeners) {
-      listener.update(this.state);
+      listener(this.state);
     }
   }
 
@@ -196,11 +188,10 @@ export class Socket {
       console.error(e.data);
     }
 
-    const message = decode(e.data) as any;
+    const message = decode(e.data as ArrayBuffer) as Message;
 
     for (let i = 0; i < this.requests.length; ++i) {
       if (this.requests[i].handle(message)) {
-        this.requests.splice(i, 1);
         return;
       }
     }
@@ -208,27 +199,25 @@ export class Socket {
     // TODO: Handle the case where id is zero
     // TODO: Maybe a catch-all handler that creates a pop-up
     for (let i = 0; i < this.handlers.length; ++i) {
-      if (this.handlers[i].handle(message)) {
+      if (this.handlers[i](message)) {
         return;
       }
     }
   }
 
-  public async request<Message, Response, Request>(
+  public request<Request>(
     request: Request,
-    handler: (message: Message) => Response | undefined,
+    handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
   ): Promise<Response> {
     const payload = encode(request);
-    const id = Math.random();
-    const promise: Promise<Response> = new Promise((accept, reject) => {
-      const requestInstance = new RequestHandler(id, handler, accept, reject, timeout);
+    let requestInstance: RequestHandlerInner<Message, Response>;
+    return new Promise<Response>((accept, reject) => {
+      requestInstance = new RequestHandlerInner(handler, accept, reject, timeout);
       this.requests.push(requestInstance);
       this.socket.send(payload);
-    });
-
-    return promise.finally(() => {
-      const index = this.requests.findIndex(r => r.id === id);
+    }).finally(() => {
+      const index = this.requests.indexOf(requestInstance);
       if (index >= 0) {
         this.requests.splice(index, 1);
       }
@@ -239,8 +228,7 @@ export class Socket {
     return this.state;
   }
 
-  public registerStateListener(handler: (state: SocketState) => void) {
-    const listener = new SocketStateListener(handler);
+  public registerStateListener(listener: SocketStateListener) {
     this.stateListeners.push(listener);
     return listener;
   }
@@ -252,13 +240,12 @@ export class Socket {
     }
   }
 
-  public registerHandler<Message>(handler: (message: Message) => boolean) {
-    const globalHandler = new GlobalHandler(handler);
-    this.handlers.push(globalHandler);
-    return globalHandler;
+  public registerHandler(handler: Handler<Message>) {
+    this.handlers.push(handler);
+    return handler;
   }
 
-  public unregisterHandler<Message>(handler: GlobalHandler<Message>) {
+  public unregisterHandler(handler: Handler<Message>) {
     const index = this.handlers.indexOf(handler);
     if (index >= 0) {
       this.handlers.splice(index, 1);

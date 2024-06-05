@@ -10,7 +10,7 @@ export class Store implements Backend {
   readonly players: Resource<User[]>;
 
   public constructor(url?: string | URL) {
-    if (!!url) {
+    if (url) {
       throw new Error('Remote backend not implemented');
     }
     this.backend = new Mock();
@@ -37,11 +37,11 @@ export class Store implements Backend {
 
   private refresh() {
     if (this.self.isPresent()) {
-      this.self.get();
+      void this.self.get();
     }
 
     if (this.players.isPresent()) {
-      this.players.get();
+      void this.players.get();
     }
   }
 }
@@ -68,8 +68,7 @@ class Resource<T> {
   }
 
   public get(): Promise<T> {
-    if (!!this.data) {
-      this.debouncer = undefined;
+    if (this.data !== undefined) {
       return Promise.resolve(this.data);
     }
 
@@ -88,13 +87,15 @@ class Resource<T> {
   // TODO: Maybe do a deeper compare?
   // TODO: If doing deep compare, set only fields that don't match?
   public set(data: T) {
-    if (!!this.debouncer) {
+    if (this.debouncer !== undefined) {
       // TODO: Cancel debouncer from updating after setting
     }
 
     if (this.data !== data) {
       this.data = data;
-      this.listeners.forEach(l => l(data));
+      this.listeners.forEach(l => {
+        l(data);
+      });
     }
   }
 

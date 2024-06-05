@@ -31,18 +31,23 @@ const App = (props: ParentProps) => {
   );
 };
 
+// TODO: Better global fallback
 render(
   () => (
     <WithStore store={store}>
       <ErrorBoundary
-        fallback={(error: any) => {
+        fallback={error => {
           console.log('CAUGHT', error);
-          return <h1>{error.toString()}</h1>;
+          return <h1>{JSON.stringify(error)}</h1>;
         }}
       >
         <Router root={App} />
       </ErrorBoundary>
     </WithStore>
   ),
+  // Allowed because this is normal solid construct
+  /* eslint-disable-next-line
+     @typescript-eslint/no-non-null-assertion
+  */
   root!,
 );

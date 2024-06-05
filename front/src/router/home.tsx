@@ -71,20 +71,22 @@ const useBla = () => {
 
   createEffect(() => {
     console.log('Register', signal[0]());
-    onCleanup(() => console.log('Clean'));
+    onCleanup(() => {
+      console.log('Clean');
+    });
   });
 
   return signal;
 };
 
 const bloink = () => {
-  let data = {
+  const data = {
     id: 27,
     name: 'namer',
     value: 3,
   };
 
-  let { id, ...rest } = data;
+  const { id, ...rest } = data;
 
   console.log(id, rest);
 };

@@ -16,6 +16,10 @@ export const WithStore = (props: ParentProps<{ store: Store }>) => (
   <StoreContext.Provider value={props.store}>{props.children}</StoreContext.Provider>
 );
 
+// Allowed because if misused, better to throw errors instead of paying for runtime checks
+/* eslint-disable-next-line
+   @typescript-eslint/no-non-null-assertion
+*/
 export const useStore = () => useContext(StoreContext)!;
 
 const UserContext = createContext<User>();
@@ -29,12 +33,18 @@ export const useAsyncSelf = (store: Store) => {
 
   createEffect(() => {
     const listener = store.self.registerListener(mutate);
-    onCleanup(() => store.self.unregisterListener(listener));
+    onCleanup(() => {
+      store.self.unregisterListener(listener);
+    });
   });
 
   return self;
 };
 
+// Allowed because if misused, better to throw errors instead of paying for runtime checks
+/* eslint-disable-next-line
+   @typescript-eslint/no-non-null-assertion
+*/
 export const useSelf = () => useContext(UserContext)!;
 
 export const usePlayers = (maybeStore?: Store) => {
@@ -43,7 +53,9 @@ export const usePlayers = (maybeStore?: Store) => {
 
   createEffect(() => {
     const listener = store.players.registerListener(mutate);
-    onCleanup(() => store.players.unregisterListener(listener));
+    onCleanup(() => {
+      store.players.unregisterListener(listener);
+    });
   });
 
   return players;

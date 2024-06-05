@@ -7,7 +7,7 @@ export class Store implements Backend {
   private readonly backend: Backend;
 
   readonly self: Resource<User>;
-  readonly users: Resource<User[]>;
+  readonly players: Resource<User[]>;
 
   public constructor(url?: string | URL) {
     if (!!url) {
@@ -16,15 +16,15 @@ export class Store implements Backend {
     this.backend = new Mock();
 
     this.self = new Resource(this.backend.getSelf);
-    this.users = new Resource(this.backend.getUsers);
+    this.players = new Resource(this.backend.getPlayers);
   }
 
   public getSelf() {
     return this.self.get();
   }
 
-  public getUsers() {
-    return this.users.get();
+  public getPlayers() {
+    return this.players.get();
   }
 
   // TODO: This is just a cheeky test
@@ -40,8 +40,8 @@ export class Store implements Backend {
       this.self.get();
     }
 
-    if (this.users.isPresent()) {
-      this.users.get();
+    if (this.players.isPresent()) {
+      this.players.get();
     }
   }
 }

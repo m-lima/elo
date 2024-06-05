@@ -13,7 +13,7 @@ export class Ws implements Backend {
     throw new Error('Method not implemented.');
   }
 
-  public getUsers(): Promise<User[]> {
+  public getPlayers(): Promise<User[]> {
     throw new Error('Method not implemented.');
   }
 }

@@ -10,10 +10,10 @@ export class Mock implements Backend {
   public getSelf() {
     this.selfCount += 1;
     console.log(`Called self() ${this.selfCount} times`);
-    return this.getUsers().then(u => u.filter(u => u.id === 27)[0]);
+    return this.getPlayers().then(u => u.filter(u => u.id === 27)[0]);
   }
 
-  public getUsers() {
+  public getPlayers() {
     const makeUser = (id: number) => {
       const first = Math.floor(Math.random() * 10000);
       const last = Math.floor(Math.random() * 10000);

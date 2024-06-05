@@ -5,8 +5,8 @@ impl Mode for Vec<u8> {}
 
 pub(crate) mod sealed {
     pub trait Mode {
-        type SerializeError: std::fmt::Display + Send;
-        type DeserializeError: std::fmt::Display + Send;
+        type SerializeError: std::fmt::Display + std::fmt::Debug + Send;
+        type DeserializeError: std::fmt::Display + std::fmt::Debug + Send;
 
         fn mode() -> &'static str;
         fn serialize<T>(payload: T) -> Result<axum::extract::ws::Message, Self::SerializeError>

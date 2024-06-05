@@ -1,5 +1,5 @@
+mod message;
 mod mode;
-mod payload;
 
 pub use mode::Mode;
 
@@ -67,20 +67,22 @@ where
                         }
                     };
                     tracing::debug!("Pushing message");
-                    flow!(self.send(None, push).await);
+                    let message = message::Push { push };
+                    flow!(self.send(message).await);
                 }
                 request = self.recv() => {
                     use service::Request;
                     use service::IntoError;
 
                     let start = std::time::Instant::now();
-                    let (id, payload) = flow!(request);
+                    let message::Request{ id, payload } = flow!(request);
                     let action = payload.action();
 
                     match self.service.call(payload).await {
-                        Ok(response) =>{
+                        Ok(ok) =>{
                             tracing::info!(latency = ?start.elapsed(), "{action}");
-                            flow!(self.send(id, response).await);
+                            let message = message::Response { id, ok };
+                            flow!(self.send(message).await);
                         }
                         Err(error) => {
                             if error.is_warn() {
@@ -89,8 +91,9 @@ where
                                 tracing::error!(%error, latency = ?start.elapsed(), "{action}");
                             }
 
-                            let payload = payload::Error::from(error);
-                            flow!(self.send(id, payload).await);
+                            let error = error.into();
+                            let message = message::Error { id: Some(id), error };
+                            flow!(self.send(message).await);
                         },
                     }
                 }
@@ -109,7 +112,7 @@ where
         }
     }
 
-    async fn recv(&mut self) -> FlowControl<(Option<payload::Id>, S::Request)> {
+    async fn recv(&mut self) -> FlowControl<message::Request<S::Request>> {
         // Closed socket
         let Some(message) = self.socket.recv().await else {
             tracing::debug!("Closing websocket");
@@ -142,21 +145,23 @@ where
         };
 
         match M::deserialize(&bytes) {
-            Ok(payload::WithId { id, payload }) => FlowControl::Pass((id, payload)),
+            Ok(message) => FlowControl::Pass(message),
             Err(error) => {
                 tracing::warn!(%error, "Failed to deserialize request");
-                let error = service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string());
-                self.send(try_extract_id::<M>(&bytes), payload::Error::from(error))
-                    .await
+                let message = message::Error {
+                    id: try_extract_id::<M>(&bytes),
+                    error: service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string()),
+                };
+                self.send(message).await
             }
         }
     }
 
-    async fn send<T, R>(&mut self, id: Option<payload::Id>, payload: T) -> FlowControl<R>
+    async fn send<T, R>(&mut self, message: T) -> FlowControl<R>
     where
-        T: serde::Serialize,
+        T: message::Message,
     {
-        match M::serialize(payload::WithId { id, payload }) {
+        match M::serialize(message) {
             Ok(message) => {
                 if let Err(error) = self.socket.send(message).await {
                     tracing::error!(%error, "Failed to send message");
@@ -173,107 +178,145 @@ where
     }
 }
 
-fn try_extract_id<M>(bytes: &[u8]) -> Option<payload::Id>
+fn try_extract_id<M>(bytes: &[u8]) -> Option<message::Id>
 where
     M: Mode,
 {
-    M::deserialize::<payload::WithId<()>>(bytes).map_or(None, |r| r.id)
+    M::deserialize::<message::OnlyId>(bytes).map(|r| r.id).ok()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{mode::sealed::Mode, payload::WithId};
-
     #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-    struct Payload {
-        name: String,
+    struct Payload<'a> {
+        name: &'a str,
         count: u32,
     }
 
-    #[test]
-    fn try_extract_id_present() {
-        let id =
-            super::try_extract_id::<String>(br#"{"id": 27, "name": "name_value", "count": 8855}"#);
+    const OBJ: Payload<'_> = Payload {
+        name: "name_value",
+        count: 8855,
+    };
+    const STR: &str = r#"{"name":"name_value","count":8855}"#;
 
-        assert_eq!(id, Some(27));
-    }
-
-    #[test]
-    fn try_extract_id_missing() {
-        let id = super::try_extract_id::<String>(br#"{"name": "name_value", "count": 8855}"#);
-
-        assert_eq!(id, None);
-    }
-
-    #[test]
-    fn serialize_with_id() {
-        let payload = WithId {
-            id: Some(27),
-            payload: Payload {
-                name: String::from("name_value"),
-                count: 8855,
-            },
+    mod request {
+        use super::{
+            super::{message::Request, try_extract_id},
+            Payload, OBJ, STR,
         };
 
-        let output = String::serialize(payload).unwrap();
+        #[test]
+        fn try_extract_id_present() {
+            let id = try_extract_id::<String>(format!(r#"{{"do":{STR},"id":27}}"#).as_bytes());
 
-        let expected = axum::extract::ws::Message::Text(String::from(
-            r#"{"id":27,"name":"name_value","count":8855}"#,
-        ));
+            assert_eq!(id, Some(27));
+        }
 
-        assert_eq!(output, expected);
+        #[test]
+        fn try_extract_id_missing() {
+            let id = try_extract_id::<String>(format!(r#"{{"do":{STR}}}"#).as_bytes());
+
+            assert_eq!(id, None);
+        }
+
+        #[test]
+        fn try_extract_id_bad_request() {
+            let id = try_extract_id::<String>(br#"{"id":27}"#);
+
+            assert_eq!(id, Some(27));
+        }
+
+        #[test]
+        fn try_extract_id_really_bad_request() {
+            let id = try_extract_id::<String>(br#"{"id":27,"":{""}}"#);
+
+            assert_eq!(id, None);
+        }
+
+        #[test]
+        fn happy() {
+            let payload = format!(r#"{{"do":{STR},"id":27}}"#);
+            let message = <String as super::super::mode::sealed::Mode>::deserialize::<
+                Request<Payload<'_>>,
+            >(payload.as_bytes())
+            .unwrap();
+
+            let expected = Request {
+                id: 27,
+                payload: OBJ,
+            };
+            assert_eq!(message, expected);
+        }
     }
 
-    #[test]
-    fn serialize_without_id() {
-        let payload = WithId {
-            id: None,
-            payload: Payload {
-                name: String::from("name_value"),
-                count: 8855,
-            },
+    mod push {
+        use super::{
+            super::{message::Push, mode::sealed::Mode},
+            OBJ, STR,
         };
 
-        let output = String::serialize(payload).unwrap();
+        #[test]
+        fn happy() {
+            let payload = Push { push: OBJ };
 
-        let expected =
-            axum::extract::ws::Message::Text(String::from(r#"{"name":"name_value","count":8855}"#));
+            let output = String::serialize(payload).unwrap();
 
-        assert_eq!(output, expected);
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"push":{STR}}}"#));
+
+            assert_eq!(output, expected);
+        }
     }
 
-    #[test]
-    fn deserialize_with_id() {
-        let expected = WithId {
-            id: Some(27),
-            payload: Payload {
-                name: String::from("name_value"),
-                count: 8855,
-            },
+    mod response {
+        use super::{
+            super::{message::Response, mode::sealed::Mode},
+            OBJ, STR,
         };
 
-        let output = String::deserialize::<WithId<Payload>>(
-            br#"{"id":27,"name":"name_value","count":8855}"#,
-        )
-        .unwrap();
+        #[test]
+        fn happy() {
+            let payload = Response { id: 27, ok: OBJ };
 
-        assert_eq!(output, expected);
+            let output = String::serialize(payload).unwrap();
+
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"id":27,"ok":{STR}}}"#,));
+
+            assert_eq!(output, expected);
+        }
     }
 
-    #[test]
-    fn deserialize_without_id() {
-        let expected = WithId {
-            id: None,
-            payload: Payload {
-                name: String::from("name_value"),
-                count: 8855,
-            },
-        };
+    mod error {
+        use super::super::{message::Error, mode::sealed::Mode};
 
-        let output =
-            String::deserialize::<WithId<Payload>>(br#"{"name":"name_value","count":8855}"#)
-                .unwrap();
+        const STR: &str = r#"{"code":400,"message":"Bad Request"}"#;
 
-        assert_eq!(output, expected);
+        #[test]
+        fn with_id() {
+            let payload = Error {
+                id: Some(27),
+                error: hyper::StatusCode::BAD_REQUEST.into(),
+            };
+
+            let output = String::serialize(payload).unwrap();
+
+            let expected =
+                axum::extract::ws::Message::Text(format!(r#"{{"id":27,"error":{STR}}}"#,));
+
+            assert_eq!(output, expected);
+        }
+
+        #[test]
+        fn without_id() {
+            let payload = Error {
+                id: None,
+                error: hyper::StatusCode::BAD_REQUEST.into(),
+            };
+
+            let output = String::serialize(payload).unwrap();
+
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":{STR}}}"#,));
+
+            assert_eq!(output, expected);
+        }
     }
 }

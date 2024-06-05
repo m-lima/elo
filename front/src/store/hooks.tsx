@@ -31,3 +31,15 @@ export const useAsyncSelf = (store: Store) => {
 };
 
 export const useSelf = () => useContext(UserContext)!;
+
+export const usePlayers = (maybeStore?: Store) => {
+  const store = !maybeStore ? useStore() : maybeStore;
+  const [players, { mutate }] = createResource(() => store.players.get());
+
+  createEffect(() => {
+    const listener = store.players.registerListener(mutate);
+    onCleanup(() => store.players.unregisterListener(listener));
+  });
+
+  return players;
+};

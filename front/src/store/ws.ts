@@ -1,5 +1,5 @@
 import { Socket } from '../socket';
-import type { User } from '../types';
+import type { Player } from '../types';
 import { Backend } from './types';
 
 export class Ws implements Backend {
@@ -9,11 +9,11 @@ export class Ws implements Backend {
     this.socket = new Socket(url);
   }
 
-  public getSelf(): Promise<User> {
+  public getSelf(): Promise<Player> {
     throw new Error('Method not implemented.');
   }
 
-  public getPlayers(): Promise<User[]> {
+  public getPlayers(): Promise<Player[]> {
     throw new Error('Method not implemented.');
   }
 }

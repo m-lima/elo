@@ -18,7 +18,7 @@ export const Home = () => {
   return (
     <div class='router_home'>
       <h1>Vite + Solid</h1>
-      <icon.User /> user
+      <icon.User /> Player
       <div>
         <button
           onClick={() => {
@@ -53,9 +53,41 @@ export const Home = () => {
         <br />
         <icon.Spinner /> Loading
       </h1>
+      <ul style={{ 'font-size': '3em' }}>
+        <li>
+          <span style={{ color: 'gold' }}>
+            <icon.Crown />
+          </span>{' '}
+          Crown
+        </li>
+        <li>
+          <span style={{ color: 'white' }}>
+            <icon.Medal />
+          </span>{' '}
+          Medal
+        </li>
+        <li>
+          <span style={{ color: 'burlywood' }}>
+            <icon.Certificate />
+          </span>{' '}
+          Certificate
+        </li>
+        <li>
+          <icon.Mosquito /> Mosquito
+        </li>
+        <li>
+          <icon.Poop /> Poop
+        </li>
+        <li>
+          <icon.Worm /> Worm
+        </li>
+        <li>
+          <icon.Skull /> Skull
+        </li>
+      </ul>
       <div>
         <Suspense>
-          <h1>User</h1>
+          <h1>Player</h1>
           <h3>Id</h3>
           {self()?.id}
           <h3>Name</h3>

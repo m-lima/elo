@@ -1,6 +1,6 @@
 // TODO: Move into types/index.ts
 
-export type User = {
+export type Player = {
   readonly id: number;
   readonly name: string;
   readonly email: string;
@@ -13,7 +13,7 @@ export type User = {
   readonly created: Date;
 };
 
-export const byPosition = (a: User, b: User) => {
+export const byPosition = (a: Player, b: Player) => {
   const position = a.position - b.position;
   if (position !== 0) {
     return position;
@@ -42,4 +42,4 @@ type Create<T> = Omit<T, 'id' | 'created'>;
 */
 type Edit<T, N extends keyof T> = Partial<Pick<T, N>>;
 
-// type CreateUser = Partial<Pick<User, 'name' | 'email'>>;
+// type CreatePlayer = Partial<Pick<Player, 'name' | 'email'>>;

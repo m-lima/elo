@@ -1,7 +1,6 @@
 import { A } from '@solidjs/router';
-import { JSXElement, Show, Suspense, createSignal } from 'solid-js';
+import { JSXElement, Show, createSignal } from 'solid-js';
 
-import { useSelf } from '../store';
 import { icon } from '.';
 
 import './side.css';
@@ -16,26 +15,16 @@ const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
 );
 
 export const Side = () => {
-  const self = useSelf();
   const [expanded, setExpanded] = createSignal(false);
-  const userPath = (id?: number) => (id !== undefined ? `/user/${id}` : '');
 
   return (
     <aside class='components_side'>
-      <A href='/'>
+      <A href='/' end>
         <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
       </A>
-      <Suspense
-        fallback={
-          <span class='components_side_ignore'>
-            <Item icon={<icon.Spinner />} text='Loading' visible={expanded()} />
-          </span>
-        }
-      >
-        <A href={userPath(self()?.id)}>
-          <Item icon={<icon.User />} text='User' visible={expanded()} />
-        </A>
-      </Suspense>
+      <A href='/player/'>
+        <Item icon={<icon.User />} text='Player' visible={expanded()} />
+      </A>
       <span onClick={() => setExpanded(e => !e)}>
         <Show
           when={expanded()}

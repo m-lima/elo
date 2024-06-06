@@ -1,6 +1,6 @@
 /// EXCLUDE(PROD)
 
-import { User, byPosition } from '../types';
+import { Player, byPosition } from '../types';
 import { Backend } from './types';
 
 export class Mock implements Backend {
@@ -14,7 +14,7 @@ export class Mock implements Backend {
   }
 
   public getPlayers() {
-    const makeUser = (id: number) => {
+    const makePlayer = (id: number) => {
       const first = Math.floor(Math.random() * 10000);
       const last = Math.floor(Math.random() * 10000);
 
@@ -53,17 +53,17 @@ export class Mock implements Backend {
       pointsLost: 10 * 5 + 7 * 11,
       created: new Date(),
     };
-    const users = Array(10)
+    const players = Array(10)
       .fill(undefined)
-      .map((_, i) => (i === 0 ? self : makeUser(i)));
-    users.sort(byPosition);
+      .map((_, i) => (i === 0 ? self : makePlayer(i)));
+    players.sort(byPosition);
 
     this.getPlayersCount += 1;
     console.log(`Called list() ${this.getPlayersCount} times`);
 
-    return new Promise<User[]>((accept, _reject) => {
+    return new Promise<Player[]>((accept, _reject) => {
       setTimeout(() => {
-        accept(users);
+        accept(players);
       }, 1000);
     });
   }

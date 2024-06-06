@@ -1,4 +1,4 @@
-import type { User } from '../types';
+import type { Player } from '../types';
 
 import { Mock } from './mock';
 import type { Backend, Listener } from './types';
@@ -6,8 +6,8 @@ import type { Backend, Listener } from './types';
 export class Store implements Backend {
   private readonly backend: Backend;
 
-  readonly self: Resource<User>;
-  readonly players: Resource<User[]>;
+  readonly self: Resource<Player>;
+  readonly players: Resource<Player[]>;
 
   public constructor(url?: string | URL) {
     if (url) {

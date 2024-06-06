@@ -1,8 +1,8 @@
-import type { User } from '../types';
+import type { Player } from '../types';
 
 export interface Backend {
-  getSelf(): Promise<User>;
-  getPlayers(): Promise<User[]>;
+  getSelf(): Promise<Player>;
+  getPlayers(): Promise<Player[]>;
 }
 
 export type Listener<T> = (data: T) => void;

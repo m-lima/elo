@@ -10,7 +10,7 @@ export class Mock implements Backend {
   public getSelf() {
     this.getSelfCount += 1;
     console.log(`Called self() ${this.getSelfCount} times`);
-    return this.getPlayers().then(u => u.filter(u => u.id === 27)[0]);
+    return Promise.resolve(makeSelf());
   }
 
   public getPlayers() {
@@ -41,18 +41,7 @@ export class Mock implements Backend {
       };
     };
 
-    const self = {
-      id: 27,
-      name: 'My Name',
-      email: 'email@domain.com',
-      position: 3,
-      score: 2000,
-      wins: 10,
-      losses: 7,
-      pointsWon: 10 * 11 + 7 * 5,
-      pointsLost: 10 * 5 + 7 * 11,
-      created: new Date(),
-    };
+    const self = makeSelf();
     const players = Array(10)
       .fill(undefined)
       .map((_, i) => (i === 0 ? self : makePlayer(i)));
@@ -68,3 +57,18 @@ export class Mock implements Backend {
     });
   }
 }
+
+const makeSelf = (): Player => {
+  return {
+    id: 27,
+    name: 'My Name',
+    email: 'email@domain.com',
+    position: 3,
+    score: 2000,
+    wins: 10,
+    losses: 7,
+    pointsWon: 10 * 11 + 7 * 5,
+    pointsLost: 10 * 5 + 7 * 11,
+    created: new Date(),
+  };
+};

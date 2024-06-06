@@ -3,17 +3,21 @@ import { useParams } from '@solidjs/router';
 
 import { usePlayers, useSelf } from '../store';
 import { Player as PlayerType } from '../types';
+import { Loading } from '../components';
 
-import { Loading } from '.';
-
-const View = (props: { id?: number; self: PlayerType; players: PlayerType[] }) => {
+const Loaded = (props: { id?: number; self: PlayerType; players: PlayerType[] }) => {
   const actualId = props.id !== undefined ? props.id : props.self.id;
+  const actualPlayer = props.players.find(p => p.id === actualId);
 
   return (
-    <>
-      <p>Self: {props.self.id}</p>
-      <p>Param: {actualId}</p>
-    </>
+    <Show when={actualPlayer}>
+      <>
+        <h1>{actualPlayer?.name}</h1>
+        <p>{actualPlayer?.email}</p>
+        <p>Self: {props.self.id}</p>
+        <p>Param: {actualId}</p>
+      </>
+    </Show>
   );
 };
 
@@ -30,7 +34,7 @@ export const Player = () => {
   return (
     <Suspense fallback={<Loading />}>
       <Show when={self() !== undefined && players() !== undefined}>
-        <View id={id()} self={self()!} players={players()!} />
+        <Loaded id={id()} self={self()!} players={players()!} />
       </Show>
     </Suspense>
   );

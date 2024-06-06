@@ -4,7 +4,6 @@ import { Router as SolidRouter, Navigate, Route } from '@solidjs/router';
 import { Home } from './home';
 import { Leaderboard } from './leaderboard';
 import { Player } from './player';
-export { Loading } from './loading';
 
 export const Router = (props: { root: Component }) => (
   <SolidRouter root={props.root}>

@@ -22,6 +22,9 @@ export const Side = () => {
       <A href='/' end>
         <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
       </A>
+      <A href='/test' end>
+        <Item icon={<icon.Mosquito />} text='Test' visible={expanded()} />
+      </A>
       <A href='/player/'>
         <Item icon={<icon.User />} text='Player' visible={expanded()} />
       </A>

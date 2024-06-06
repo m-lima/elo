@@ -1,35 +1,48 @@
 import { A } from '@solidjs/router';
-import { JSXElement, Show, createSignal } from 'solid-js';
+import { JSXElement, Show, Suspense, createSignal } from 'solid-js';
 
 import { useSelf } from '../store';
 import { icon } from '.';
 
 import './side.css';
 
-const Item = (props: { path: string; icon: JSXElement; text: string; visible: boolean }) => (
-  <A href={props.path}>
+const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
+  <>
     {props.icon}
     <span class='components_side_text' id={props.visible ? 'visible' : ''}>
       {props.text}
     </span>
-  </A>
+  </>
 );
 
 export const Side = () => {
   const self = useSelf();
   const [expanded, setExpanded] = createSignal(false);
+  const userPath = (id?: number) => (id !== undefined ? `/user/${id}` : '');
 
   return (
     <aside class='components_side'>
-      <Item path='/' icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
-      <Item path={`/user/${self.id}`} icon={<icon.User />} text='User' visible={expanded()} />
+      <A href='/'>
+        <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
+      </A>
+      <Suspense
+        fallback={
+          <span class='components_side_ignore'>
+            <Item icon={<icon.Spinner />} text='Loading' visible={expanded()} />
+          </span>
+        }
+      >
+        <A href={userPath(self()?.id)}>
+          <Item icon={<icon.User />} text='User' visible={expanded()} />
+        </A>
+      </Suspense>
       <span onClick={() => setExpanded(e => !e)}>
-        <Show when={expanded()} fallback={<icon.DoubleRight />}>
-          <icon.DoubleLeft />
+        <Show
+          when={expanded()}
+          fallback={<Item icon={<icon.DoubleRight />} text='Collapse' visible={false} />}
+        >
+          <Item icon={<icon.DoubleLeft />} text='Collapse' visible={true} />
         </Show>
-        <span class='components_side_text' id={expanded() ? 'visible' : ''}>
-          Collapse
-        </span>
       </span>
     </aside>
   );

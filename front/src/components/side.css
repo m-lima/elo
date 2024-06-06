@@ -31,8 +31,6 @@
   }
 
   & > * {
-    cursor: pointer;
-
     color: currentColor;
     font-weight: bold;
 
@@ -40,20 +38,23 @@
     padding-left: 0.4em;
     padding-right: 0.4em;
 
-    will-change: background-color;
-    transition: background-color var(--duration-hover);
+    &:not(.components_side_ignore) {
+      cursor: pointer;
+      will-change: background-color;
+      transition: background-color var(--duration-hover);
 
-    &:hover {
-      background-color: var(--this-color-background-bright);
-    }
+      &:hover {
+        background-color: var(--this-color-background-bright);
+      }
 
-    &.active {
-      color: var(--this-color-background);
-      background-color: var(--color-accent);
-    }
+      &.active {
+        color: var(--this-color-background);
+        background-color: var(--color-accent);
+      }
 
-    &.inactive {
-      color: currentColor;
+      &.inactive {
+        color: currentColor;
+      }
     }
   }
 

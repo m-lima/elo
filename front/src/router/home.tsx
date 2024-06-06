@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onCleanup } from 'solid-js';
+import { createSignal, createEffect, onCleanup, Suspense } from 'solid-js';
 
 import { icon } from '../components';
 import { useSelf, useStore } from '../store';
@@ -54,13 +54,15 @@ export const Home = () => {
         <icon.Spinner /> Loading
       </h1>
       <div>
-        <h1>User</h1>
-        <h3>Id</h3>
-        {self.id}
-        <h3>Name</h3>
-        {self.name}
-        <h3>Email</h3>
-        {self.email}
+        <Suspense>
+          <h1>User</h1>
+          <h3>Id</h3>
+          {self()?.id}
+          <h3>Name</h3>
+          {self()?.name}
+          <h3>Email</h3>
+          {self()?.email}
+        </Suspense>
       </div>
     </div>
   );

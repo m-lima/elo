@@ -1,2 +1,2 @@
 export { Store } from './store';
-export { WithSelf, WithStore, useAsyncSelf, usePlayers, useSelf, useStore } from './hooks';
+export { WithStore, usePlayers, useSelf, useStore } from './hooks';

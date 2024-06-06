@@ -8,7 +8,6 @@ import {
 } from 'solid-js';
 
 import { Store } from './store';
-import { User } from '../types';
 
 const StoreContext = createContext<Store>();
 
@@ -22,13 +21,8 @@ export const WithStore = (props: ParentProps<{ store: Store }>) => (
 */
 export const useStore = () => useContext(StoreContext)!;
 
-const UserContext = createContext<User>();
-
-export const WithSelf = (props: ParentProps<{ self: User }>) => (
-  <UserContext.Provider value={props.self}>{props.children}</UserContext.Provider>
-);
-
-export const useAsyncSelf = (store: Store) => {
+export const useSelf = (maybeStore?: Store) => {
+  const store = !maybeStore ? useStore() : maybeStore;
   const [self, { mutate }] = createResource(() => store.self.get());
 
   createEffect(() => {
@@ -40,12 +34,6 @@ export const useAsyncSelf = (store: Store) => {
 
   return self;
 };
-
-// Allowed because if misused, better to throw errors instead of paying for runtime checks
-/* eslint-disable-next-line
-   @typescript-eslint/no-non-null-assertion
-*/
-export const useSelf = () => useContext(UserContext)!;
 
 export const usePlayers = (maybeStore?: Store) => {
   const store = !maybeStore ? useStore() : maybeStore;

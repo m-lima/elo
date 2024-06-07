@@ -12,12 +12,26 @@ export class Timeout {
   }
 }
 
-export enum SocketState {
-  Connecting,
-  Open,
-  Closed,
-  Error,
-  Unauthorized,
+type SocketState = PendingState | ConnectedState | ErrorState;
+
+const isConnectedState = (state: SocketState) =>
+  state === ConnectedState.Open || state === ConnectedState.Fetching;
+const isErrorState = (state: SocketState) =>
+  state === ErrorState.Closed || state === ErrorState.Error || state === ErrorState.Unauthorized;
+
+export enum PendingState {
+  Connecting = 0,
+}
+
+export enum ConnectedState {
+  Open = 1,
+  Fetching = 2,
+}
+
+export enum ErrorState {
+  Closed = 3,
+  Error = 4,
+  Unauthorized = 5,
 }
 
 type SocketStateListener = (state: SocketState) => void;
@@ -36,7 +50,7 @@ class RequestHandlerInner<Message, Response> {
   readonly accept: Accept<Response>;
   readonly reject: Reject;
 
-  constructor(
+  public constructor(
     handler: RequestHandler<Message, Response>,
     accept: Accept<Response>,
     reject: Reject,
@@ -51,7 +65,7 @@ class RequestHandlerInner<Message, Response> {
     }, timeout);
   }
 
-  handle(message: Message): boolean {
+  public handle(message: Message): boolean {
     try {
       const response = this.handler(message);
 
@@ -65,6 +79,10 @@ class RequestHandlerInner<Message, Response> {
       this.reject(error);
       return true;
     }
+  }
+
+  public cancel(reason: ErrorState) {
+    this.reject(reason);
   }
 }
 
@@ -82,13 +100,13 @@ export class Socket<Message, Response> {
     this.handlers = [];
     this.stateListeners = [];
 
-    this.state = SocketState.Closed;
+    this.state = ErrorState.Closed;
     this.attempts = 0;
     this.socket = this.connect(url, checkUrl);
   }
 
   private connect(url: string | URL, checkUrl?: string | URL) {
-    this.setState(SocketState.Connecting);
+    this.setState(PendingState.Connecting);
 
     const socket = new WebSocket(url);
 
@@ -97,24 +115,25 @@ export class Socket<Message, Response> {
       if (this.attempts === 0 && !!checkUrl) {
         void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
           if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
-            this.setState(SocketState.Unauthorized);
+            this.setState(ErrorState.Unauthorized);
           }
         });
       }
 
-      this.setState(SocketState.Error);
+      this.setState(ErrorState.Error);
     };
 
     socket.onclose = () => {
-      if (this.state !== SocketState.Error) {
-        this.setState(SocketState.Closed);
+      if (this.state !== ErrorState.Error) {
+        this.setState(ErrorState.Closed);
       }
 
       this.tryReconnect(url, checkUrl);
     };
 
     socket.onopen = () => {
-      this.setState(SocketState.Open);
+      this.attempts = 0;
+      this.setState(ConnectedState.Open);
     };
 
     socket.onmessage = evt => {
@@ -129,7 +148,7 @@ export class Socket<Message, Response> {
 
   private nextAttempt() {
     // Unauthorized is always fatal
-    if (this.state === SocketState.Unauthorized) {
+    if (this.state === ErrorState.Unauthorized) {
       return;
     }
 
@@ -159,26 +178,23 @@ export class Socket<Message, Response> {
   }
 
   private setState(state: SocketState) {
-    // If we are now open, gladly accept it
-    if (state === SocketState.Open) {
-      this.attempts = 0;
-      this.state = state;
-    } else {
+    if (this.state !== state) {
       // Unauthorized can only be overriden by OPEN
-      if (this.state === SocketState.Unauthorized) {
+      if (this.state === ErrorState.Unauthorized && !isConnectedState(state)) {
         return;
       }
 
-      // If we still have attempts, mark it as connecting
-      if (this.nextAttempt() !== undefined) {
-        this.state = SocketState.Connecting;
-      } else {
-        this.state = state;
+      if (isErrorState(state)) {
+        this.requests.forEach(r => {
+          r.cancel(state as ErrorState);
+        });
       }
-    }
 
-    for (const listener of this.stateListeners) {
-      listener(this.state);
+      this.state = state;
+
+      for (const listener of this.stateListeners) {
+        listener(this.state);
+      }
     }
   }
 
@@ -196,13 +212,13 @@ export class Socket<Message, Response> {
       }
     }
 
-    // TODO: Handle the case where id is zero
-    // TODO: Maybe a catch-all handler that creates a pop-up
     for (let i = 0; i < this.handlers.length; ++i) {
       if (this.handlers[i](message)) {
         return;
       }
     }
+
+    console.log('Unprocessed message received', JSON.stringify(message));
   }
 
   public request<Request>(
@@ -210,16 +226,21 @@ export class Socket<Message, Response> {
     handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
   ): Promise<Response> {
+    // TODO: queue requests if the socket is not ready
     const payload = encode(request);
     let requestInstance: RequestHandlerInner<Message, Response>;
     return new Promise<Response>((accept, reject) => {
       requestInstance = new RequestHandlerInner(handler, accept, reject, timeout);
       this.requests.push(requestInstance);
+      this.setState(ConnectedState.Fetching);
       this.socket.send(payload);
     }).finally(() => {
       const index = this.requests.indexOf(requestInstance);
       if (index >= 0) {
         this.requests.splice(index, 1);
+        if (this.requests.length === 0 && this.state === ConnectedState.Fetching) {
+          this.setState(ConnectedState.Open);
+        }
       }
     });
   }

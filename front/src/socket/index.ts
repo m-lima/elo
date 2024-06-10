@@ -12,6 +12,29 @@ export class Timeout {
   }
 }
 
+export class SocketError {
+  private readonly error: ErrorState;
+
+  public constructor(error: ErrorState) {
+    this.error = error;
+  }
+
+  public getError() {
+    return this.error;
+  }
+
+  public toSring() {
+    switch (this.error) {
+      case ErrorState.Closed:
+        return 'Closed socket';
+      case ErrorState.Error:
+        return 'Socket error';
+      case ErrorState.Unauthorized:
+        return 'Unauthorized';
+    }
+  }
+}
+
 type SocketState = PendingState | ConnectedState | ErrorState;
 
 const isConnectedState = (state: SocketState) =>
@@ -81,8 +104,8 @@ class RequestHandlerInner<Message, Response> {
     }
   }
 
-  public cancel(reason: ErrorState) {
-    this.reject(reason);
+  public cancel(error: ErrorState) {
+    this.reject(new SocketError(error));
   }
 }
 

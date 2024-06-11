@@ -5,8 +5,8 @@ import { usePlayers, useSelf } from '../store';
 import { Player as PlayerType } from '../types';
 import { Loading } from '../components';
 
-const Loaded = (props: { id?: number; self: PlayerType; players: PlayerType[] }) => {
-  const actualId = props.id !== undefined ? props.id : props.self.id;
+const Loaded = (props: { selfId?: number; self: PlayerType; players: PlayerType[] }) => {
+  const actualId = props.selfId !== undefined ? props.selfId : props.self.id;
   const actualPlayer = props.players.find(p => p.id === actualId);
 
   return (
@@ -34,7 +34,7 @@ export const Player = () => {
   return (
     <Suspense fallback={<Loading />}>
       <Show when={self() !== undefined && players() !== undefined}>
-        <Loaded id={id()} self={self()!} players={players()!} />
+        <Loaded selfId={id()} self={self()!} players={players()!} />
       </Show>
     </Suspense>
   );

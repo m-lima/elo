@@ -1,4 +1,4 @@
-import { createSignal, For, JSX, Suspense } from 'solid-js';
+import { For, JSX, Suspense } from 'solid-js';
 
 import { usePlayers } from '../store';
 import { Player, byPosition } from '../types';
@@ -11,7 +11,7 @@ type PreparedPlayer = Player & {
   class?: string;
 };
 
-const PlayerTable = (props: { players: Player[]; value: number }) => {
+const PlayerTable = (props: { players: Player[] }) => {
   const length = props.players.length;
   const preparedPlayers: PreparedPlayer[] = props.players.sort(byPosition).map((p, i) => {
     if (i === 0) {
@@ -37,14 +37,13 @@ const PlayerTable = (props: { players: Player[]; value: number }) => {
     }
     return p;
   });
-  console.log('Outer', props.players);
 
   return (
     <div class='router-leaderboard'>
       <table>
         <thead>
           <tr>
-            <th scope='col'>{props.value}</th>
+            <th scope='col' />
             <th scope='col'>#</th>
             <th scope='col'>Player</th>
             <th scope='col'>Score</th>
@@ -69,12 +68,10 @@ const PlayerTable = (props: { players: Player[]; value: number }) => {
 
 export const Leaderboard = () => {
   const players = usePlayers();
-  const [value, setValue] = createSignal(0);
 
   return (
     <Suspense fallback={<Loading />}>
-      <button onClick={() => setValue(i => i + 1)}>C</button>
-      <PlayerTable players={players() || []} value={value()} />
+      <PlayerTable players={players() || []} />
     </Suspense>
   );
 };

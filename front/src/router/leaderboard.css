@@ -1,0 +1,32 @@
+.router-leaderboard {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  & > svg {
+    width: 40%;
+    max-width: 800px;
+    height: 100%;
+
+    & > #paddle-ball {
+      animation: components_loading_ball 400ms cubic-bezier(1,0,1,1) alternate infinite;
+      /* animation: components_loading_ball 400ms cubic-bezier(.5,.06,.84,.5) alternate infinite; */
+    }
+
+    & > #paddle-dot-1 {
+      animation: components_loading_dot 400ms linear alternate infinite;
+    }
+
+    & > #paddle-dot-2 {
+      animation: components_loading_dot 400ms linear alternate infinite 150ms;
+    }
+
+    & > #paddle-dot-3 {
+      animation: components_loading_dot 400ms linear alternate infinite 300ms;
+    }
+  }
+}

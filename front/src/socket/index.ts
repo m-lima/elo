@@ -12,49 +12,50 @@ export class Timeout {
   }
 }
 
-export class SocketError {
-  private readonly error: ErrorState;
+export class SocketNotConnected {
+  private readonly state: DisconnectedState;
 
-  public constructor(error: ErrorState) {
-    this.error = error;
+  public constructor(state: DisconnectedState) {
+    this.state = state;
   }
 
-  public getError() {
-    return this.error;
+  public getState() {
+    return this.state;
   }
 
   public toSring() {
-    switch (this.error) {
-      case ErrorState.Closed:
+    switch (this.state) {
+      case DisconnectedState.Connecting:
+        return 'Connecting';
+      case DisconnectedState.Closed:
         return 'Closed socket';
-      case ErrorState.Error:
+      case DisconnectedState.Error:
         return 'Socket error';
-      case ErrorState.Unauthorized:
+      case DisconnectedState.Unauthorized:
         return 'Unauthorized';
     }
   }
 }
 
-type SocketState = PendingState | ConnectedState | ErrorState;
+type SocketState = DisconnectedState | ConnectedState;
 
-const isConnectedState = (state: SocketState) =>
-  state === ConnectedState.Open || state === ConnectedState.Fetching;
-const isErrorState = (state: SocketState) =>
-  state === ErrorState.Closed || state === ErrorState.Error || state === ErrorState.Unauthorized;
+const isDisconnectedState = (state: SocketState) =>
+  state === DisconnectedState.Connecting ||
+  state === DisconnectedState.Closed ||
+  DisconnectedState.Error ||
+  DisconnectedState.Unauthorized;
 
-export enum PendingState {
+export enum DisconnectedState {
   Connecting = 0,
+  Closed = 1,
+  Error = 2,
+  Unauthorized = 3,
 }
 
 export enum ConnectedState {
-  Open = 1,
-  Fetching = 2,
-}
-
-export enum ErrorState {
-  Closed = 3,
-  Error = 4,
-  Unauthorized = 5,
+  Open = 4,
+  Ready = 5,
+  Fetching = 6,
 }
 
 type SocketStateListener = (state: SocketState) => void;
@@ -104,8 +105,8 @@ class RequestHandlerInner<Message, Response> {
     }
   }
 
-  public cancel(error: ErrorState) {
-    this.reject(new SocketError(error));
+  public abort(socketNotConnected: SocketNotConnected) {
+    this.reject(socketNotConnected);
   }
 }
 
@@ -123,13 +124,13 @@ export class Socket<Message, Response> {
     this.handlers = [];
     this.stateListeners = [];
 
-    this.state = ErrorState.Closed;
+    this.state = DisconnectedState.Closed;
     this.attempts = 0;
     this.socket = this.connect(url, checkUrl);
   }
 
   private connect(url: string | URL, checkUrl?: string | URL) {
-    this.setState(PendingState.Connecting);
+    this.setState(DisconnectedState.Connecting);
 
     const socket = new WebSocket(url);
 
@@ -138,17 +139,17 @@ export class Socket<Message, Response> {
       if (this.attempts === 0 && !!checkUrl) {
         void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
           if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
-            this.setState(ErrorState.Unauthorized);
+            this.setState(DisconnectedState.Unauthorized);
           }
         });
       }
 
-      this.setState(ErrorState.Error);
+      this.setState(DisconnectedState.Error);
     };
 
     socket.onclose = () => {
-      if (this.state !== ErrorState.Error) {
-        this.setState(ErrorState.Closed);
+      if (this.state !== DisconnectedState.Error) {
+        this.setState(DisconnectedState.Closed);
       }
 
       this.tryReconnect(url, checkUrl);
@@ -171,7 +172,7 @@ export class Socket<Message, Response> {
 
   private nextAttempt() {
     // Unauthorized is always fatal
-    if (this.state === ErrorState.Unauthorized) {
+    if (this.state === DisconnectedState.Unauthorized) {
       return;
     }
 
@@ -202,14 +203,14 @@ export class Socket<Message, Response> {
 
   private setState(state: SocketState) {
     if (this.state !== state) {
-      // Unauthorized can only be overriden by OPEN
-      if (this.state === ErrorState.Unauthorized && !isConnectedState(state)) {
+      // Unauthorized can only be overriden by ConnectedState
+      if (this.state === DisconnectedState.Unauthorized && isDisconnectedState(state)) {
         return;
       }
 
-      if (isErrorState(state)) {
+      if (isDisconnectedState(state)) {
         this.requests.forEach(r => {
-          r.cancel(state as ErrorState);
+          r.abort(new SocketNotConnected(state as DisconnectedState));
         });
       }
 
@@ -249,7 +250,11 @@ export class Socket<Message, Response> {
     handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
   ): Promise<Response> {
-    // TODO: queue requests if the socket is not ready
+    if (isDisconnectedState(this.state)) {
+      return Promise.reject(new SocketNotConnected(this.state as DisconnectedState));
+    }
+
+    // TODO: maybe queue requests if the socket is not ready
     const payload = encode(request);
     let requestInstance: RequestHandlerInner<Message, Response>;
     return new Promise<Response>((accept, reject) => {
@@ -262,7 +267,7 @@ export class Socket<Message, Response> {
       if (index >= 0) {
         this.requests.splice(index, 1);
         if (this.requests.length === 0 && this.state === ConnectedState.Fetching) {
-          this.setState(ConnectedState.Open);
+          this.setState(ConnectedState.Ready);
         }
       }
     });

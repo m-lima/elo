@@ -27,12 +27,14 @@ export class Mock implements Backend {
       const pointsWon = wins * 11 + Math.floor(Math.random() * losses * 7.5);
       const pointsLost = losses * 11 + Math.floor(Math.random() * wins * 7.5);
 
+      const score = 1000 + pointsWon * 2 - pointsLost;
+
       return {
         id,
         name,
         email,
         position: 0,
-        score: 2000,
+        score,
         wins,
         losses,
         pointsWon,
@@ -44,8 +46,11 @@ export class Mock implements Backend {
     const self = makeSelf();
     const players = Array(10)
       .fill(undefined)
-      .map((_, i) => (i === 0 ? self : makePlayer(i)));
-    players.sort(byPosition);
+      .map((_, i) => (i === 0 ? self : makePlayer(i)))
+      .sort(byPosition)
+      .map((p, i) => {
+        return { ...p, position: i + 1 };
+      });
 
     this.getPlayersCount += 1;
     console.log(`Called list() ${this.getPlayersCount} times`);

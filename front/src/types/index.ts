@@ -19,7 +19,12 @@ export const byPosition = (a: Player, b: Player) => {
     return position;
   }
 
-  const wins = b.position - a.position;
+  const score = b.score - a.score;
+  if (score !== 0) {
+    return score;
+  }
+
+  const wins = b.wins - a.wins;
   if (wins !== 0) {
     return wins;
   }

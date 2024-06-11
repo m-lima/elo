@@ -1,4 +1,4 @@
-.components_icon {
+.components-icon {
   display: inline-block;
 
   margin: 0;
@@ -10,13 +10,13 @@
   fill: currentColor;
 }
 
-.components_icon_spin {
+.components-icon-spin {
   & > svg {
-    animation: components_icon_spin 1s linear infinite;
+    animation: components-icon-spin 1s linear infinite;
   }
 }
 
-@keyframes components_icon_spin {
+@keyframes components-icon-spin {
   0% {
     transform: rotate(0deg);
   }

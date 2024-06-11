@@ -16,7 +16,7 @@ export const Home = () => {
   console.log('building home');
 
   return (
-    <div class='router_home'>
+    <div class='router-home'>
       <h1>Vite + Solid</h1>
       <icon.User /> Player
       <div>

@@ -8,7 +8,7 @@ import './side.css';
 const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
   <>
     {props.icon}
-    <span class='components_side_text' id={props.visible ? 'visible' : ''}>
+    <span class='components-side-text' id={props.visible ? 'visible' : ''}>
       {props.text}
     </span>
   </>
@@ -18,7 +18,7 @@ export const Side = () => {
   const [expanded, setExpanded] = createSignal(false);
 
   return (
-    <aside class='components_side'>
+    <aside class='components-side'>
       <A href='/' end>
         <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
       </A>

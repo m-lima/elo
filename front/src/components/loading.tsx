@@ -29,7 +29,7 @@ const Paddle = () => {
 
 export const Loading = () => {
   return (
-    <div class='components_loading'>
+    <div class='components-loading'>
       <Paddle />
     </div>
   );

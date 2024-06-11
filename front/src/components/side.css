@@ -1,4 +1,4 @@
-.components_side {
+.components-side {
   display: flex;
 
   background-color: var(--this-color-background);
@@ -38,7 +38,7 @@
     padding-left: 0.4em;
     padding-right: 0.4em;
 
-    &:not(.components_side_ignore) {
+    &:not(.components-side-ignore) {
       cursor: pointer;
       will-change: background-color;
       transition: background-color var(--duration-hover);
@@ -58,7 +58,7 @@
     }
   }
 
-  & .components_side_text {
+  & .components-side-text {
     display: none;
     margin-left: 1ch;
 

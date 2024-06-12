@@ -62,7 +62,7 @@
     display: none;
     margin-left: 1ch;
 
-    @media (orientation: portrait) and (min-width: 600px) {
+    @media (orientation: portrait) and (min-width: 450px) {
       display: unset;
     }
 
@@ -70,7 +70,7 @@
     vertical-align: middle;
 
     &#visible {
-      @media (orientation: landscape) or (min-width: 600px) {
+      @media (orientation: landscape) or (min-width: 450px) {
         display: unset;
       }
     }

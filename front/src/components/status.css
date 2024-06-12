@@ -1,0 +1,10 @@
+.components-status {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+
+  padding: 2px 8px;
+  background-color: #00000080;
+
+  z-index: 1;
+}

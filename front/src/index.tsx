@@ -3,7 +3,7 @@ import { render } from 'solid-js/web';
 import { ErrorBoundary, ParentProps } from 'solid-js';
 
 import { Router } from './router';
-import { Side } from './components';
+import { status, Side } from './components';
 import { Store, WithStore } from './store';
 
 import './index.css';
@@ -24,6 +24,7 @@ const App = (props: ParentProps) => {
 render(
   () => (
     <WithStore store={store}>
+      <status.Loading />
       <ErrorBoundary
         fallback={error => {
           console.log('CAUGHT', error);

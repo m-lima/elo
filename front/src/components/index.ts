@@ -1,3 +1,4 @@
 export * as icon from './icon';
-export { Side } from './side';
+export * as status from './status';
 export { Loading } from './loading';
+export { Side } from './side';

@@ -7,6 +7,9 @@ mod store;
 mod types;
 mod ws;
 
+#[cfg(all(not(debug_assertions), feature = "local"))]
+compile_error!("Cannot enable feature `local` on a production build");
+
 #[allow(clippy::declare_interior_mutable_const)]
 const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
 

@@ -10,6 +10,7 @@ impl Auth {
         Self { store }
     }
 
+    #[cfg(not(feature = "local"))]
     #[tracing::instrument(skip_all)]
     async fn auth<B, I>(
         self,
@@ -40,6 +41,42 @@ impl Auth {
                 forbid!(%header, %error, "Header is not parseable as a String");
             }
         };
+
+        match self.store.users().by_email(user).await {
+            Ok(Some(user)) => {
+                request.extensions_mut().insert(user);
+            }
+            Ok(None) => {
+                forbid!(%user, "User is not authorized");
+            }
+            Err(error) => {
+                forbid!(%user, %error, "Could not query for user");
+            }
+        };
+
+        inner.call(request).await
+    }
+
+    #[cfg(feature = "local")]
+    #[tracing::instrument(skip_all)]
+    async fn auth<B, I>(
+        self,
+        mut request: hyper::Request<B>,
+        mut inner: I,
+    ) -> Result<I::Response, I::Error>
+    where
+        I: tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
+    {
+        macro_rules! forbid {
+            ($($arg: tt)*) => {
+                tracing::warn!($($arg)*);
+                return Ok(axum::response::IntoResponse::into_response(
+                    hyper::StatusCode::FORBIDDEN,
+                ));
+            };
+        }
+
+        let user = "me@email.com";
 
         match self.store.users().by_email(user).await {
             Ok(Some(user)) => {

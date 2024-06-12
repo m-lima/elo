@@ -5,6 +5,7 @@ edition = "2021"
 
 [features]
 log-spans = ["boile-rs/log-spans"]
+local = ["dep:tower-http"]
 
 [dependencies]
 axum = { version = "0.7.5", features = ["ws"] }
@@ -20,6 +21,7 @@ serde_json = "1.0.117"
 sqlx = { version = "0.7.4", features = ["sqlite", "runtime-tokio-rustls"] }
 thiserror = "1.0.60"
 tokio = "1.37.0"
+tower-http = { version = "0.5.2", features = ["cors"], optional = true }
 tower-layer = "0.3.2"
 tower-service = "0.3.2"
 tracing = "0.1.40"

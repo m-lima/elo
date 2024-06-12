@@ -19,55 +19,7 @@ export const isDisconnected = (state: State) =>
   state === Disconnected.Error ||
   state === Disconnected.Unauthorized;
 
+export const isConnected = (state: State) =>
+  state === Connected.Open || state === Connected.Ready || state === Connected.Fetching;
+
 export type Listener = (state: State) => void;
-
-export class Manager {
-  private state: State;
-  private readonly listeners: Listener[];
-
-  public constructor(state: State) {
-    this.state = state;
-    this.listeners = [];
-  }
-
-  public get() {
-    return this.state;
-  }
-
-  public set(state: State) {
-    if (state === this.state) {
-      this.state = state;
-      for (const listener of this.listeners) {
-        listener(this.state);
-      }
-    }
-  }
-
-  public isDisconnected() {
-    return isDisconnected(this.state);
-  }
-
-  public isError() {
-    return this.state === Disconnected.Error;
-  }
-
-  public isFetching() {
-    return this.state === Connected.Fetching;
-  }
-
-  public isUnauthorized() {
-    return this.state === Disconnected.Unauthorized;
-  }
-
-  public registerListener(listener: Listener) {
-    this.listeners.push(listener);
-    return listener;
-  }
-
-  public unregisterListener(listener: Listener) {
-    const index = this.listeners.indexOf(listener);
-    if (index >= 0) {
-      this.listeners.splice(index, 1);
-    }
-  }
-}

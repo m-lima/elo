@@ -1,9 +1,10 @@
 import { encode, decode } from '@msgpack/msgpack';
 
-export class Timeout {
+export class Timeout extends Error {
   private readonly millis: number;
 
   public constructor(millis: number) {
+    super('Timeout');
     this.millis = millis;
   }
 
@@ -12,28 +13,16 @@ export class Timeout {
   }
 }
 
-export class SocketNotConnected {
+export class SocketNotConnected extends Error {
   private readonly state: DisconnectedState;
 
   public constructor(state: DisconnectedState) {
+    super(disconnectedStateToString(state));
     this.state = state;
   }
 
   public getState() {
     return this.state;
-  }
-
-  public toSring() {
-    switch (this.state) {
-      case DisconnectedState.Connecting:
-        return 'Connecting';
-      case DisconnectedState.Closed:
-        return 'Closed socket';
-      case DisconnectedState.Error:
-        return 'Socket error';
-      case DisconnectedState.Unauthorized:
-        return 'Unauthorized';
-    }
   }
 }
 
@@ -42,8 +31,21 @@ type SocketState = DisconnectedState | ConnectedState;
 const isDisconnectedState = (state: SocketState) =>
   state === DisconnectedState.Connecting ||
   state === DisconnectedState.Closed ||
-  DisconnectedState.Error ||
-  DisconnectedState.Unauthorized;
+  state === DisconnectedState.Error ||
+  state === DisconnectedState.Unauthorized;
+
+const disconnectedStateToString = (state: DisconnectedState) => {
+  switch (state) {
+    case DisconnectedState.Connecting:
+      return 'Connecting';
+    case DisconnectedState.Closed:
+      return 'Closed socket';
+    case DisconnectedState.Error:
+      return 'Socket error';
+    case DisconnectedState.Unauthorized:
+      return 'Unauthorized';
+  }
+};
 
 export enum DisconnectedState {
   Connecting = 0,

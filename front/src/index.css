@@ -14,6 +14,8 @@
 
   --color-foreground: #cccccc;
   --color-background: #242424;
+  --color-background-bright: #303030;
+  --color-background-dark: #1d1d1d;
   --color-accent: hsl(39, 100%, 50%); /* #ffa500 */
   --color-accent-brighter: hsl(39, 100%, 70%);
   --color-accent-bright: hsl(39, 100%, 60%);

@@ -1,7 +1,7 @@
 .components-side {
   display: flex;
 
-  background-color: var(--this-color-background);
+  background-color: var(--color-background-dark);
 
   font-size: 3em;
 
@@ -11,7 +11,7 @@
     &::after {
       margin-top: auto;
       content: '';
-      border-top: solid var(--this-color-background-bright);
+      border-top: solid var(--color-background-bright);
     }
 
     & > :last-child {
@@ -44,11 +44,11 @@
       transition: background-color var(--duration-hover);
 
       &:hover {
-        background-color: var(--this-color-background-bright);
+        background-color: var(--color-background-bright);
       }
 
       &.active {
-        color: var(--this-color-background);
+        color: var(--color-background-dark);
         background-color: var(--color-accent);
       }
 
@@ -62,7 +62,7 @@
     display: none;
     margin-left: 1ch;
 
-    @media (orientation: portrait) and (min-width: 800px) {
+    @media (orientation: portrait) and (min-width: 600px) {
       display: unset;
     }
 
@@ -70,12 +70,9 @@
     vertical-align: middle;
 
     &#visible {
-      @media (orientation: landscape) or (min-width: 800px) {
+      @media (orientation: landscape) or (min-width: 600px) {
         display: unset;
       }
     }
   }
-
-  --this-color-background: #202020;
-  --this-color-background-bright: #404040;
 }

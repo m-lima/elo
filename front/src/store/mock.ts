@@ -50,15 +50,17 @@ export class Mock implements Backend {
       .sort(byPosition)
       .map((p, i) => {
         return { ...p, position: i + 1 };
-      });
+      })
+      .reverse();
 
     this.getPlayersCount += 1;
     console.log(`Called list() ${this.getPlayersCount} times`);
 
     return new Promise<Player[]>((accept, _reject) => {
       setTimeout(() => {
+        console.log('Done');
         accept(players);
-      }, 1000);
+      }, 3000);
     });
   }
 }

@@ -3,7 +3,7 @@ import type { Player } from '../types';
 import { Backend } from './types';
 
 export class Ws implements Backend {
-  private readonly socket: Socket;
+  private readonly socket: Socket<string, string>;
 
   public constructor(url: string | URL) {
     this.socket = new Socket(url);

@@ -54,7 +54,7 @@ pub(crate) mod sealed {
         where
             T: serde::Serialize,
         {
-            rmp_serde::to_vec(&payload).map(axum::extract::ws::Message::Binary)
+            rmp_serde::to_vec_named(&payload).map(axum::extract::ws::Message::Binary)
         }
 
         fn deserialize<'b, 'de, T>(bytes: &'b [u8]) -> Result<T, Self::DeserializeError>

@@ -1,14 +1,26 @@
 pub type Id = u32;
 
+pub trait Message: serde::Serialize {}
+impl<T> Message for Response<T> where T: serde::Serialize {}
+impl Message for Error {}
+impl<T> Message for Push<T> where T: serde::Serialize {}
+
 #[derive(Debug, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum Message<Response, Push> {
-    Ok(Id, Response),
-    Error(
-        #[serde(skip_serializing_if = "Option::is_none")] Option<Id>,
-        super::service::Error,
-    ),
-    Push(Push),
+pub struct Response<T> {
+    pub id: Id,
+    pub ok: T,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct Error {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Id>,
+    pub error: super::service::Error,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct Push<T> {
+    pub push: T,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]

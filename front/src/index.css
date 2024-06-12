@@ -46,6 +46,7 @@ a {
 }
 
 h1 {
+  color: var(--color-accent);
   font-size: 3.2em;
   line-height: 1.1;
 }
@@ -77,6 +78,36 @@ button {
   &:active {
     transition: unset;
     background-color: var(--color-accent-brighter);
+  }
+}
+
+table {
+  width: 100%;
+
+  text-align: left;
+  font-size: 1.3em;
+
+  border-collapse: collapse;
+
+  & > thead {
+    background-color: var(--color-background-dark);
+  }
+
+  & > tbody > tr {
+    &:nth-child(odd) {
+      background-color: var(--color-background-bright);
+    }
+  }
+
+  &.clickable > tbody > tr {
+    cursor: pointer;
+
+    will-change: background-color;
+    transition: background-color var(--duration-hover);
+
+    &:hover {
+      background-color: var(--color-accent-darker);
+    }
   }
 }
 

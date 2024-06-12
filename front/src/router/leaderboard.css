@@ -1,59 +1,28 @@
 .router-leaderboard {
   padding: 0 48px 48px 48px;
 
-  text-align: left;
-  font-size: 1.3em;
+  & .router-leaderboard-icon {
+    width: 1em;
+    text-align: center;
 
-  & > table {
-    width: 100%;
-
-    border-collapse: collapse;
-
-    & > thead {
-      background-color: var(--color-background-dark);
-    }
-
-    & > tbody {
-      & > tr {
-        cursor: pointer;
-        border: none;
-
-        will-change: background-color;
-        transition: background-color var(--duration-hover);
-
-        &:nth-child(odd) {
-          background-color: var(--color-background-bright);
-        }
-
-        &:hover {
-          background-color: var(--color-accent-darker);
-        }
+    & .router-leaderboard-first {
+      color: gold;
+      & > svg {
+        filter: drop-shadow(0 0 4px);
       }
     }
 
-    & .router-leaderboard-icon {
-      width: 1em;
-      text-align: center;
-
-      &#first {
-        color: gold;
-        & > svg {
-          filter: drop-shadow(0 0 4px);
-        }
+    & .router-leaderboard-second {
+      color: white;
+      & > svg {
+        filter: drop-shadow(0 0 4px);
       }
+    }
 
-      &#second {
-        color: white;
-        & > svg {
-          filter: drop-shadow(0 0 4px);
-        }
-      }
-
-      &#third {
-        color: burlywood;
-        & > svg {
-          filter: drop-shadow(0 0 4px);
-        }
+    & .router-leaderboard-third {
+      color: burlywood;
+      & > svg {
+        filter: drop-shadow(0 0 4px);
       }
     }
   }

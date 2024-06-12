@@ -8,61 +8,40 @@ import './leaderboard.css';
 
 export const Leaderboard = () => {
   const players = usePlayers();
-
-  console.log('Leaderboard', players);
-
   return <Suspense fallback={<Loading />}>{playerTable(players())}</Suspense>;
 };
 
 const playerTable = (players: Player[] = []) => {
-  console.log('Table', players);
-
   const getIcon = (i: number, l: number) => {
     switch (i) {
       case 0:
         return (
-          <td class='router-leaderboard-icon' id='first'>
+          <span class='router-leaderboard-first'>
             <icon.Crown />
-          </td>
+          </span>
         );
       case 1:
         return (
-          <td class='router-leaderboard-icon' id='second'>
+          <span class='router-leaderboard-second'>
             <icon.Medal />
-          </td>
+          </span>
         );
       case 2:
         return (
-          <td class='router-leaderboard-icon' id='third'>
+          <span class='router-leaderboard-third'>
             <icon.Certificate />
-          </td>
+          </span>
         );
       case l - 4:
-        return (
-          <td class='router-leaderboard-icon'>
-            <icon.Mosquito />
-          </td>
-        );
+        return <icon.Mosquito />;
       case l - 3:
-        return (
-          <td class='router-leaderboard-icon'>
-            <icon.Poop />
-          </td>
-        );
+        return <icon.Poop />;
       case l - 2:
-        return (
-          <td class='router-leaderboard-icon'>
-            <icon.Worm />
-          </td>
-        );
+        return <icon.Worm />;
       case l - 1:
-        return (
-          <td class='router-leaderboard-icon'>
-            <icon.Skull />
-          </td>
-        );
+        return <icon.Skull />;
     }
-    return <td class='router-leaderboard-icon' />;
+    return;
   };
 
   players.sort(byPosition);
@@ -70,7 +49,7 @@ const playerTable = (players: Player[] = []) => {
   return (
     <div class='router-leaderboard'>
       <h1>Leaderboard</h1>
-      <table>
+      <table class='clickable'>
         <thead>
           <tr>
             <th scope='col' />

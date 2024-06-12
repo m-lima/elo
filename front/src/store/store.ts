@@ -36,7 +36,7 @@ export class Store {
     });
     this.players = new Resource(() => {
       const id = newRequestId();
-      return this.socket.request({ id, do: { user: 'info' } }, message => {
+      return this.socket.request({ id, do: { user: 'list' } }, message => {
         const validated = validateMessage(id, 'users', message);
 
         if (validated === undefined) {

@@ -1,22 +1,47 @@
-import type { Player } from '../types';
+import { Socket, state } from '../socket';
+import { type Player } from '../types';
+import { type Message, type Request } from '.';
+import { newRequestId, validateMessage } from './request';
 
-import { Mock } from './mock';
-import type { Backend, Listener } from './types';
-
-export class Store implements Backend {
-  private readonly backend: Backend;
+export class Store {
+  private readonly socket: Socket<Request, Message>;
 
   readonly self: Resource<Player>;
   readonly players: Resource<Player[]>;
 
-  public constructor(url?: string | URL) {
-    if (url) {
-      throw new Error('Remote backend not implemented');
-    }
-    this.backend = new Mock();
+  public constructor(socket: Socket<Request, Message>) {
+    this.socket = socket;
 
-    this.self = new Resource(() => this.backend.getSelf());
-    this.players = new Resource(() => this.backend.getPlayers());
+    this.socket.registerStateListener(newState => {
+      if (newState === state.Connected.Open) {
+        this.refresh();
+      }
+    });
+
+    this.self = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { user: 'info' } }, message => {
+        const validated = validateMessage(id, 'user', message);
+
+        if (validated === undefined) {
+          return;
+        }
+
+        return validated;
+      });
+    });
+    this.players = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { user: 'info' } }, message => {
+        const validated = validateMessage(id, 'users', message);
+
+        if (validated === undefined) {
+          return;
+        }
+
+        return validated;
+      });
+    });
   }
 
   public getSelf() {
@@ -45,6 +70,8 @@ export class Store implements Backend {
     }
   }
 }
+
+type Listener<T> = (data: T) => void;
 
 class Resource<T> {
   private readonly fetcher: () => Promise<T>;

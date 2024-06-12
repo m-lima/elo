@@ -13,7 +13,7 @@ export const Home = () => {
 
   const store = useStore();
   const self = useSelf();
-  console.log('building home');
+  console.debug('building home');
 
   return (
     <div class='router-home'>
@@ -104,9 +104,9 @@ const useBla = () => {
   const signal = createSignal(3);
 
   createEffect(() => {
-    console.log('Register', signal[0]());
+    console.debug('Register', signal[0]());
     onCleanup(() => {
-      console.log('Clean');
+      console.debug('Clean');
     });
   });
 
@@ -122,5 +122,5 @@ const bloink = () => {
 
   const { id, ...rest } = data;
 
-  console.log(id, rest);
+  console.debug(id, rest);
 };

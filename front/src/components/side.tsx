@@ -15,7 +15,7 @@ const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
 );
 
 export const Side = () => {
-  const [expanded, setExpanded] = createSignal(false);
+  const [expanded, setExpanded] = createSignal(true);
 
   return (
     <aside class='components-side'>

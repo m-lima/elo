@@ -25,7 +25,7 @@ export const Side = () => {
       <A href='/test' end>
         <Item icon={<icon.Mosquito />} text='Test' visible={expanded()} />
       </A>
-      <A href='/player/'>
+      <A href='/player'>
         <Item icon={<icon.User />} text='Player' visible={expanded()} />
       </A>
       <span onClick={() => setExpanded(e => !e)}>

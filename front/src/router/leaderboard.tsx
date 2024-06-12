@@ -1,4 +1,5 @@
 import { For, JSX, Suspense } from 'solid-js';
+import { Navigator, useNavigate } from '@solidjs/router';
 
 import { usePlayers } from '../store';
 import { Player, byPosition } from '../types';
@@ -12,6 +13,8 @@ export const Leaderboard = () => {
 };
 
 const playerTable = (players: Player[] = []) => {
+  const navigate = useNavigate();
+
   const getIcon = (i: number, l: number) => {
     switch (i) {
       case 0:
@@ -58,16 +61,20 @@ const playerTable = (players: Player[] = []) => {
           </tr>
         </thead>
         <tbody>
-          <For each={players}>{(p, i) => playerRow(p, getIcon(i(), players.length))}</For>
+          <For each={players}>{(p, i) => playerRow(navigate, p, getIcon(i(), players.length))}</For>
         </tbody>
       </table>
     </div>
   );
 };
 
-const playerRow = (player: Player, icon?: JSX.Element) => {
+const playerRow = (navigate: Navigator, player: Player, icon?: JSX.Element) => {
   return (
-    <tr>
+    <tr
+      onClick={() => {
+        navigate(`/player/${player.id}`);
+      }}
+    >
       <td class='router-leaderboard-icon'>{icon}</td>
       <td>{player.position}</td>
       <td>{player.name}</td>

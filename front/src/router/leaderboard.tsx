@@ -48,7 +48,6 @@ const playerTable = (players: Player[] = []) => {
 
   return (
     <div class='router-leaderboard'>
-      <h1>Leaderboard</h1>
       <table class='clickable'>
         <thead>
           <tr>

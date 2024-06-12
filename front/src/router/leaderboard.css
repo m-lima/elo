@@ -1,5 +1,5 @@
 .router-leaderboard {
-  padding: 0 48px 48px 48px;
+  padding: 24px;
 
   & .router-leaderboard-icon {
     width: 1em;

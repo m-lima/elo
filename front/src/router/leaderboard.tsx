@@ -4,42 +4,72 @@ import { usePlayers } from '../store';
 import { Player, byPosition } from '../types';
 import { icon, Loading } from '../components';
 
-import 'leaderboard.css';
+import './leaderboard.css';
 
-type PreparedPlayer = Player & {
-  icon?: () => JSX.Element;
-  class?: string;
+export const Leaderboard = () => {
+  const players = usePlayers();
+
+  console.log('Leaderboard', players);
+
+  return <Suspense fallback={<Loading />}>{playerTable(players())}</Suspense>;
 };
 
-const PlayerTable = (props: { players: Player[] }) => {
-  const length = props.players.length;
-  const preparedPlayers: PreparedPlayer[] = props.players.sort(byPosition).map((p, i) => {
-    if (i === 0) {
-      return { icon: icon.Crown, class: 'router-leaderboard-first', ...p };
+const playerTable = (players: Player[] = []) => {
+  console.log('Table', players);
+
+  const getIcon = (i: number, l: number) => {
+    switch (i) {
+      case 0:
+        return (
+          <td class='router-leaderboard-icon' id='first'>
+            <icon.Crown />
+          </td>
+        );
+      case 1:
+        return (
+          <td class='router-leaderboard-icon' id='second'>
+            <icon.Medal />
+          </td>
+        );
+      case 2:
+        return (
+          <td class='router-leaderboard-icon' id='third'>
+            <icon.Certificate />
+          </td>
+        );
+      case l - 4:
+        return (
+          <td class='router-leaderboard-icon'>
+            <icon.Mosquito />
+          </td>
+        );
+      case l - 3:
+        return (
+          <td class='router-leaderboard-icon'>
+            <icon.Poop />
+          </td>
+        );
+      case l - 2:
+        return (
+          <td class='router-leaderboard-icon'>
+            <icon.Worm />
+          </td>
+        );
+      case l - 1:
+        return (
+          <td class='router-leaderboard-icon'>
+            <icon.Skull />
+          </td>
+        );
     }
-    if (i === 1) {
-      return { icon: icon.Medal, class: 'router-leaderboard-second', ...p };
-    }
-    if (i === 2) {
-      return { icon: icon.Certificate, class: 'router-leaderboard-third', ...p };
-    }
-    if (i === length - 4) {
-      return { icon: icon.Mosquito, ...p };
-    }
-    if (i === length - 3) {
-      return { icon: icon.Poop, ...p };
-    }
-    if (i === length - 2) {
-      return { icon: icon.Worm, ...p };
-    }
-    if (i === length - 1) {
-      return { icon: icon.Skull, ...p };
-    }
-    return p;
-  });
+    return <td class='router-leaderboard-icon' />;
+  };
+
+  players.sort(byPosition);
 
   return (
     <div class='router-leaderboard'>
+      <h1>Leaderboard</h1>
       <table>
         <thead>
           <tr>
@@ -50,28 +80,20 @@ const PlayerTable = (props: { players: Player[] }) => {
           </tr>
         </thead>
         <tbody>
-          <For each={preparedPlayers}>
-            {p => (
-              <tr class={p.class}>
-                <td class={p.class}>{p.icon !== undefined ? p.icon() : ''}</td>
-                <td>{p.position}</td>
-                <td>{p.name}</td>
-                <td>{p.score}</td>
-              </tr>
-            )}
-          </For>
+          <For each={players}>{(p, i) => playerRow(p, getIcon(i(), players.length))}</For>
         </tbody>
       </table>
     </div>
   );
 };
 
-export const Leaderboard = () => {
-  const players = usePlayers();
-
+const playerRow = (player: Player, icon?: JSX.Element) => {
   return (
-    <Suspense fallback={<Loading />}>
-      <PlayerTable players={players() || []} />
-    </Suspense>
+    <tr>
+      <td class='router-leaderboard-icon'>{icon}</td>
+      <td>{player.position}</td>
+      <td>{player.name}</td>
+      <td>{player.score}</td>
+    </tr>
   );
 };

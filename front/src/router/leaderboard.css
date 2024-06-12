@@ -1,32 +1,60 @@
 .router-leaderboard {
-  width: 100%;
-  height: 100%;
+  padding: 0 48px 48px 48px;
 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+  text-align: left;
+  font-size: 1.3em;
 
-  & > svg {
-    width: 40%;
-    max-width: 800px;
-    height: 100%;
+  & > table {
+    width: 100%;
 
-    & > #paddle-ball {
-      animation: components_loading_ball 400ms cubic-bezier(1,0,1,1) alternate infinite;
-      /* animation: components_loading_ball 400ms cubic-bezier(.5,.06,.84,.5) alternate infinite; */
+    border-collapse: collapse;
+
+    & > thead {
+      background-color: var(--color-background-dark);
     }
 
-    & > #paddle-dot-1 {
-      animation: components_loading_dot 400ms linear alternate infinite;
+    & > tbody {
+      & > tr {
+        cursor: pointer;
+        border: none;
+
+        will-change: background-color;
+        transition: background-color var(--duration-hover);
+
+        &:nth-child(odd) {
+          background-color: var(--color-background-bright);
+        }
+
+        &:hover {
+          background-color: var(--color-accent-darker);
+        }
+      }
     }
 
-    & > #paddle-dot-2 {
-      animation: components_loading_dot 400ms linear alternate infinite 150ms;
-    }
+    & .router-leaderboard-icon {
+      width: 1em;
+      text-align: center;
 
-    & > #paddle-dot-3 {
-      animation: components_loading_dot 400ms linear alternate infinite 300ms;
+      &#first {
+        color: gold;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
+
+      &#second {
+        color: white;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
+
+      &#third {
+        color: burlywood;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
     }
   }
 }

@@ -67,7 +67,7 @@ where
                         }
                     };
                     tracing::debug!("Pushing message");
-                    let message = message::Push { push };
+                    let message = message::Message::Push(push);
                     flow!(self.send(message).await);
                 }
                 request = self.recv() => {
@@ -81,7 +81,7 @@ where
                     match self.service.call(payload).await {
                         Ok(ok) =>{
                             tracing::info!(latency = ?start.elapsed(), "{action}");
-                            let message = message::Response { id, ok };
+                            let message = message::Message::Ok(id, ok);
                             flow!(self.send(message).await);
                         }
                         Err(error) => {
@@ -92,7 +92,7 @@ where
                             }
 
                             let error = error.into();
-                            let message = message::Error { id: Some(id), error };
+                            let message = message::Message::Error(Some(id), error);
                             flow!(self.send(message).await);
                         },
                     }
@@ -148,19 +148,16 @@ where
             Ok(message) => FlowControl::Pass(message),
             Err(error) => {
                 tracing::warn!(%error, "Failed to deserialize request");
-                let message = message::Error {
-                    id: try_extract_id::<M>(&bytes),
-                    error: service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string()),
-                };
+                let message = message::Message::Error(
+                    try_extract_id::<M>(&bytes),
+                    service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string()),
+                );
                 self.send(message).await
             }
         }
     }
 
-    async fn send<T, R>(&mut self, message: T) -> FlowControl<R>
-    where
-        T: message::Message,
-    {
+    async fn send<R>(&mut self, message: message::Message<S::Response, S::Push>) -> FlowControl<R> {
         match M::serialize(message) {
             Ok(message) => {
                 if let Err(error) = self.socket.send(message).await {
@@ -251,13 +248,13 @@ mod tests {
 
     mod push {
         use super::{
-            super::{message::Push, mode::sealed::Mode},
+            super::{message::Message, mode::sealed::Mode},
             OBJ, STR,
         };
 
         #[test]
         fn happy() {
-            let payload = Push { push: OBJ };
+            let payload = Message::Push::<(), _>(OBJ);
 
             let output = String::serialize(payload).unwrap();
 
@@ -269,52 +266,45 @@ mod tests {
 
     mod response {
         use super::{
-            super::{message::Response, mode::sealed::Mode},
+            super::{message::Message, mode::sealed::Mode},
             OBJ, STR,
         };
 
         #[test]
         fn happy() {
-            let payload = Response { id: 27, ok: OBJ };
+            let payload = Message::Ok::<_, ()>(27, OBJ);
 
             let output = String::serialize(payload).unwrap();
 
-            let expected = axum::extract::ws::Message::Text(format!(r#"{{"id":27,"ok":{STR}}}"#,));
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"ok":[27,{STR}]}}"#));
 
             assert_eq!(output, expected);
         }
     }
 
     mod error {
-        use super::super::{message::Error, mode::sealed::Mode};
+        use super::super::{message::Message, mode::sealed::Mode};
 
         const STR: &str = r#"{"code":400,"message":"Bad Request"}"#;
 
         #[test]
         fn with_id() {
-            let payload = Error {
-                id: Some(27),
-                error: hyper::StatusCode::BAD_REQUEST.into(),
-            };
+            let payload = Message::Error::<(), ()>(Some(27), hyper::StatusCode::BAD_REQUEST.into());
 
             let output = String::serialize(payload).unwrap();
 
-            let expected =
-                axum::extract::ws::Message::Text(format!(r#"{{"id":27,"error":{STR}}}"#,));
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":[27,{STR}]}}"#));
 
             assert_eq!(output, expected);
         }
 
         #[test]
         fn without_id() {
-            let payload = Error {
-                id: None,
-                error: hyper::StatusCode::BAD_REQUEST.into(),
-            };
+            let payload = Message::Error::<(), ()>(None, hyper::StatusCode::BAD_REQUEST.into());
 
             let output = String::serialize(payload).unwrap();
 
-            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":{STR}}}"#,));
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":[{STR}]}}"#));
 
             assert_eq!(output, expected);
         }

@@ -100,6 +100,7 @@ mod constraints {
             r#"
             INSERT INTO rankings (
                 user,
+                position,
                 score,
                 wins,
                 losses,
@@ -111,15 +112,18 @@ mod constraints {
                 $3,
                 $4,
                 $5,
-                $6
+                $6,
+                $7
             ) RETURNING
                 user,
+                position,
                 score,
                 wins,
                 losses,
                 points_won,
                 points_lost
             "#,
+            0,
             0,
             0,
             0,
@@ -148,6 +152,7 @@ mod constraints {
             r#"
             INSERT INTO rankings (
                 user,
+                position,
                 score,
                 wins,
                 losses,
@@ -159,9 +164,11 @@ mod constraints {
                 $3,
                 $4,
                 $5,
-                $6
+                $6,
+                $7
             ) RETURNING
                 user,
+                position,
                 score,
                 wins,
                 losses,
@@ -169,6 +176,7 @@ mod constraints {
                 points_lost
             "#,
             user.id,
+            0,
             0,
             0,
             0,
@@ -183,6 +191,7 @@ mod constraints {
             ranking,
             model::Ranking {
                 user: user.id,
+                position: 0,
                 score: 0,
                 wins: 0,
                 losses: 0,
@@ -215,6 +224,7 @@ mod constraints {
             r#"
             SELECT
                 user,
+                position,
                 score,
                 wins,
                 losses,

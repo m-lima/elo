@@ -16,6 +16,7 @@ pub(crate) struct User {
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub(crate) struct Ranking {
     pub user: types::Id,
+    pub position: i64,
     pub score: i64,
     pub wins: i64,
     pub losses: i64,

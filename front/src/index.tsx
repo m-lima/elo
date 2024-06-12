@@ -4,15 +4,12 @@ import { ErrorBoundary, Match, ParentProps, Show, Switch, createSignal } from 's
 
 import { Router } from './router';
 import { status, Side, Loading } from './components';
-import { Message, Request, Store, WithStore } from './store';
-import { Socket, state } from './socket';
+import { Store, WithStore } from './store';
+import { state } from './socket';
 
 import './index.css';
 
-const socket = new Socket<Request, Message>(
-  'ws://localhost:3333/ws/binary',
-  'http://localhost:3333/check',
-);
+const socket = Store.makeSocket('ws://localhost:3333/ws/binary', 'http://localhost:3333/check');
 const [socketState, setSocketState] = createSignal(socket.getState());
 socket.registerStateListener(state => setSocketState(state));
 

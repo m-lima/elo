@@ -1,6 +1,6 @@
 import { Socket, state } from '../socket';
 import { type Player } from '../types';
-import { type Message, type Request } from '.';
+import { type Message, type Request } from './message';
 import { newRequestId, validateMessage } from './request';
 
 export class Store {
@@ -8,6 +8,10 @@ export class Store {
 
   readonly self: Resource<Player>;
   readonly players: Resource<Player[]>;
+
+  public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
+    return new Socket(url, checkUrl);
+  }
 
   public constructor(socket: Socket<Request, Message>) {
     this.socket = socket;

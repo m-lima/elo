@@ -6,3 +6,10 @@ export interface Backend {
 }
 
 export type Listener<T> = (data: T) => void;
+
+export type Ided = {
+  id: number;
+};
+
+export type Request = Ided & { do: UserRequest };
+export type UserRequest = 'info' | 'list' | { rename: string };

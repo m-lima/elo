@@ -1,29 +1,25 @@
-.router-leaderboard {
-  padding: 24px;
+.router-leaderboard-icon {
+  width: 1em;
+  text-align: center;
 
-  & .router-leaderboard-icon {
-    width: 1em;
-    text-align: center;
-
-    & .router-leaderboard-first {
-      color: gold;
-      & > svg {
-        filter: drop-shadow(0 0 4px);
-      }
+  & .router-leaderboard-first {
+    color: gold;
+    & > svg {
+      filter: drop-shadow(0 0 4px);
     }
+  }
 
-    & .router-leaderboard-second {
-      color: white;
-      & > svg {
-        filter: drop-shadow(0 0 4px);
-      }
+  & .router-leaderboard-second {
+    color: white;
+    & > svg {
+      filter: drop-shadow(0 0 4px);
     }
+  }
 
-    & .router-leaderboard-third {
-      color: burlywood;
-      & > svg {
-        filter: drop-shadow(0 0 4px);
-      }
+  & .router-leaderboard-third {
+    color: burlywood;
+    & > svg {
+      filter: drop-shadow(0 0 4px);
     }
   }
 }

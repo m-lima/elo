@@ -50,21 +50,19 @@ const playerTable = (players: Player[] = []) => {
   players.sort(byPosition);
 
   return (
-    <div class='router-leaderboard'>
-      <table class='clickable'>
-        <thead>
-          <tr>
-            <th scope='col' />
-            <th scope='col'>#</th>
-            <th scope='col'>Player</th>
-            <th scope='col'>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <For each={players}>{(p, i) => playerRow(navigate, p, getIcon(i(), players.length))}</For>
-        </tbody>
-      </table>
-    </div>
+    <table class='clickable'>
+      <thead>
+        <tr>
+          <th />
+          <th>#</th>
+          <th>Player</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <For each={players}>{(p, i) => playerRow(navigate, p, getIcon(i(), players.length))}</For>
+      </tbody>
+    </table>
   );
 };
 

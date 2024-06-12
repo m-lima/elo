@@ -127,5 +127,6 @@ table {
 
   & > :last-child {
     overflow: scroll;
+    padding: 24px;
   }
 }

@@ -1,4 +1,4 @@
-mod user;
+mod player;
 
 use super::{broadcaster, model};
 use crate::{smtp, store, types, ws};
@@ -37,7 +37,7 @@ impl ws::Service for Handler {
 
     async fn call(&mut self, request: Self::Request) -> Result<Self::Response, Self::Error> {
         match request {
-            model::Request::User(user) => user::User::new(self).handle(user).await,
+            model::Request::Player(request) => player::Player::new(self).handle(request).await,
         }
     }
 }

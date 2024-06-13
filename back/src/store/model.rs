@@ -6,18 +6,28 @@ pub struct Id {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub(crate) struct User {
+pub(crate) struct Player {
     pub id: types::Id,
     pub name: String,
     pub email: String,
     pub created_ms: Millis,
 }
 
+#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
+pub(crate) struct Rating {
+    pub player: types::Id,
+    #[allow(clippy::struct_field_names)]
+    pub rating: f64,
+    pub deviation: f64,
+    pub volatility: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
+pub(crate) struct PlayerRating {}
+
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub(crate) struct Ranking {
-    pub user: types::Id,
-    pub position: i64,
-    pub score: i64,
+pub(crate) struct StatsCache {
+    pub player: types::Id,
     pub wins: i64,
     pub losses: i64,
     pub points_won: i64,
@@ -35,8 +45,8 @@ impl From<Millis> for chrono::DateTime<chrono::Utc> {
     }
 }
 
-impl From<User> for types::User {
-    fn from(value: User) -> Self {
+impl From<Player> for types::Player {
+    fn from(value: Player) -> Self {
         Self {
             id: value.id,
             name: value.name,

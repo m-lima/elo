@@ -1,4 +1,4 @@
-mod users;
+mod players;
 
 #[derive(Debug, Clone)]
 pub struct Store {
@@ -24,7 +24,7 @@ impl Store {
     }
 
     #[must_use]
-    pub fn users(&self) -> users::Users<'_> {
-        users::Users::from(self)
+    pub fn players(&self) -> players::Players<'_> {
+        players::Players::from(self)
     }
 }

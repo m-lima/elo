@@ -42,7 +42,7 @@ impl Auth {
             }
         };
 
-        match self.store.users().by_email(user).await {
+        match self.store.players().by_email(user).await {
             Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }
@@ -78,7 +78,7 @@ impl Auth {
 
         let user = "me@email.com";
 
-        match self.store.users().by_email(user).await {
+        match self.store.players().by_email(user).await {
             Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }

@@ -3,21 +3,21 @@ use crate::types;
 
 type Result<T = ()> = std::result::Result<T, Error>;
 
-pub struct Users<'a> {
+pub struct Players<'a> {
     pool: &'a sqlx::sqlite::SqlitePool,
 }
 
-impl<'a> From<&'a super::Store> for Users<'a> {
+impl<'a> From<&'a super::Store> for Players<'a> {
     fn from(value: &'a super::Store) -> Self {
         Self { pool: &value.pool }
     }
 }
 
-impl Users<'_> {
+impl Players<'_> {
     #[tracing::instrument(skip(self))]
-    pub async fn list(&self) -> Result<Vec<types::User>> {
+    pub async fn list(&self) -> Result<Vec<types::Player>> {
         sqlx::query_as!(
-            model::User,
+            model::Player,
             r#"
             SELECT
                 id,
@@ -25,21 +25,21 @@ impl Users<'_> {
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
-                users
+                players
             "#
         )
         .fetch_all(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.into_iter().map(types::User::from).collect())
+        .map(|r| r.into_iter().map(types::Player::from).collect())
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn by_email(&self, email: &str) -> Result<Option<types::User>> {
+    pub async fn by_email(&self, email: &str) -> Result<Option<types::Player>> {
         let email = email.trim();
 
         sqlx::query_as!(
-            model::User,
+            model::Player,
             r#"
             SELECT
                 id,
@@ -47,7 +47,7 @@ impl Users<'_> {
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
-                users
+                players
             WHERE
                 email = $1
             "#,
@@ -56,13 +56,13 @@ impl Users<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(types::User::from))
+        .map(|r| r.map(types::Player::from))
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn by_id(&self, id: types::Id) -> Result<Option<types::User>> {
+    pub async fn by_id(&self, id: types::Id) -> Result<Option<types::Player>> {
         sqlx::query_as!(
-            model::User,
+            model::Player,
             r#"
             SELECT
                 id,
@@ -70,7 +70,7 @@ impl Users<'_> {
                 email,
                 created_ms AS "created_ms: model::Millis"
             FROM
-                users
+                players
             WHERE
                 id = $1
             "#,
@@ -79,7 +79,7 @@ impl Users<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(types::User::from))
+        .map(|r| r.map(types::Player::from))
     }
 
     #[tracing::instrument(skip(self))]
@@ -95,7 +95,7 @@ impl Users<'_> {
             SELECT
                 id
             FROM
-                users
+                players
             WHERE
                 email = $1
             "#,
@@ -118,7 +118,7 @@ impl Users<'_> {
             model::Id,
             r#"
             UPDATE
-                users
+                players
             SET
                 name = $2
             WHERE
@@ -155,7 +155,7 @@ impl Users<'_> {
             SELECT
                 id
             FROM
-                users
+                players
             WHERE
                 email = $1
             "#,

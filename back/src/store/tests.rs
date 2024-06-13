@@ -1,10 +1,13 @@
 use super::model;
 
-async fn insert(email: &str, pool: &sqlx::sqlite::SqlitePool) -> Result<model::User, sqlx::Error> {
+async fn insert(
+    email: &str,
+    pool: &sqlx::sqlite::SqlitePool,
+) -> Result<model::Player, sqlx::Error> {
     sqlx::query_as!(
-        model::User,
+        model::Player,
         r#"
-        INSERT INTO users (
+        INSERT INTO players (
             name,
             email
         ) VALUES (
@@ -53,9 +56,9 @@ mod constraints {
     #[sqlx::test]
     async fn not_null_cannot_be_null(pool: sqlx::sqlite::SqlitePool) {
         let error = sqlx::query_as!(
-            model::User,
+            model::Player,
             r#"
-            INSERT INTO users (
+            INSERT INTO players (
                 name,
                 email
             ) VALUES (
@@ -75,7 +78,7 @@ mod constraints {
         match error {
             sqlx::Error::Database(db) => {
                 assert_eq!("1299", db.code().unwrap());
-                assert_eq!("NOT NULL constraint failed: users.email", db.message());
+                assert_eq!("NOT NULL constraint failed: players.email", db.message());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -87,7 +90,7 @@ mod constraints {
         match insert("email", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!("2067", db.code().unwrap());
-                assert_eq!("UNIQUE constraint failed: users.email", db.message());
+                assert_eq!("UNIQUE constraint failed: players.email", db.message());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -96,36 +99,24 @@ mod constraints {
     #[sqlx::test]
     async fn foreign_key_must_exist(pool: sqlx::sqlite::SqlitePool) {
         match sqlx::query_as!(
-            model::Ranking,
+            model::Rating,
             r#"
-            INSERT INTO rankings (
-                user,
-                position,
-                score,
-                wins,
-                losses,
-                points_won,
-                points_lost
+            INSERT INTO ratings (
+                player,
+                rating,
+                deviation,
+                volatility
             ) VALUES (
                 $1,
                 $2,
                 $3,
-                $4,
-                $5,
-                $6,
-                $7
+                $4
             ) RETURNING
-                user,
-                position,
-                score,
-                wins,
-                losses,
-                points_won,
-                points_lost
+                player,
+                rating,
+                deviation,
+                volatility
             "#,
-            0,
-            0,
-            0,
             0,
             0,
             0,
@@ -145,40 +136,28 @@ mod constraints {
 
     #[sqlx::test]
     async fn cascade_deletes(pool: sqlx::sqlite::SqlitePool) {
-        let user = insert("email", &pool).await.unwrap();
+        let player = insert("email", &pool).await.unwrap();
 
         let ranking = sqlx::query_as!(
-            model::Ranking,
+            model::Rating,
             r#"
-            INSERT INTO rankings (
-                user,
-                position,
-                score,
-                wins,
-                losses,
-                points_won,
-                points_lost
+            INSERT INTO ratings (
+                player,
+                rating,
+                deviation,
+                volatility
             ) VALUES (
                 $1,
                 $2,
                 $3,
-                $4,
-                $5,
-                $6,
-                $7
+                $4
             ) RETURNING
-                user,
-                position,
-                score,
-                wins,
-                losses,
-                points_won,
-                points_lost
+                player,
+                rating,
+                deviation,
+                volatility
             "#,
-            user.id,
-            0,
-            0,
-            0,
+            player.id,
             0,
             0,
             0
@@ -189,29 +168,26 @@ mod constraints {
 
         assert_eq!(
             ranking,
-            model::Ranking {
-                user: user.id,
-                position: 0,
-                score: 0,
-                wins: 0,
-                losses: 0,
-                points_won: 0,
-                points_lost: 0,
+            model::Rating {
+                player: player.id,
+                rating: 0.0,
+                deviation: 0.0,
+                volatility: 0.0,
             }
         );
 
         assert_eq!(
-            Some(user.id),
+            Some(player.id),
             sqlx::query!(
                 r#"
                 DELETE FROM
-                    users
+                    players
                 WHERE
                     id = $1
                 RETURNING
                     id
                 "#,
-                user.id
+                player.id
             )
             .map(|r| r.id)
             .fetch_optional(&pool)
@@ -220,18 +196,15 @@ mod constraints {
         );
 
         assert!(sqlx::query_as!(
-            model::Ranking,
+            model::Rating,
             r#"
             SELECT
-                user,
-                position,
-                score,
-                wins,
-                losses,
-                points_won,
-                points_lost
+                player,
+                rating,
+                deviation,
+                volatility
             FROM
-                rankings
+                ratings
             "#,
         )
         .fetch_all(&pool)
@@ -246,13 +219,13 @@ mod behavior {
 
     #[sqlx::test]
     async fn updates_dont_return_optional(pool: sqlx::sqlite::SqlitePool) {
-        let user = insert("email", &pool).await.unwrap();
+        let player = insert("email", &pool).await.unwrap();
 
         let id = sqlx::query_as!(
             model::Id,
             r#"
             UPDATE
-                users
+                players
             SET
                 name = "other"
             WHERE
@@ -260,20 +233,20 @@ mod behavior {
             RETURNING
                 id AS "id!: _"
             "#,
-            user.id
+            player.id
         )
         .fetch_optional(&pool)
         .await
         .map(|r| r.map(|id| id.id))
         .unwrap();
 
-        assert_eq!(id, Some(user.id));
+        assert_eq!(id, Some(player.id));
 
         let id = sqlx::query_as!(
             model::Id,
             r#"
             UPDATE
-                users
+                players
             SET
                 name = "other"
             WHERE

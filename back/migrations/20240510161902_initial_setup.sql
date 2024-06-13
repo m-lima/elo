@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE players (
   id         INTEGER NOT NULL PRIMARY KEY,
   name       TEXT    NOT NULL
     CHECK(LENGTH(TRIM(name)) > 0),
@@ -6,6 +6,16 @@ CREATE TABLE users (
     CHECK(LENGTH(TRIM(email)) > 0),
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4))
+);
+
+-- Separate rating table so we can change the algorithm and replay the games
+CREATE TABLE ratings (
+  player     INTEGER NOT NULL PRIMARY KEY,
+  rating     REAL NOT NULL,
+  deviation  REAL NOT NULL,
+  volatility REAL NOT NULL,
+
+  FOREIGN KEY(player) REFERENCES players(id) ON DELETE CASCADE
 );
 
 CREATE TABLE invites (
@@ -18,20 +28,7 @@ CREATE TABLE invites (
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
-  FOREIGN KEY(inviter) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- To be recalculated every time a match is accepted
-CREATE TABLE rankings (
-  user        INTEGER NOT NULL PRIMARY KEY,
-  position    INTEGER NOT NULL,
-  score       INTEGER NOT NULL,
-  wins        INTEGER NOT NULL,
-  losses      INTEGER NOT NULL,
-  points_won  INTEGER NOT NULL,
-  points_lost INTEGER NOT NULL,
-
-  FOREIGN KEY(user) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY(inviter) REFERENCES players(id) ON DELETE CASCADE
 );
 
 CREATE TABLE matches (
@@ -45,8 +42,19 @@ CREATE TABLE matches (
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
-  FOREIGN KEY(player_one) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY(player_two) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY(player_one) REFERENCES players(id) ON DELETE CASCADE,
+  FOREIGN KEY(player_two) REFERENCES players(id) ON DELETE CASCADE
+);
+
+-- To be recalculated every time a match is accepted
+CREATE TABLE stats_cache (
+  player      INTEGER NOT NULL PRIMARY KEY,
+  wins        INTEGER NOT NULL,
+  losses      INTEGER NOT NULL,
+  points_won  INTEGER NOT NULL,
+  points_lost INTEGER NOT NULL,
+
+  FOREIGN KEY(player) REFERENCES players(id) ON DELETE CASCADE
 );
 
 CREATE TABLE challenges (
@@ -59,7 +67,7 @@ CREATE TABLE challenges (
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
-  FOREIGN KEY(player_one) REFERENCES users(id)   ON DELETE CASCADE,
-  FOREIGN KEY(player_two) REFERENCES users(id)   ON DELETE CASCADE,
+  FOREIGN KEY(player_one) REFERENCES players(id) ON DELETE CASCADE,
+  FOREIGN KEY(player_two) REFERENCES players(id) ON DELETE CASCADE,
   FOREIGN KEY(match)      REFERENCES matches(id) ON DELETE SET NULL
 );

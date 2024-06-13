@@ -3,20 +3,20 @@ use crate::{mailbox, store, types, ws};
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Request {
-    User(User),
+    Player(Player),
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Response {
     Id(types::Id),
-    User(types::User),
-    Users(Vec<types::User>),
+    Player(types::Player),
+    Players(Vec<types::Player>),
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum User {
+pub enum Player {
     Info,
     Rename(String),
     List,
@@ -86,12 +86,12 @@ impl From<Error> for ws::Error {
 impl ws::Request for Request {
     fn action(&self) -> &'static str {
         match self {
-            Self::User(user) => match user {
-                User::Info => "User::Info",
-                User::Rename(_) => "User::Renmae",
-                User::List => "User::List",
-                User::Get(_) => "User::Get",
-                User::Invite(_) => "User::Invite",
+            Self::Player(player) => match player {
+                Player::Info => "Player::Info",
+                Player::Rename(_) => "Player::Renmae",
+                Player::List => "Player::List",
+                Player::Get(_) => "Player::Get",
+                Player::Invite(_) => "Player::Invite",
             },
         }
     }

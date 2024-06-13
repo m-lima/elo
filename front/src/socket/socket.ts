@@ -120,11 +120,6 @@ export class Socket<Request, Message> {
   }
 
   private nextAttempt() {
-    // Unauthorized is always fatal
-    if (this.state === state.Disconnected.Unauthorized) {
-      return;
-    }
-
     switch (this.attempts) {
       case 0:
         return 0;
@@ -147,7 +142,12 @@ export class Socket<Request, Message> {
     }
 
     this.attempts += 1;
-    setTimeout(() => this.connect(url, checkUrl), timeout);
+    setTimeout(() => {
+      // Unauthorized is always fatal
+      if (this.state !== state.Disconnected.Unauthorized) {
+        this.connect(url, checkUrl);
+      }
+    }, timeout);
   }
 
   private setState(newState: state.State) {

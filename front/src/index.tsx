@@ -3,7 +3,7 @@ import { render } from 'solid-js/web';
 import { ErrorBoundary, Match, ParentProps, Show, Switch, createSignal } from 'solid-js';
 
 import { Router } from './router';
-import { status, Side, Loading } from './components';
+import { status, error, Side, Loading } from './components';
 import { Store, WithStore } from './store';
 import { state } from './socket';
 
@@ -26,9 +26,24 @@ const App = (props: ParentProps) => {
           return <h1>{JSON.stringify(error)}</h1>;
         }}
       >
-        <Show when={state.isConnected(socketState())} fallback={<Loading />}>
-          <div>{props.children}</div>
-        </Show>
+        {console.debug(state.toString(socketState()))}
+        <Switch>
+          <Match when={state.isPending(socketState())}>
+            <Loading />
+          </Match>
+          <Match when={state.isConnected(socketState())}>
+            <div>{props.children}</div>
+          </Match>
+          <Match when={socketState() === state.Disconnected.Unauthorized}>
+            <error.Unauthorized />
+          </Match>
+          <Match when={socketState() === state.Disconnected.Error}>
+            <error.Unauthorized />
+          </Match>
+          <Match when={socketState() === state.Disconnected.Closed}>
+            <error.Unauthorized />
+          </Match>
+        </Switch>
       </ErrorBoundary>
     </>
   );

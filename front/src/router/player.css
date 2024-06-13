@@ -13,22 +13,16 @@
 }
 
 .router-player {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-
-
   .router-player-header {
     display: flex;
-    align-items: stretch;
 
     background-color: var(--color-background-dark);
 
     border-radius: 16px;
 
     & .router-player-header-badge {
-      padding: 0.2em;
+      padding-left: 16px;
+      padding-right: 16px;
 
       color: var(--color-foreground);
       font-size: 4em;
@@ -70,14 +64,16 @@
       font-weight: bold;
       font-size: 4em;
 
-      margin-left: 0.5em;
+      margin-left: 32px;
+      margin-right: 32px;
     }
 
     & .router-player-header-score {
       font-weight: bold;
       font-size: 4em;
 
-      margin: 0 0.5em 0 auto;
+      margin-left: auto;
+      margin-right: 32px;
     }
   }
 

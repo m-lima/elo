@@ -1,0 +1,43 @@
+.router-player-not-found {
+  height: 100%;
+
+  display: flex;
+  justify-content: center;
+  place-items: center;
+  text-align: center;
+  gap: 1em;
+
+  & > .router-player-not-found-icon {
+    font-size: 7em;
+  }
+}
+
+.router-player-badge {
+  color: var(--color-foreground);
+  font-size: 2em;
+  margin-right: 0.2em;
+
+  &.first {
+    color: gold;
+
+    & > svg {
+      filter: drop-shadow(0 0 4px);
+    }
+  }
+
+  &.second {
+    color: white;
+
+    & > svg {
+      filter: drop-shadow(0 0 4px);
+    }
+  }
+
+  &.third {
+    color: burlywood;
+
+    & > svg {
+      filter: drop-shadow(0 0 4px);
+    }
+  }
+}

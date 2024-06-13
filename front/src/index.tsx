@@ -1,6 +1,6 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import { ErrorBoundary, Match, ParentProps, Show, Switch, createSignal } from 'solid-js';
+import { ErrorBoundary, Match, ParentProps, Switch, createSignal } from 'solid-js';
 
 import { Router } from './router';
 import { status, error, Side, Loading } from './components';
@@ -67,8 +67,6 @@ render(
     );
   },
   // Allowed because this is normal solid construct
-  /* eslint-disable-next-line
-@typescript-eslint/no-non-null-assertion
-*/
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   root!,
 );

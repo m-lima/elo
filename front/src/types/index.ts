@@ -38,13 +38,9 @@ export const byPosition = (a: Player, b: Player) => {
 };
 
 // TODO: Use these
-/* eslint-disable-next-line
-@typescript-eslint/no-unused-vars
-*/
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Create<T> = Omit<T, 'id' | 'created'>;
-/* eslint-disable-next-line
-@typescript-eslint/no-unused-vars
-*/
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Edit<T, N extends keyof T> = Partial<Pick<T, N>>;
 
 // type CreatePlayer = Partial<Pick<Player, 'name' | 'email'>>;

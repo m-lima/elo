@@ -16,9 +16,7 @@ export const WithStore = (props: ParentProps<{ store: Store }>) => (
 );
 
 // Allowed because if misused, better to throw errors instead of paying for runtime checks
-/* eslint-disable-next-line
-@typescript-eslint/no-non-null-assertion
-*/
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const useStore = () => useContext(StoreContext)!;
 
 export const useSelf = (maybeStore?: Store) => {

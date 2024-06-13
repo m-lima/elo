@@ -142,6 +142,7 @@ export class Socket<Request, Message> {
     }
 
     this.attempts += 1;
+    this.setState(state.Disconnected.Connecting);
     setTimeout(() => {
       // Unauthorized is always fatal
       if (this.state !== state.Disconnected.Unauthorized) {

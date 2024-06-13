@@ -17,6 +17,7 @@ const store = new Store(socket);
 const root = document.getElementById('root');
 
 const App = (props: ParentProps) => {
+  console.debug(state.toString(socketState()));
   return (
     <>
       <Side />
@@ -26,7 +27,6 @@ const App = (props: ParentProps) => {
           return <h1>{JSON.stringify(error)}</h1>;
         }}
       >
-        {console.debug(state.toString(socketState()))}
         <Switch>
           <Match when={state.isPending(socketState())}>
             <Loading />

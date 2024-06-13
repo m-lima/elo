@@ -35,7 +35,7 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
     ) -> axum::routing::MethodRouter<()> {
         axum::routing::get(
             |upgrade: axum::extract::WebSocketUpgrade,
-             axum::Extension(user): axum::Extension<types::Player>| async move {
+             axum::Extension(user): axum::Extension<types::User>| async move {
                 upgrade.on_upgrade(move |socket| {
                     let handler = handler::Handler::new(user.id, store, smtp);
                     let socket = ws::Layer::<M, _>::new(socket, handler, user.email);

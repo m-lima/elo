@@ -1,5 +1,11 @@
 pub type Id = i64;
 
+#[derive(Debug, Clone)]
+pub struct User {
+    pub id: i64,
+    pub email: String,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {

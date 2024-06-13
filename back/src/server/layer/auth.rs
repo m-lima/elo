@@ -1,4 +1,4 @@
-use crate::store;
+use crate::{store, types};
 
 #[derive(Debug, Clone)]
 pub struct Auth {
@@ -43,8 +43,9 @@ impl Auth {
         };
 
         match self.store.players().id_for(user).await {
-            Ok(Some(user)) => {
-                request.extensions_mut().insert(user);
+            Ok(Some(id)) => {
+                let email = String::from(user);
+                request.extensions_mut().insert(types::User { id, email });
             }
             Ok(None) => {
                 forbid!(%user, "User is not authorized");
@@ -80,7 +81,8 @@ impl Auth {
 
         match self.store.players().id_for(user).await {
             Ok(Some(id)) => {
-                request.extensions_mut().insert(id);
+                let email = String::from(user);
+                request.extensions_mut().insert(types::User { id, email });
             }
             Ok(None) => {
                 forbid!(%user, "User is not authorized");

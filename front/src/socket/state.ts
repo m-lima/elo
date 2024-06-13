@@ -22,4 +22,28 @@ export const isDisconnected = (state: State) =>
 export const isConnected = (state: State) =>
   state === Connected.Open || state === Connected.Ready || state === Connected.Fetching;
 
+export const isPending = (state: State) =>
+  state === Disconnected.Connecting || state === Connected.Fetching;
+
 export type Listener = (state: State) => void;
+
+export const toString = (state: State) => {
+  switch (state) {
+    case Disconnected.Connecting:
+      return 'Connecting';
+    case Disconnected.Closed:
+      return 'Closed';
+    case Disconnected.Error:
+      return 'Error';
+    case Disconnected.Unauthorized:
+      return 'Unauthorized';
+    case Connected.Open:
+      return 'Open';
+    case Connected.Ready:
+      return 'Ready';
+    case Connected.Fetching:
+      return 'Fetching';
+    default:
+      return 'Unknown';
+  }
+};

@@ -16,25 +16,12 @@ export class Timeout extends Error {
 export class Disconnected extends Error {
   private readonly state: state.Disconnected;
 
-  public constructor(state: state.Disconnected) {
-    super(disconnectedStateToString(state));
-    this.state = state;
+  public constructor(reason: state.Disconnected) {
+    super(`Socket disconnected: ${state.toString(reason)}`);
+    this.state = reason;
   }
 
   public getState() {
     return this.state;
   }
 }
-
-const disconnectedStateToString = (s: state.Disconnected) => {
-  switch (s) {
-    case state.Disconnected.Connecting:
-      return 'Connecting';
-    case state.Disconnected.Closed:
-      return 'Closed socket';
-    case state.Disconnected.Error:
-      return 'Socket error';
-    case state.Disconnected.Unauthorized:
-      return 'Unauthorized';
-  }
-};

@@ -8,12 +8,12 @@ pub struct Server {
 
 impl Server {
     pub async fn new(port: u16, store: store::Store, smtp: smtp::Smtp) -> Result<Self, Error> {
-        let router = route(store.clone(), smtp);
+        let router = route(store.clone(), smtp)
+            .layer(layer::auth(store))
+            .layer(layer::logger());
 
         #[cfg(feature = "local")]
         let router = router.layer(tower_http::cors::CorsLayer::very_permissive());
-
-        let router = router.layer(layer::auth(store)).layer(layer::logger());
 
         let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::new(0, 0, 0, 0), port);
         let listener = tokio::net::TcpListener::bind(address).await?;
@@ -45,14 +45,7 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
         )
     }
 
-    if cfg!(feature = "local") {
-        axum::Router::new()
-            .route("/check", axum::routing::get("ok"))
-            .route("/ws/text", upgrade::<String>(store.clone(), smtp.clone()))
-            .route("/ws/binary", upgrade::<Vec<u8>>(store, smtp))
-    } else {
-        axum::Router::new()
-            .route("/ws/text", upgrade::<String>(store.clone(), smtp.clone()))
-            .route("/ws/binary", upgrade::<Vec<u8>>(store, smtp))
-    }
+    axum::Router::new()
+        .route("/ws/text", upgrade::<String>(store.clone(), smtp.clone()))
+        .route("/ws/binary", upgrade::<Vec<u8>>(store, smtp))
 }

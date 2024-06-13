@@ -88,12 +88,8 @@ export class Socket<Request, Message> {
     socket.onerror = () => {
       // Check only in the first failure
       if (this.attempts === 0 && checkUrl !== undefined) {
-        console.debug('Checking auth', checkUrl);
         void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
-          // TODO: This test is not working due to CORS
-          console.debug('Fetched auth');
           if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
-            console.debug('Setting unauthorized');
             this.setState(state.Disconnected.Unauthorized);
           }
         });

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["local"]
 log-spans = ["boile-rs/log-spans"]
 local = ["dep:tower-http"]
 

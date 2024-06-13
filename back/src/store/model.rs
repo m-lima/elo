@@ -5,33 +5,24 @@ pub struct Id {
     pub id: types::Id,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
 pub(crate) struct Player {
     pub id: types::Id,
     pub name: String,
     pub email: String,
     pub created_ms: Millis,
-}
-
-#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
-pub(crate) struct Rating {
-    pub player: types::Id,
-    #[allow(clippy::struct_field_names)]
     pub rating: f64,
-    pub deviation: f64,
-    pub volatility: f64,
 }
-
-#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
-pub(crate) struct PlayerRating {}
 
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub(crate) struct StatsCache {
-    pub player: types::Id,
-    pub wins: i64,
-    pub losses: i64,
-    pub points_won: i64,
-    pub points_lost: i64,
+pub(crate) struct Match {
+    pub id: types::Id,
+    pub player_one: types::Id,
+    pub player_two: types::Id,
+    pub score_one: i64,
+    pub score_two: i64,
+    pub accepted: bool,
+    pub created_ms: Millis,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, sqlx::Type)]
@@ -52,6 +43,7 @@ impl From<Player> for types::Player {
             name: value.name,
             email: value.email,
             created: value.created_ms.into(),
+            rating: value.rating,
         }
     }
 }

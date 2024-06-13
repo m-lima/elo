@@ -1,6 +1,7 @@
 use super::model;
 
 async fn insert(
+    name: &str,
     email: &str,
     pool: &sqlx::sqlite::SqlitePool,
 ) -> Result<model::Player, sqlx::Error> {
@@ -9,16 +10,24 @@ async fn insert(
         r#"
         INSERT INTO players (
             name,
-            email
+            email,
+            rating,
+            deviation,
+            volatility
         ) VALUES (
-            "name",
-            $1
+            $1,
+            $2,
+            0,
+            0,
+            0
         ) RETURNING
             id,
             name,
             email,
-            created_ms AS "created_ms: model::Millis"
+            created_ms AS "created_ms: model::Millis",
+            rating
         "#,
+        name,
         email
     )
     .fetch_one(pool)
@@ -30,7 +39,7 @@ mod constraints {
 
     #[sqlx::test]
     async fn text_column_cannot_be_blank(pool: sqlx::sqlite::SqlitePool) {
-        match insert("", &pool).await.err().unwrap() {
+        match insert("name", "", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!("275", db.code().unwrap());
                 assert_eq!(
@@ -41,7 +50,7 @@ mod constraints {
             err => panic!("Unexpected error: {err:?}"),
         }
 
-        match insert("    ", &pool).await.err().unwrap() {
+        match insert("name", "    ", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!("275", db.code().unwrap());
                 assert_eq!(
@@ -60,15 +69,22 @@ mod constraints {
             r#"
             INSERT INTO players (
                 name,
-                email
+                email,
+                rating,
+                deviation,
+                volatility
             ) VALUES (
                 "bla",
-                NULL
+                NULL,
+                0,
+                0,
+                0
             ) RETURNING
                 id,
                 name,
                 email,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: model::Millis",
+                rating
             "#
         )
         .fetch_one(&pool)
@@ -86,8 +102,8 @@ mod constraints {
 
     #[sqlx::test]
     async fn unique_column_must_be_unique(pool: sqlx::sqlite::SqlitePool) {
-        assert!(insert("email", &pool).await.err().is_none());
-        match insert("email", &pool).await.err().unwrap() {
+        assert!(insert("name", "email", &pool).await.err().is_none());
+        match insert("name", "email", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!("2067", db.code().unwrap());
                 assert_eq!("UNIQUE constraint failed: players.email", db.message());
@@ -99,28 +115,27 @@ mod constraints {
     #[sqlx::test]
     async fn foreign_key_must_exist(pool: sqlx::sqlite::SqlitePool) {
         match sqlx::query_as!(
-            model::Rating,
+            model::Match,
             r#"
-            INSERT INTO ratings (
-                player,
-                rating,
-                deviation,
-                volatility
+            INSERT INTO matches (
+                player_one,
+                player_two,
+                score_one,
+                score_two
             ) VALUES (
-                $1,
-                $2,
-                $3,
-                $4
+                0,
+                1,
+                0,
+                0
             ) RETURNING
-                player,
-                rating,
-                deviation,
-                volatility
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                accepted,
+                created_ms AS "created_ms: model::Millis"
             "#,
-            0,
-            0,
-            0,
-            0
         )
         .fetch_one(&pool)
         .await
@@ -135,30 +150,77 @@ mod constraints {
     }
 
     #[sqlx::test]
+    async fn exclusive_values_must_be_different(pool: sqlx::sqlite::SqlitePool) {
+        let player = insert("name", "email", &pool).await.unwrap();
+
+        match sqlx::query_as!(
+            model::Match,
+            r#"
+            INSERT INTO matches (
+                player_one,
+                player_two,
+                score_one,
+                score_two
+            ) VALUES (
+                $1,
+                $1,
+                0,
+                0
+            ) RETURNING
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                accepted,
+                created_ms AS "created_ms: model::Millis"
+            "#,
+            player.id
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap_err()
+        {
+            sqlx::Error::Database(db) => {
+                assert_eq!("275", db.code().unwrap());
+                assert_eq!(
+                    "CHECK constraint failed: player_one <> player_two",
+                    db.message()
+                );
+            }
+            err => panic!("Unexpected error: {err:?}"),
+        }
+    }
+
+    #[sqlx::test]
     async fn cascade_deletes(pool: sqlx::sqlite::SqlitePool) {
-        let player = insert("email", &pool).await.unwrap();
+        let one = insert("one", "one", &pool).await.unwrap();
+        let two = insert("two", "two", &pool).await.unwrap();
 
         let ranking = sqlx::query_as!(
-            model::Rating,
+            model::Match,
             r#"
-            INSERT INTO ratings (
-                player,
-                rating,
-                deviation,
-                volatility
+            INSERT INTO matches (
+                player_one,
+                player_two,
+                score_one,
+                score_two
             ) VALUES (
                 $1,
                 $2,
                 $3,
                 $4
             ) RETURNING
-                player,
-                rating,
-                deviation,
-                volatility
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                accepted,
+                created_ms AS "created_ms: model::Millis"
             "#,
-            player.id,
-            0,
+            one.id,
+            two.id,
             0,
             0
         )
@@ -168,16 +230,19 @@ mod constraints {
 
         assert_eq!(
             ranking,
-            model::Rating {
-                player: player.id,
-                rating: 0.0,
-                deviation: 0.0,
-                volatility: 0.0,
+            model::Match {
+                id: ranking.id,
+                player_one: one.id,
+                player_two: two.id,
+                score_one: 0,
+                score_two: 0,
+                accepted: false,
+                created_ms: ranking.created_ms,
             }
         );
 
         assert_eq!(
-            Some(player.id),
+            Some(one.id),
             sqlx::query!(
                 r#"
                 DELETE FROM
@@ -187,7 +252,7 @@ mod constraints {
                 RETURNING
                     id
                 "#,
-                player.id
+                one.id
             )
             .map(|r| r.id)
             .fetch_optional(&pool)
@@ -196,15 +261,18 @@ mod constraints {
         );
 
         assert!(sqlx::query_as!(
-            model::Rating,
+            model::Match,
             r#"
             SELECT
-                player,
-                rating,
-                deviation,
-                volatility
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                accepted,
+                created_ms AS "created_ms: model::Millis"
             FROM
-                ratings
+                matches
             "#,
         )
         .fetch_all(&pool)
@@ -219,7 +287,7 @@ mod behavior {
 
     #[sqlx::test]
     async fn updates_dont_return_optional(pool: sqlx::sqlite::SqlitePool) {
-        let player = insert("email", &pool).await.unwrap();
+        let player = insert("name", "email", &pool).await.unwrap();
 
         let id = sqlx::query_as!(
             model::Id,

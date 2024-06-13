@@ -10,17 +10,15 @@ pub enum Request {
 #[serde(rename_all = "camelCase")]
 pub enum Response {
     Id(types::Id),
-    Player(types::Player),
     Players(Vec<types::Player>),
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Player {
-    Info,
-    Rename(String),
+    Id,
     List,
-    Get(String),
+    Rename(String),
     Invite(Invite),
 }
 
@@ -87,10 +85,9 @@ impl ws::Request for Request {
     fn action(&self) -> &'static str {
         match self {
             Self::Player(player) => match player {
-                Player::Info => "Player::Info",
-                Player::Rename(_) => "Player::Renmae",
+                Player::Id => "Player::Id",
                 Player::List => "Player::List",
-                Player::Get(_) => "Player::Get",
+                Player::Rename(_) => "Player::Renmae",
                 Player::Invite(_) => "Player::Invite",
             },
         }

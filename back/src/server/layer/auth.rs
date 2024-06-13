@@ -42,7 +42,7 @@ impl Auth {
             }
         };
 
-        match self.store.players().by_email(user).await {
+        match self.store.players().id_for(user).await {
             Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }
@@ -78,9 +78,9 @@ impl Auth {
 
         let user = "me@email.com";
 
-        match self.store.players().by_email(user).await {
-            Ok(Some(user)) => {
-                request.extensions_mut().insert(user);
+        match self.store.players().id_for(user).await {
+            Ok(Some(id)) => {
+                request.extensions_mut().insert(id);
             }
             Ok(None) => {
                 forbid!(%user, "User is not authorized");

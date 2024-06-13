@@ -15,74 +15,6 @@ impl<'a> From<&'a super::Store> for Players<'a> {
 
 impl Players<'_> {
     #[tracing::instrument(skip(self))]
-    pub async fn list(&self) -> Result<Vec<types::Player>> {
-        sqlx::query_as!(
-            model::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                created_ms AS "created_ms: model::Millis"
-            FROM
-                players
-            "#
-        )
-        .fetch_all(self.pool)
-        .await
-        .map_err(Error::Query)
-        .map(|r| r.into_iter().map(types::Player::from).collect())
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub async fn by_email(&self, email: &str) -> Result<Option<types::Player>> {
-        let email = email.trim();
-
-        sqlx::query_as!(
-            model::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                created_ms AS "created_ms: model::Millis"
-            FROM
-                players
-            WHERE
-                email = $1
-            "#,
-            email
-        )
-        .fetch_optional(self.pool)
-        .await
-        .map_err(Error::Query)
-        .map(|r| r.map(types::Player::from))
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub async fn by_id(&self, id: types::Id) -> Result<Option<types::Player>> {
-        sqlx::query_as!(
-            model::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                created_ms AS "created_ms: model::Millis"
-            FROM
-                players
-            WHERE
-                id = $1
-            "#,
-            id
-        )
-        .fetch_optional(self.pool)
-        .await
-        .map_err(Error::Query)
-        .map(|r| r.map(types::Player::from))
-    }
-
-    #[tracing::instrument(skip(self))]
     pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
         let email = email.trim();
         if email.is_empty() {
@@ -105,6 +37,27 @@ impl Players<'_> {
         .await
         .map_err(Error::Query)
         .map(|r| r.map(|id| id.id))
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn list(&self) -> Result<Vec<types::Player>> {
+        sqlx::query_as!(
+            model::Player,
+            r#"
+            SELECT
+                id,
+                name,
+                email,
+                created_ms AS "created_ms: model::Millis",
+                rating
+            FROM
+                players
+            "#
+        )
+        .fetch_all(self.pool)
+        .await
+        .map_err(Error::Query)
+        .map(|r| r.into_iter().map(types::Player::from).collect())
     }
 
     #[tracing::instrument(skip(self))]

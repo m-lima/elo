@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 mod args;
 mod handler;
 mod mailbox;

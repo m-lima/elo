@@ -15,29 +15,18 @@ impl<'a> Player<'a> {
         let players = self.handler.store.players();
 
         match request {
-            model::Player::Info => players
-                .by_id(self.handler.user_id)
+            model::Player::Id => Ok(model::Response::Id(self.handler.user_id)),
+            model::Player::List => players
+                .list()
                 .await
                 .map_err(model::Error::Store)
-                .and_then(|r| r.ok_or(model::Error::NotFound))
-                .map(model::Response::Player),
+                .map(model::Response::Players),
             model::Player::Rename(name) => players
                 .rename(self.handler.user_id, &name)
                 .await
                 .map_err(model::Error::Store)
                 .and_then(|r| r.ok_or(model::Error::NotFound))
                 .map(model::Response::Id),
-            model::Player::List => players
-                .list()
-                .await
-                .map_err(model::Error::Store)
-                .map(model::Response::Players),
-            model::Player::Get(email) => players
-                .by_email(&email)
-                .await
-                .map_err(model::Error::Store)
-                .and_then(|r| r.ok_or(model::Error::NotFound))
-                .map(model::Response::Player),
             model::Player::Invite(model::Invite { name, email }) => {
                 let mailbox =
                     mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;

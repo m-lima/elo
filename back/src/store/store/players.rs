@@ -52,6 +52,9 @@ impl Players<'_> {
                 rating
             FROM
                 players
+            ORDER BY
+                rating DESC,
+                created_ms ASC
             "#
         )
         .fetch_all(self.pool)

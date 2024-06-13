@@ -2,7 +2,7 @@ import { For, JSX, Suspense } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
 import { usePlayers } from '../store';
-import { Player, byPosition } from '../types';
+import { type Player } from '../types';
 import { icon, Loading } from '../components';
 
 import './leaderboard.css';
@@ -47,8 +47,6 @@ const playerTable = (players: Player[] = []) => {
     return;
   };
 
-  players.sort(byPosition);
-
   return (
     <table class='clickable'>
       <thead>
@@ -56,17 +54,19 @@ const playerTable = (players: Player[] = []) => {
           <th />
           <th>#</th>
           <th>Player</th>
-          <th>Score</th>
+          <th>Rating</th>
         </tr>
       </thead>
       <tbody>
-        <For each={players}>{(p, i) => playerRow(navigate, p, getIcon(i(), players.length))}</For>
+        <For each={players}>
+          {(p, i) => playerRow(i() + 1, navigate, p, getIcon(i(), players.length))}
+        </For>
       </tbody>
     </table>
   );
 };
 
-const playerRow = (navigate: Navigator, player: Player, icon?: JSX.Element) => {
+const playerRow = (position: number, navigate: Navigator, player: Player, icon?: JSX.Element) => {
   return (
     <tr
       onClick={() => {
@@ -74,9 +74,9 @@ const playerRow = (navigate: Navigator, player: Player, icon?: JSX.Element) => {
       }}
     >
       <td class='router-leaderboard-icon'>{icon}</td>
-      <td>{player.position}</td>
+      <td>{position}</td>
       <td>{player.name}</td>
-      <td>{player.score}</td>
+      <td>{player.rating}</td>
     </tr>
   );
 };

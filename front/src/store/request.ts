@@ -1,5 +1,4 @@
-import type { Message } from '.';
-import type { Ok } from './message';
+import type { Message, Ok } from './message';
 
 export const newRequestId = () => Math.floor(Math.random() * 1024 * 1024);
 

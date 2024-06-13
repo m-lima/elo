@@ -6,7 +6,7 @@ import { newRequestId, validateMessage } from './request';
 export class Store {
   private readonly socket: Socket<Request, Message>;
 
-  readonly self: Resource<Player>;
+  readonly self: Resource<number>;
   readonly players: Resource<Player[]>;
 
   public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
@@ -24,8 +24,8 @@ export class Store {
 
     this.self = new Resource(() => {
       const id = newRequestId();
-      return this.socket.request({ id, do: { user: 'info' } }, message => {
-        const validated = validateMessage(id, 'user', message);
+      return this.socket.request({ id, do: { player: 'id' } }, message => {
+        const validated = validateMessage(id, 'id', message);
 
         if (validated === undefined) {
           return;
@@ -36,8 +36,8 @@ export class Store {
     });
     this.players = new Resource(() => {
       const id = newRequestId();
-      return this.socket.request({ id, do: { user: 'list' } }, message => {
-        const validated = validateMessage(id, 'users', message);
+      return this.socket.request({ id, do: { player: 'list' } }, message => {
+        const validated = validateMessage(id, 'players', message);
 
         if (validated === undefined) {
           return;
@@ -54,14 +54,6 @@ export class Store {
 
   public getPlayers() {
     return this.players.get();
-  }
-
-  // TODO: This is just a cheeky test
-  public increment() {
-    const self = this.self.getRaw();
-    if (self) {
-      this.self.set({ ...self, id: self.id + 1 });
-    }
   }
 
   private refresh() {

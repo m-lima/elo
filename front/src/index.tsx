@@ -17,7 +17,7 @@ const store = new Store(socket);
 const root = document.getElementById('root');
 
 const App = (props: ParentProps) => {
-  console.debug(state.toString(socketState()));
+  console.debug('Current state:', state.toString(socketState()));
   return (
     <>
       <Side />

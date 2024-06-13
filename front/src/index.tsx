@@ -9,12 +9,13 @@ import { state } from './socket';
 
 import './index.css';
 
+const root = document.getElementById('root');
+
 const socket = Store.makeSocket('ws://localhost:3333/ws/binary', 'http://localhost:3333/check');
 const [socketState, setSocketState] = createSignal(socket.getState());
 socket.registerStateListener(state => setSocketState(state));
 
 const store = new Store(socket);
-const root = document.getElementById('root');
 
 const App = (props: ParentProps) => {
   console.debug('Current state:', state.toString(socketState()));
@@ -27,21 +28,15 @@ const App = (props: ParentProps) => {
           return <h1>{JSON.stringify(error)}</h1>;
         }}
       >
-        <Switch>
-          <Match when={state.isPending(socketState())}>
+        <Switch fallback={<div>{props.children}</div>}>
+          <Match when={socketState() === state.Disconnected.Connecting}>
             <Loading />
-          </Match>
-          <Match when={state.isConnected(socketState())}>
-            <div>{props.children}</div>
           </Match>
           <Match when={socketState() === state.Disconnected.Unauthorized}>
             <error.Unauthorized />
           </Match>
-          <Match when={socketState() === state.Disconnected.Error}>
-            <error.Unauthorized />
-          </Match>
-          <Match when={socketState() === state.Disconnected.Closed}>
-            <error.Unauthorized />
+          <Match when={state.isDisconnected(socketState())}>
+            <div></div>
           </Match>
         </Switch>
       </ErrorBoundary>

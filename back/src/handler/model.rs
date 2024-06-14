@@ -7,6 +7,24 @@ pub enum Request {
     Invite(Invite),
 }
 
+impl std::fmt::Display for Request {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Player(player) => match player {
+                Player::Id => f.write_str("Player::Id"),
+                Player::List => f.write_str("Player::List"),
+                Player::Rename(_) => f.write_str("Player::Renmae"),
+            },
+            Self::Invite(invite) => match invite {
+                Invite::Player(_) => f.write_str("Invite::Player"),
+                Invite::Cancel(_) => f.write_str("Invite::Cancel"),
+                Invite::Accept => f.write_str("Invite::Accept"),
+                Invite::Reject => f.write_str("Invite::Reject"),
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Response {
@@ -56,25 +74,16 @@ pub enum Error {
     Store(store::Error),
     NotFound,
     InvalidEmail(mailbox::Error),
+    Forbidden,
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Store(error) => error.fmt(f),
-            Error::NotFound => f.write_str("Not found"),
-            Error::InvalidEmail(error) => error.fmt(f),
-        }
-    }
-}
-
-impl ws::IntoError for Error {
-    fn is_warn(&self) -> bool {
-        match self {
-            Error::Store(store::Error::Query(_)) => false,
-            Error::Store(store::Error::BlankValue(_) | store::Error::AlreadyExists)
-            | Error::NotFound
-            | Error::InvalidEmail(_) => true,
+            Self::Store(error) => error.fmt(f),
+            Self::NotFound => f.write_str("Not found"),
+            Self::InvalidEmail(error) => error.fmt(f),
+            Self::Forbidden => f.write_str("Forbidden"),
         }
     }
 }
@@ -93,24 +102,19 @@ impl From<Error> for ws::Error {
             Error::InvalidEmail(error) => {
                 Self::new(hyper::StatusCode::BAD_REQUEST, error.to_string())
             }
+            Error::Forbidden => Self::from(hyper::StatusCode::FORBIDDEN),
         }
     }
 }
 
-impl ws::Request for Request {
-    fn action(&self) -> &'static str {
+impl Error {
+    pub fn is_warn(&self) -> bool {
         match self {
-            Self::Player(player) => match player {
-                Player::Id => "Player::Id",
-                Player::List => "Player::List",
-                Player::Rename(_) => "Player::Renmae",
-            },
-            Self::Invite(invite) => match invite {
-                Invite::Player(_) => "Invite::Player",
-                Invite::Cancel(_) => "Invite::Cancel",
-                Invite::Accept => "Invite::Accept",
-                Invite::Reject => "Invite::Reject",
-            },
+            Self::Store(store::Error::Query(_)) => false,
+            Self::Store(store::Error::BlankValue(_) | store::Error::AlreadyExists)
+            | Self::NotFound
+            | Self::InvalidEmail(_)
+            | Self::Forbidden => true,
         }
     }
 }

@@ -14,6 +14,30 @@ impl<'a> From<&'a super::Store> for Invites<'a> {
 }
 
 impl Invites<'_> {
+    pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
+        let email = email.trim();
+        if email.is_empty() {
+            return Err(Error::BlankValue("email"));
+        }
+
+        sqlx::query_as!(
+            model::Id,
+            r#"
+            SELECT
+                id
+            FROM
+                invites
+            WHERE
+                email = $1
+            "#,
+            email
+        )
+        .fetch_optional(self.pool)
+        .await
+        .map_err(Error::Query)
+        .map(|r| r.map(|id| id.id))
+    }
+
     #[tracing::instrument(skip(self))]
     pub async fn invite(&self, inviter: types::Id, name: &str, email: &str) -> Result<types::Id> {
         let name = name.trim();
@@ -101,6 +125,7 @@ impl Invites<'_> {
     #[tracing::instrument(skip(self))]
     pub async fn accept(
         &self,
+        id: types::Id,
         email: &str,
         rating: f64,
         deviation: f64,
@@ -114,7 +139,8 @@ impl Invites<'_> {
             DELETE FROM
                 invites
             WHERE
-                email = $1
+                id = $1 AND
+                email = $2
             RETURNING
                 id,
                 inviter,
@@ -122,6 +148,7 @@ impl Invites<'_> {
                 email,
                 created_ms AS "created_ms: model::Millis"
             "#,
+            id,
             email
         )
         .fetch_optional(tx.as_mut())
@@ -169,17 +196,19 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn reject(&self, email: &str) -> Result<Option<types::Id>> {
+    pub async fn reject(&self, id: types::Id, email: &str) -> Result<Option<types::Id>> {
         sqlx::query_as!(
             model::Id,
             r#"
             DELETE FROM
                 invites
             WHERE
-                email = $1
+                id = $1 AND
+                email = $2
             RETURNING
                 id
             "#,
+            id,
             email
         )
         .fetch_optional(self.pool)

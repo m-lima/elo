@@ -1,7 +1,19 @@
 pub type Id = i64;
 
 #[derive(Debug, Clone)]
-pub struct User {
+pub enum User {
+    Existing(ExistingUser),
+    Pending(PendingUser),
+}
+
+#[derive(Debug, Clone)]
+pub struct ExistingUser {
+    pub id: i64,
+    pub email: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PendingUser {
     pub id: i64,
     pub email: String,
 }

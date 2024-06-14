@@ -4,21 +4,65 @@ mod player;
 use super::{broadcaster, model};
 use crate::{smtp, store, types, ws};
 
+pub trait Access: Sized {
+    fn email(&self) -> &String;
+
+    fn handle(
+        handler: &mut Handler<Self>,
+        request: model::Request,
+    ) -> impl std::future::Future<Output = Result<model::Response, model::Error>>;
+}
+
+macro_rules! impl_user {
+    ($type: ty) => {
+        impl Access for $type {
+            fn email(&self) -> &String {
+                &self.email
+            }
+
+            async fn handle(
+                handler: &mut Handler<Self>,
+                request: model::Request,
+            ) -> Result<model::Response, model::Error> {
+                match request {
+                    model::Request::Player(request) => {
+                        player::Player::<Self>::new(handler).handle(request).await
+                    }
+                    model::Request::Invite(request) => {
+                        invite::Invite::<Self>::new(handler).handle(request).await
+                    }
+                }
+            }
+        }
+
+        impl super::Access for $type {}
+    };
+}
+
+impl_user!(types::ExistingUser);
+impl_user!(types::PendingUser);
+
 #[derive(Debug)]
-pub struct Handler {
-    user_id: types::Id,
+pub struct Handler<A>
+where
+    A: Access,
+{
+    user: A,
     store: store::Store,
     smtp: smtp::Smtp,
     broadcaster: broadcaster::Broadcaster<model::Push>,
 }
 
-impl Handler {
+impl<A> Handler<A>
+where
+    A: Access,
+{
     #[must_use]
-    pub fn new(user_id: types::Id, store: store::Store, smtp: smtp::Smtp) -> Self {
+    pub fn new(user: A, store: store::Store, smtp: smtp::Smtp) -> Self {
         let broadcaster = broadcaster::Broadcaster::new();
 
         Self {
-            user_id,
+            user,
             store,
             smtp,
             broadcaster,
@@ -26,7 +70,10 @@ impl Handler {
     }
 }
 
-impl ws::Service for Handler {
+impl<A> ws::Service for Handler<A>
+where
+    A: Access,
+{
     type Request = model::Request;
     type Response = model::Response;
     type Error = model::Error;
@@ -37,9 +84,23 @@ impl ws::Service for Handler {
     }
 
     async fn call(&mut self, request: Self::Request) -> Result<Self::Response, Self::Error> {
-        match request {
-            model::Request::Player(request) => player::Player::new(self).handle(request).await,
-            model::Request::Invite(request) => invite::Invite::new(self).handle(request).await,
+        let start = std::time::Instant::now();
+        let message = request.to_string();
+
+        let result = A::handle(self, request).await;
+
+        match result {
+            Ok(_) => {
+                tracing::info!(user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+            }
+            Err(ref error) if error.is_warn() => {
+                tracing::warn!(%error, user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+            }
+            Err(ref error) => {
+                tracing::error!(%error, user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+            }
         }
+
+        result
     }
 }

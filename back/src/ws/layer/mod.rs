@@ -17,7 +17,6 @@ where
     S: service::Service,
 {
     id: String,
-    user: String,
     service: S,
     socket: axum::extract::ws::WebSocket,
     _mode: std::marker::PhantomData<M>,
@@ -28,20 +27,19 @@ where
     M: Mode,
     S: service::Service,
 {
-    pub fn new(socket: axum::extract::ws::WebSocket, service: S, user: String) -> Self {
+    pub fn new(socket: axum::extract::ws::WebSocket, service: S) -> Self {
         let id = format!("{id:04x}", id = rand::random::<u16>());
-        tracing::debug!(ws = %id, %user, mode = %M::mode(), "Opening websocket");
+        tracing::debug!(ws = %id, mode = %M::mode(), "Opening websocket");
 
         Self {
             id,
-            user,
             socket,
             service,
             _mode: std::marker::PhantomData,
         }
     }
 
-    #[tracing::instrument(skip_all, fields(ws = %self.id, user = %self.user, mode = %M::mode()))]
+    #[tracing::instrument(skip_all, fields(ws = %self.id, mode = %M::mode()))]
     pub async fn serve(mut self) {
         macro_rules! flow {
             ($flow_control: expr) => {
@@ -66,33 +64,24 @@ where
                             continue;
                         }
                     };
-                    tracing::debug!("Pushing message");
+
                     let message = message::Push { push };
+                    tracing::debug!("Pushing message");
                     flow!(self.send(message).await);
                 }
                 request = self.recv() => {
-                    use service::Request;
-                    use service::IntoError;
-
-                    let start = std::time::Instant::now();
                     let message::Request{ id, payload } = flow!(request);
-                    let action = payload.action();
 
                     match self.service.call(payload).await {
                         Ok(ok) =>{
-                            tracing::info!(latency = ?start.elapsed(), "{action}");
                             let message = message::Response { id, ok };
+                            tracing::debug!("Responding OK");
                             flow!(self.send(message).await);
                         }
                         Err(error) => {
-                            if error.is_warn() {
-                                tracing::warn!(%error, latency = ?start.elapsed(), "{action}");
-                            } else {
-                                tracing::error!(%error, latency = ?start.elapsed(), "{action}");
-                            }
-
                             let error = error.into();
                             let message = message::Error { id: Some(id), error };
+                            tracing::debug!("Responding ERROR");
                             flow!(self.send(message).await);
                         },
                     }

@@ -1,7 +1,7 @@
 pub trait Service {
-    type Request: Request;
+    type Request: serde::de::DeserializeOwned;
     type Response: serde::Serialize;
-    type Error: IntoError;
+    type Error: Into<Error>;
     type Push: Clone + serde::Serialize;
 
     fn subscribe(&self) -> tokio::sync::broadcast::Receiver<Self::Push>;
@@ -9,10 +9,6 @@ pub trait Service {
         &mut self,
         request: Self::Request,
     ) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>>;
-}
-
-pub trait Request: serde::de::DeserializeOwned {
-    fn action(&self) -> &'static str;
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -39,10 +35,6 @@ impl From<hyper::StatusCode> for Error {
             message: code.canonical_reason().map(String::from),
         }
     }
-}
-
-pub trait IntoError: Into<Error> + std::fmt::Display {
-    fn is_warn(&self) -> bool;
 }
 
 // allow(clippy::trivially_copy_pass_by_ref): To match serde's signature

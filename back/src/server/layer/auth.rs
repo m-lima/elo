@@ -10,7 +10,6 @@ impl Auth {
         Self { store }
     }
 
-    #[cfg(not(feature = "local"))]
     #[tracing::instrument(skip_all)]
     async fn auth<B, I>(
         self,
@@ -29,64 +28,41 @@ impl Auth {
             };
         }
 
-        let header = crate::X_USER;
+        let user = if cfg!(feature = "local") {
+            "me@email.com"
+        } else {
+            let header = crate::X_USER;
 
-        let Some(user_header) = request.headers().get(&header) else {
-            forbid!(%header, "Header is missing");
-        };
-
-        let user = match user_header.to_str() {
-            Ok(user) => user,
-            Err(error) => {
-                forbid!(%header, %error, "Header is not parseable as a String");
-            }
-        };
-
-        match self.store.players().id_for(user).await {
-            Ok(Some(id)) => {
-                let email = String::from(user);
-                request.extensions_mut().insert(types::User { id, email });
-            }
-            Ok(None) => {
-                forbid!(%user, "User is not authorized");
-            }
-            Err(error) => {
-                forbid!(%user, %error, "Could not query for user");
-            }
-        };
-
-        inner.call(request).await
-    }
-
-    #[cfg(feature = "local")]
-    #[tracing::instrument(skip_all)]
-    async fn auth<B, I>(
-        self,
-        mut request: hyper::Request<B>,
-        mut inner: I,
-    ) -> Result<I::Response, I::Error>
-    where
-        I: tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
-    {
-        macro_rules! forbid {
-            ($($arg: tt)*) => {
-                tracing::warn!($($arg)*);
-                return Ok(axum::response::IntoResponse::into_response(
-                    hyper::StatusCode::FORBIDDEN,
-                ));
+            let Some(user_header) = request.headers().get(&header) else {
+                forbid!(%header, "Header is missing");
             };
-        }
 
-        let user = "me@email.com";
+            match user_header.to_str() {
+                Ok(user) => user,
+                Err(error) => {
+                    forbid!(%header, %error, "Header is not parseable as a String");
+                }
+            }
+        };
 
         match self.store.players().id_for(user).await {
             Ok(Some(id)) => {
                 let email = String::from(user);
-                request.extensions_mut().insert(types::User { id, email });
+                request
+                    .extensions_mut()
+                    .insert(types::User::Existing(types::ExistingUser { id, email }));
             }
-            Ok(None) => {
-                forbid!(%user, "User is not authorized");
-            }
+            Ok(None) => match self.store.invites().id_for(user).await {
+                Ok(Some(id)) => {
+                    let email = String::from(user);
+                    request
+                        .extensions_mut()
+                        .insert(types::User::Pending(types::PendingUser { id, email }));
+                }
+                Ok(None) | Err(_) => {
+                    forbid!(%user, "User is not authorized");
+                }
+            },
             Err(error) => {
                 forbid!(%user, %error, "Could not query for user");
             }

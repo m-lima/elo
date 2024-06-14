@@ -15,17 +15,19 @@ impl<'a> From<&'a super::Store> for Players<'a> {
 
 impl Players<'_> {
     #[tracing::instrument(skip(self))]
-    pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
+    pub async fn auth(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
         }
 
         sqlx::query_as!(
-            model::Id,
+            model::User,
             r#"
             SELECT
-                id
+                id,
+                name,
+                email
             FROM
                 players
             WHERE
@@ -36,7 +38,7 @@ impl Players<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.map(types::User::from))
     }
 
     #[tracing::instrument(skip(self))]
@@ -48,6 +50,7 @@ impl Players<'_> {
                 id,
                 name,
                 email,
+                inviter,
                 created_ms AS "created_ms: model::Millis",
                 rating
             FROM
@@ -72,6 +75,7 @@ impl Players<'_> {
                 id,
                 name,
                 email,
+                inviter,
                 created_ms AS "created_ms: model::Millis",
                 rating
             FROM

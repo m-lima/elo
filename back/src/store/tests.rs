@@ -24,6 +24,7 @@ async fn insert(
             id,
             name,
             email,
+            inviter,
             created_ms AS "created_ms: model::Millis",
             rating
         "#,
@@ -83,6 +84,7 @@ mod constraints {
                 id,
                 name,
                 email,
+                inviter,
                 created_ms AS "created_ms: model::Millis",
                 rating
             "#

@@ -1,6 +1,6 @@
 use super::error::Error;
 use super::layer;
-use crate::{handler, smtp, store, types, ws};
+use crate::{handler, smtp, store, ws};
 
 pub struct Server {
     server: axum::serve::WithGracefulShutdown<axum::Router, axum::Router, boile_rs::rt::Shutdown>,
@@ -9,7 +9,7 @@ pub struct Server {
 impl Server {
     pub async fn new(port: u16, store: store::Store, smtp: smtp::Smtp) -> Result<Self, Error> {
         let router = route(store.clone(), smtp)
-            .layer(layer::auth(store))
+            .layer(layer::auth(handler::Auth::new(store.clone())))
             .layer(layer::logger());
 
         #[cfg(feature = "local")]
@@ -35,7 +35,7 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
     ) -> axum::routing::MethodRouter<()> {
         axum::routing::get(
             |upgrade: axum::extract::WebSocketUpgrade,
-             axum::Extension(user): axum::Extension<types::User>| async {
+             axum::Extension(user): axum::Extension<handler::UserAccess>| async {
                 upgrade.on_upgrade(|socket| async {
                     macro_rules! serve {
                         ($user: expr) => {{
@@ -46,8 +46,8 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
                     }
 
                     match user {
-                        types::User::Existing(user) => serve!(user),
-                        types::User::Pending(user) => serve!(user),
+                        handler::UserAccess::Regular(user) => serve!(user),
+                        handler::UserAccess::Pending(user) => serve!(user),
                     }
                 })
             },

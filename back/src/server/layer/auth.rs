@@ -1,13 +1,13 @@
-use crate::{store, types};
+use crate::handler;
 
 #[derive(Debug, Clone)]
 pub struct Auth {
-    store: store::Store,
+    handler: handler::Auth,
 }
 
 impl Auth {
-    pub fn new(store: store::Store) -> Self {
-        Self { store }
+    pub fn new(handler: handler::Auth) -> Self {
+        Self { handler }
     }
 
     #[tracing::instrument(skip_all)]
@@ -45,28 +45,17 @@ impl Auth {
             }
         };
 
-        match self.store.players().id_for(user).await {
-            Ok(Some(id)) => {
-                let email = String::from(user);
-                request
-                    .extensions_mut()
-                    .insert(types::User::Existing(types::ExistingUser { id, email }));
+        match self.handler.auth(user).await {
+            Ok(Some(user)) => {
+                request.extensions_mut().insert(user);
             }
-            Ok(None) => match self.store.invites().id_for(user).await {
-                Ok(Some(id)) => {
-                    let email = String::from(user);
-                    request
-                        .extensions_mut()
-                        .insert(types::User::Pending(types::PendingUser { id, email }));
-                }
-                Ok(None) | Err(_) => {
-                    forbid!(%user, "User is not authorized");
-                }
-            },
+            Ok(None) => {
+                forbid!(%user, "User is not authorized");
+            }
             Err(error) => {
                 forbid!(%user, %error, "Could not query for user");
             }
-        };
+        }
 
         inner.call(request).await
     }

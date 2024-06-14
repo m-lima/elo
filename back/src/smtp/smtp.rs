@@ -114,7 +114,7 @@ impl Worker {
     ) -> (tracing::Span, Result<lettre::Message, BuildError>) {
         match payload {
             Payload::Invite(recipient) => {
-                let invitee = String::from(recipient.name());
+                let name = String::from(recipient.name());
                 let elo = self.from.name();
                 let link = &self.link;
 
@@ -130,7 +130,7 @@ impl Worker {
                                 lettre::message::SinglePart::builder()
                                     .header(lettre::message::header::ContentType::TEXT_PLAIN)
                                     .body(format!(
-                                        r#"Hi {invitee}!
+                                        r#"Hi {name}!
 
 You have been invited to join {elo}!
 Try it out at {link}
@@ -152,7 +152,7 @@ Happy gaming!
     <title>Invitation to join {elo}</title>
 </head>
 <body>
-    <p>Hi {invitee}!</p>
+    <p>Hi {name}!</p>
 
     <p>
         You have been invited to join {elo}!
@@ -186,7 +186,7 @@ Happy gaming!
 
                 let outcome = if accepted { "accepted" } else { "rejected" };
                 let elo = self.from.name();
-                let inviter = inviter.name;
+                let name = inviter.name;
                 let invitee = invitee.name;
 
                 let message = lettre::Message::builder()
@@ -194,7 +194,7 @@ Happy gaming!
                     .to(recipient.into())
                     .subject(format!("Invitation {outcome} by {invitee}"))
                     .body(format!(
-                        r#"Hi {inviter}!
+                        r#"Hi {name}!
 
 The user {invitee} has {outcome} your invitation to join {elo}.
 

@@ -14,17 +14,19 @@ impl<'a> From<&'a super::Store> for Invites<'a> {
 }
 
 impl Invites<'_> {
-    pub async fn id_for(&self, email: &str) -> Result<Option<types::Id>> {
+    pub async fn auth(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
         }
 
         sqlx::query_as!(
-            model::Id,
+            model::User,
             r#"
             SELECT
-                id
+                id,
+                name,
+                email
             FROM
                 invites
             WHERE
@@ -35,7 +37,7 @@ impl Invites<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.map(types::User::from))
     }
 
     #[tracing::instrument(skip(self))]
@@ -126,7 +128,6 @@ impl Invites<'_> {
     pub async fn accept(
         &self,
         id: types::Id,
-        email: &str,
         rating: f64,
         deviation: f64,
         volatility: f64,
@@ -139,8 +140,7 @@ impl Invites<'_> {
             DELETE FROM
                 invites
             WHERE
-                id = $1 AND
-                email = $2
+                id = $1
             RETURNING
                 id,
                 inviter,
@@ -148,8 +148,7 @@ impl Invites<'_> {
                 email,
                 created_ms AS "created_ms: model::Millis"
             "#,
-            id,
-            email
+            id
         )
         .fetch_optional(tx.as_mut())
         .await
@@ -179,6 +178,7 @@ impl Invites<'_> {
                 id,
                 name,
                 email,
+                inviter,
                 created_ms AS "created_ms: model::Millis",
                 rating
             "#,
@@ -200,24 +200,26 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn reject(&self, id: types::Id, email: &str) -> Result<Option<types::Id>> {
+    pub async fn reject(&self, id: types::Id) -> Result<Option<types::Invite>> {
         sqlx::query_as!(
-            model::Id,
+            model::Invite,
             r#"
             DELETE FROM
                 invites
             WHERE
-                id = $1 AND
-                email = $2
+                id = $1
             RETURNING
-                id
+                id,
+                inviter,
+                name,
+                email,
+                created_ms AS "created_ms: model::Millis"
             "#,
-            id,
-            email
+            id
         )
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.map(types::Invite::from))
     }
 }

@@ -1,10 +1,10 @@
 mod auth;
 mod logger;
 
-use crate::store;
+use crate::handler;
 
-pub fn auth(store: store::Store) -> auth::Auth {
-    auth::Auth::new(store)
+pub fn auth(handler: handler::Auth) -> auth::Auth {
+    auth::Auth::new(handler)
 }
 
 pub fn logger() -> logger::Logger {

@@ -1,21 +1,9 @@
+// TODO: Make this type safe
 pub type Id = i64;
 
-// TODO: Move this to handler. Then, on auth, detach it from these types
-#[derive(Debug, Clone)]
-pub enum User {
-    Existing(ExistingUser),
-    Pending(PendingUser),
-}
-
-#[derive(Debug, Clone)]
-pub struct ExistingUser {
-    pub id: Id,
-    pub name: String,
-    pub email: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct PendingUser {
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct User {
     pub id: Id,
     pub name: String,
     pub email: String,
@@ -27,8 +15,19 @@ pub struct Player {
     pub id: Id,
     pub name: String,
     pub email: String,
-    pub inviter: Id,
+    pub inviter: Option<Id>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub created: chrono::DateTime<chrono::Utc>,
     pub rating: f64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Invite {
+    pub id: Id,
+    pub inviter: Id,
+    pub name: String,
+    pub email: String,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created: chrono::DateTime<chrono::Utc>,
 }

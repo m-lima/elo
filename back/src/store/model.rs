@@ -6,10 +6,18 @@ pub struct Id {
 }
 
 #[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
+pub(crate) struct User {
+    pub id: types::Id,
+    pub name: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
 pub(crate) struct Player {
     pub id: types::Id,
     pub name: String,
     pub email: String,
+    pub inviter: Option<types::Id>,
     pub created_ms: Millis,
     pub rating: f64,
 }
@@ -45,14 +53,37 @@ impl From<Millis> for chrono::DateTime<chrono::Utc> {
     }
 }
 
+impl From<User> for types::User {
+    fn from(value: User) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            email: value.email,
+        }
+    }
+}
+
 impl From<Player> for types::Player {
     fn from(value: Player) -> Self {
         Self {
             id: value.id,
             name: value.name,
             email: value.email,
+            inviter: value.inviter,
             created: value.created_ms.into(),
             rating: value.rating,
+        }
+    }
+}
+
+impl From<Invite> for types::Invite {
+    fn from(value: Invite) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            email: value.email,
+            inviter: value.inviter,
+            created: value.created_ms.into(),
         }
     }
 }

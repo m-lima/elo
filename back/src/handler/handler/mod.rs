@@ -1,62 +1,45 @@
 mod invite;
 mod player;
 
-use super::{broadcaster, model};
-use crate::{mailbox, smtp, store, types, ws};
+use super::{access, broadcaster, model};
+use crate::{smtp, store, ws};
 
-pub trait Access: Sized {
-    fn into_proto(self) -> mailbox::Proto;
-
-    fn email(&self) -> &String;
-
+pub trait Access: access::Access + Sized {
     fn handle(
         handler: &mut Handler<Self>,
         request: model::Request,
     ) -> impl std::future::Future<Output = Result<model::Response, model::Error>>;
 }
 
-macro_rules! impl_user {
+macro_rules! impl_access {
     ($type: ty) => {
         impl Access for $type {
-            fn into_proto(self) -> mailbox::Proto {
-                mailbox::Proto {
-                    name: self.name,
-                    email: self.email,
-                }
-            }
-
-            fn email(&self) -> &String {
-                &self.email
-            }
-
             async fn handle(
                 handler: &mut Handler<Self>,
                 request: model::Request,
             ) -> Result<model::Response, model::Error> {
                 match request {
                     model::Request::Player(request) => {
-                        player::Player::<Self>::new(handler).handle(request).await
+                        player::Player::new(handler).handle(request).await
                     }
                     model::Request::Invite(request) => {
-                        invite::Invite::<Self>::new(handler).handle(request).await
+                        invite::Invite::new(handler).handle(request).await
                     }
                 }
             }
         }
-
-        impl super::Access for $type {}
     };
 }
 
-impl_user!(types::ExistingUser);
-impl_user!(types::PendingUser);
+impl_access!(access::Regular);
+impl_access!(access::Pending);
 
 #[derive(Debug)]
 pub struct Handler<A>
 where
     A: Access,
 {
-    user: A,
+    user: access::User<A>,
     store: store::Store,
     smtp: smtp::Smtp,
     broadcaster: broadcaster::Broadcaster<model::Push>,
@@ -67,7 +50,7 @@ where
     A: Access,
 {
     #[must_use]
-    pub fn new(user: A, store: store::Store, smtp: smtp::Smtp) -> Self {
+    pub fn new(user: access::User<A>, store: store::Store, smtp: smtp::Smtp) -> Self {
         let broadcaster = broadcaster::Broadcaster::new();
 
         Self {

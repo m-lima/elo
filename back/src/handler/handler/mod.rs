@@ -2,9 +2,11 @@ mod invite;
 mod player;
 
 use super::{broadcaster, model};
-use crate::{smtp, store, types, ws};
+use crate::{mailbox, smtp, store, types, ws};
 
 pub trait Access: Sized {
+    fn into_proto(self) -> mailbox::Proto;
+
     fn email(&self) -> &String;
 
     fn handle(
@@ -16,6 +18,13 @@ pub trait Access: Sized {
 macro_rules! impl_user {
     ($type: ty) => {
         impl Access for $type {
+            fn into_proto(self) -> mailbox::Proto {
+                mailbox::Proto {
+                    name: self.name,
+                    email: self.email,
+                }
+            }
+
             fn email(&self) -> &String {
                 &self.email
             }

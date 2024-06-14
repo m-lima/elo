@@ -33,6 +33,10 @@ impl Smtp {
             }
         }
     }
+
+    pub fn present(&self) -> bool {
+        self.tx.is_some()
+    }
 }
 
 struct Worker {
@@ -107,11 +111,11 @@ impl Worker {
     fn build_message(
         &self,
         payload: Payload,
-    ) -> (tracing::Span, Result<lettre::Message, lettre::error::Error>) {
+    ) -> (tracing::Span, Result<lettre::Message, BuildError>) {
         match payload {
             Payload::Invite(recipient) => {
                 let invitee = String::from(recipient.name());
-                let name = self.from.name();
+                let elo = self.from.name();
                 let link = &self.link;
 
                 let span = tracing::info_span!("send", kind = %"Invite", %recipient);
@@ -119,7 +123,7 @@ impl Worker {
                 let message = lettre::Message::builder()
                     .from(self.from.clone().into())
                     .to(recipient.into())
-                    .subject(format!("Invitation to join {name}"))
+                    .subject(format!("Invitation to join {elo}"))
                     .multipart(
                         lettre::message::MultiPart::alternative()
                             .singlepart(
@@ -128,7 +132,7 @@ impl Worker {
                                     .body(format!(
                                         r#"Hi {invitee}!
 
-You have been invited to join {name}!
+You have been invited to join {elo}!
 Try it out at {link}
 
 Happy gaming!
@@ -139,31 +143,76 @@ Happy gaming!
                                 lettre::message::SinglePart::builder()
                                     .header(lettre::message::header::ContentType::TEXT_HTML)
                                     .body(format!(
-                                        r#"<!DOCTYPE html>
+                                        r#"
+<!DOCTYPE html>
 <html lang = "en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitation to join {name}</title>
+    <title>Invitation to join {elo}</title>
 </head>
 <body>
-Hi {invitee}!
+    <p>Hi {invitee}!</p>
 
-You have been invited to join {name}!
-Try it out at <a href={link}>{link}</a>
+    <p>
+        You have been invited to join {elo}!
+        <br>
+        Try it out at <a href="{link}">{link}</a>
+    </p>
 
-Happy gaming!
+    <p>
+        Happy gaming!
+    </p>
 </body>
 </html>
 "#
                                     )),
                             ),
-                    );
+                    )
+                    .map_err(BuildError::Lettre);
 
                 (span, message)
             }
-            Payload::_Challenge(_) => todo!(),
-            Payload::_Match(_) => todo!(),
+            Payload::InviteOutcome {
+                inviter,
+                invitee,
+                accepted,
+            } => {
+                let span = tracing::info_span!("send", kind = %{if accepted { "Accepted" } else { "Rejected" } }, recipient = %inviter);
+
+                let Ok(recipient) = mailbox::Mailbox::try_from(inviter.clone()) else {
+                    return (span, Err(BuildError::InvalidEmail(inviter)));
+                };
+
+                let outcome = if accepted { "accepted" } else { "rejected" };
+                let elo = self.from.name();
+                let inviter = inviter.name;
+                let invitee = invitee.name;
+
+                let message = lettre::Message::builder()
+                    .from(self.from.clone().into())
+                    .to(recipient.into())
+                    .subject(format!("Invitation {outcome} by {invitee}"))
+                    .body(format!(
+                        r#"Hi {inviter}!
+
+The user {invitee} has {outcome} your invitation to join {elo}.
+
+Happy gaming!
+"#
+                    ))
+                    .map_err(BuildError::Lettre);
+
+                (span, message)
+            }
         }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum BuildError {
+    #[error(transparent)]
+    Lettre(lettre::error::Error),
+    #[error("Could not create mailbox for '{0}'")]
+    InvalidEmail(mailbox::Proto),
 }

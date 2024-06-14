@@ -40,6 +40,30 @@ impl Players<'_> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub async fn get(&self, id: types::Id) -> Result<Option<types::Player>> {
+        sqlx::query_as!(
+            model::Player,
+            r#"
+            SELECT
+                id,
+                name,
+                email,
+                created_ms AS "created_ms: model::Millis",
+                rating
+            FROM
+                players
+            ORDER BY
+                rating DESC,
+                created_ms ASC
+            "#
+        )
+        .fetch_optional(self.pool)
+        .await
+        .map_err(Error::Query)
+        .map(|p| p.map(types::Player::from))
+    }
+
+    #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::Player>> {
         sqlx::query_as!(
             model::Player,

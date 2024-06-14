@@ -30,7 +30,7 @@ impl std::fmt::Display for Request {
 pub enum Response {
     Id(types::Id),
     Players(Vec<types::Player>),
-    Renamed,
+    Done,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -61,6 +61,8 @@ pub struct InvitePlayer {
 pub enum Push {
     Renamed(Renamed),
     Invited(InvitePlayer),
+    Uninvited(types::Id),
+    Joined(types::Player),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

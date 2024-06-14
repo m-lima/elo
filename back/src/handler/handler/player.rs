@@ -44,7 +44,7 @@ impl<'a> Player<'a, types::ExistingUser> {
                         name,
                     }));
 
-                Ok(model::Response::Renamed)
+                Ok(model::Response::Done)
             }
         }
     }

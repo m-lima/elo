@@ -76,6 +76,29 @@ impl std::fmt::Debug for Mailbox {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Proto {
+    pub name: String,
+    pub email: String,
+}
+
+impl TryFrom<Proto> for Mailbox {
+    type Error = Error;
+
+    fn try_from(proto: Proto) -> Result<Self, Self::Error> {
+        Self::new(proto.name, proto.email)
+    }
+}
+
+impl std::fmt::Display for Proto {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.name.fmt(f)?;
+        f.write_str(" <")?;
+        self.email.fmt(f)?;
+        '>'.fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

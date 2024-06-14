@@ -130,7 +130,7 @@ impl Invites<'_> {
         rating: f64,
         deviation: f64,
         volatility: f64,
-    ) -> Result<Option<types::Id>> {
+    ) -> Result<Option<types::Player>> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let Some(invite) = sqlx::query_as!(
@@ -158,8 +158,8 @@ impl Invites<'_> {
             return Ok(None);
         };
 
-        let id = sqlx::query_as!(
-            model::Id,
+        let player = sqlx::query_as!(
+            model::Player,
             r#"
             INSERT INTO players (
                 name,
@@ -176,7 +176,11 @@ impl Invites<'_> {
                 $5,
                 $6
             ) RETURNING
-                id
+                id,
+                name,
+                email,
+                created_ms AS "created_ms: model::Millis",
+                rating
             "#,
             invite.name,
             invite.email,
@@ -188,11 +192,11 @@ impl Invites<'_> {
         .fetch_one(tx.as_mut())
         .await
         .map_err(Error::Query)
-        .map(|r| r.id)?;
+        .map(types::Player::from)?;
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(Some(id))
+        Ok(Some(player))
     }
 
     #[tracing::instrument(skip(self))]

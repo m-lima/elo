@@ -1,7 +1,10 @@
-use crate::{mailbox, types};
+use crate::mailbox;
 
 pub enum Payload {
     Invite(mailbox::Mailbox),
-    _Challenge(types::Id),
-    _Match(types::Id),
+    InviteOutcome {
+        inviter: mailbox::Proto,
+        invitee: mailbox::Proto,
+        accepted: bool,
+    },
 }

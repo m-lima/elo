@@ -1,13 +1,29 @@
-use crate::handler;
+// TODO: This is completely independent. Move this to boile_rs?
 
-#[derive(Debug, Clone)]
-pub struct Auth {
-    handler: handler::Auth,
+pub trait Provider: 'static + Clone + Send {
+    type Ok: Clone + Send + Sync;
+    type Error: std::fmt::Display;
+
+    fn auth(
+        &self,
+        user: &str,
+    ) -> impl std::future::Future<Output = Result<Option<Self::Ok>, Self::Error>> + Send;
 }
 
-impl Auth {
-    pub fn new(handler: handler::Auth) -> Self {
-        Self { handler }
+#[derive(Debug, Clone)]
+pub struct Auth<P>
+where
+    P: Provider,
+{
+    provider: P,
+}
+
+impl<P> Auth<P>
+where
+    P: Provider,
+{
+    pub fn new(provider: P) -> Self {
+        Self { provider }
     }
 
     #[tracing::instrument(skip_all)]
@@ -45,7 +61,7 @@ impl Auth {
             }
         };
 
-        match self.handler.auth(user).await {
+        match self.provider.auth(user).await {
             Ok(Some(user)) => {
                 request.extensions_mut().insert(user);
             }
@@ -61,53 +77,65 @@ impl Auth {
     }
 }
 
-impl<I> tower_layer::Layer<I> for Auth {
-    type Service = Middleware<I>;
+mod tower {
+    use super::{Auth, Provider};
 
-    fn layer(&self, inner: I) -> Self::Service {
-        Middleware {
-            auth: self.clone(),
-            inner,
-            ready_inner: None,
+    impl<I, P> tower_layer::Layer<I> for Auth<P>
+    where
+        P: Provider,
+    {
+        type Service = Middleware<P, I>;
+
+        fn layer(&self, inner: I) -> Self::Service {
+            Middleware {
+                auth: self.clone(),
+                inner,
+                ready_inner: None,
+            }
         }
     }
-}
 
-#[derive(Debug, Clone)]
-pub struct Middleware<I> {
-    auth: Auth,
-    inner: I,
-    ready_inner: Option<I>,
-}
-
-impl<B, I> tower_service::Service<hyper::Request<B>> for Middleware<I>
-where
-    B: 'static + Send,
-    I::Future: Send,
-    I: 'static
-        + Clone
-        + Send
-        + tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
-{
-    type Response = I::Response;
-    type Error = I::Error;
-    type Future =
-        std::pin::Pin<Box<dyn Send + std::future::Future<Output = Result<I::Response, I::Error>>>>;
-
-    fn poll_ready(
-        &mut self,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
-        let inner = self.ready_inner.get_or_insert_with(|| self.inner.clone());
-        inner.poll_ready(cx)
+    #[derive(Debug, Clone)]
+    pub struct Middleware<P, I>
+    where
+        P: Provider,
+    {
+        auth: Auth<P>,
+        inner: I,
+        ready_inner: Option<I>,
     }
 
-    fn call(&mut self, request: hyper::Request<B>) -> Self::Future {
-        let inner = self
-            .ready_inner
-            .take()
-            .expect("Received a `call` in Auth without a `poll_ready`");
+    impl<B, P, I> tower_service::Service<hyper::Request<B>> for Middleware<P, I>
+    where
+        B: 'static + Send,
+        P: Provider,
+        I::Future: Send,
+        I: 'static
+            + Clone
+            + Send
+            + tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
+    {
+        type Response = I::Response;
+        type Error = I::Error;
+        type Future = std::pin::Pin<
+            Box<dyn Send + std::future::Future<Output = Result<I::Response, I::Error>>>,
+        >;
 
-        Box::pin(self.auth.clone().auth(request, inner))
+        fn poll_ready(
+            &mut self,
+            cx: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Result<(), Self::Error>> {
+            let inner = self.ready_inner.get_or_insert_with(|| self.inner.clone());
+            inner.poll_ready(cx)
+        }
+
+        fn call(&mut self, request: hyper::Request<B>) -> Self::Future {
+            let inner = self
+                .ready_inner
+                .take()
+                .expect("Received a `call` in Auth without a `poll_ready`");
+
+            Box::pin(self.auth.clone().auth(request, inner))
+        }
     }
 }

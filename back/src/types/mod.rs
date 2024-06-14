@@ -1,4 +1,3 @@
-// TODO: Make this type safe
 pub type Id = i64;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

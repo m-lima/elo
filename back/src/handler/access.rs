@@ -1,4 +1,4 @@
-use crate::{mailbox, store, types};
+use crate::{mailbox, server, store, types};
 
 #[derive(Debug, Clone)]
 pub struct User<A>
@@ -37,8 +37,6 @@ where
 
 #[derive(Debug, Clone)]
 pub enum UserAccess {
-    // TODO: Consider adding admin
-    // Admin(User<Admin>),
     Regular(User<Regular>),
     Pending(User<Pending>),
 }
@@ -68,8 +66,13 @@ impl Auth {
     pub fn new(store: store::Store) -> Self {
         Self { store }
     }
+}
 
-    pub async fn auth(&self, user: &str) -> Result<Option<UserAccess>, store::Error> {
+impl server::auth::Provider for Auth {
+    type Ok = UserAccess;
+    type Error = store::Error;
+
+    async fn auth(&self, user: &str) -> Result<Option<Self::Ok>, Self::Error> {
         if let Some(user) = self.store.players().auth(user).await? {
             return Ok(Some(UserAccess::Regular(User {
                 id: user.id,

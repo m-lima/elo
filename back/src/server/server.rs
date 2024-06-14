@@ -9,7 +9,7 @@ pub struct Server {
 impl Server {
     pub async fn new(port: u16, store: store::Store, smtp: smtp::Smtp) -> Result<Self, Error> {
         let router = route(store.clone(), smtp)
-            .layer(layer::auth(handler::Auth::new(store.clone())))
+            .layer(layer::auth::Auth::new(handler::Auth::new(store.clone())))
             .layer(layer::logger());
 
         #[cfg(feature = "local")]

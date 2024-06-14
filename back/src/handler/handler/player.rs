@@ -1,5 +1,4 @@
 use super::super::model;
-use crate::{mailbox, smtp};
 
 #[derive(Debug)]
 pub struct Player<'a> {
@@ -21,32 +20,22 @@ impl<'a> Player<'a> {
                 .await
                 .map_err(model::Error::Store)
                 .map(model::Response::Players),
-            model::Player::Rename(name) => players
-                .rename(self.handler.user_id, &name)
-                .await
-                .map_err(model::Error::Store)
-                .and_then(|r| r.ok_or(model::Error::NotFound))
-                .map(model::Response::Id),
-            model::Player::Invite(model::Invite { name, email }) => {
-                let mailbox =
-                    mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
-
-                let id = players
-                    .invite(self.handler.user_id, mailbox.name(), mailbox.email())
+            model::Player::Rename(name) => {
+                players
+                    .rename(self.handler.user_id, &name)
                     .await
                     .map_err(model::Error::Store)
+                    .and_then(|r| r.ok_or(model::Error::NotFound))
                     .map(model::Response::Id)?;
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Invited(model::Invite {
-                        name: String::from(mailbox.name()),
-                        email: String::from(mailbox.email()),
+                    .send(model::Push::Renamed(model::Renamed {
+                        player: self.handler.user_id,
+                        name,
                     }));
 
-                self.handler.smtp.send(smtp::Payload::Invite(mailbox)).await;
-
-                Ok(id)
+                Ok(model::Response::Renamed)
             }
         }
     }

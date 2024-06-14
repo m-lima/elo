@@ -4,6 +4,7 @@ use crate::{mailbox, store, types, ws};
 #[serde(rename_all = "camelCase")]
 pub enum Request {
     Player(Player),
+    Invite(Invite),
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -11,6 +12,7 @@ pub enum Request {
 pub enum Response {
     Id(types::Id),
     Players(Vec<types::Player>),
+    Renamed,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -19,12 +21,19 @@ pub enum Player {
     Id,
     List,
     Rename(String),
-    Invite(Invite),
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Invite {
+    Player(InvitePlayer),
+    Cancel(types::Id),
+    Accept,
+    Reject,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Invite {
+pub struct InvitePlayer {
     pub name: String,
     pub email: String,
 }
@@ -32,7 +41,14 @@ pub struct Invite {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Push {
-    Invited(Invite),
+    Renamed(Renamed),
+    Invited(InvitePlayer),
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Renamed {
+    pub player: types::Id,
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -88,7 +104,12 @@ impl ws::Request for Request {
                 Player::Id => "Player::Id",
                 Player::List => "Player::List",
                 Player::Rename(_) => "Player::Renmae",
-                Player::Invite(_) => "Player::Invite",
+            },
+            Self::Invite(invite) => match invite {
+                Invite::Player(_) => "Invite::Player",
+                Invite::Cancel(_) => "Invite::Cancel",
+                Invite::Accept => "Invite::Accept",
+                Invite::Reject => "Invite::Reject",
             },
         }
     }

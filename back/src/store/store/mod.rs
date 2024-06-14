@@ -1,3 +1,4 @@
+mod invites;
 mod players;
 
 #[derive(Debug, Clone)]
@@ -26,5 +27,10 @@ impl Store {
     #[must_use]
     pub fn players(&self) -> players::Players<'_> {
         players::Players::from(self)
+    }
+
+    #[must_use]
+    pub fn invites(&self) -> invites::Invites<'_> {
+        invites::Invites::from(self)
     }
 }

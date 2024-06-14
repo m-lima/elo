@@ -14,6 +14,15 @@ pub(crate) struct Player {
     pub rating: f64,
 }
 
+#[derive(Debug, Clone, PartialEq, sqlx::FromRow)]
+pub(crate) struct Invite {
+    pub id: types::Id,
+    pub inviter: types::Id,
+    pub email: String,
+    pub name: String,
+    pub created_ms: Millis,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub(crate) struct Match {
     pub id: types::Id,

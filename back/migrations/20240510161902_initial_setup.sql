@@ -10,7 +10,11 @@ CREATE TABLE players (
   -- rating
   rating     REAL NOT NULL,
   deviation  REAL NOT NULL,
-  volatility REAL NOT NULL
+  volatility REAL NOT NULL,
+
+  inviter    INTEGER,
+
+  FOREIGN KEY(inviter) REFERENCES players(id) ON DELETE SET NULL
 );
 
 CREATE TABLE invites (

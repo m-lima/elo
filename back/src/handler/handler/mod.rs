@@ -1,3 +1,4 @@
+mod invite;
 mod player;
 
 use super::{broadcaster, model};
@@ -38,6 +39,7 @@ impl ws::Service for Handler {
     async fn call(&mut self, request: Self::Request) -> Result<Self::Response, Self::Error> {
         match request {
             model::Request::Player(request) => player::Player::new(self).handle(request).await,
+            model::Request::Invite(request) => invite::Invite::new(self).handle(request).await,
         }
     }
 }

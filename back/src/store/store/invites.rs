@@ -1,4 +1,4 @@
-use super::super::{error::Error, model};
+use super::super::error::Error;
 use crate::types;
 
 type Result<T = ()> = std::result::Result<T, Error>;
@@ -21,7 +21,7 @@ impl Invites<'_> {
         }
 
         sqlx::query_as!(
-            model::User,
+            types::User,
             r#"
             SELECT
                 id,
@@ -37,7 +37,6 @@ impl Invites<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(types::User::from))
     }
 
     #[tracing::instrument(skip(self))]
@@ -55,7 +54,7 @@ impl Invites<'_> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         if sqlx::query_as!(
-            model::Id,
+            super::Id,
             r#"
             SELECT
                 id
@@ -75,7 +74,7 @@ impl Invites<'_> {
         }
 
         let id = sqlx::query_as!(
-            model::Id,
+            super::Id,
             r#"
             INSERT INTO invites (
                 inviter,
@@ -105,7 +104,7 @@ impl Invites<'_> {
     #[tracing::instrument(skip(self))]
     pub async fn cancel(&self, inviter: types::Id, id: types::Id) -> Result<Option<types::Id>> {
         sqlx::query_as!(
-            model::Id,
+            super::Id,
             r#"
             DELETE FROM
                 invites
@@ -135,7 +134,7 @@ impl Invites<'_> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let Some(invite) = sqlx::query_as!(
-            model::Invite,
+            types::Invite,
             r#"
             DELETE FROM
                 invites
@@ -146,7 +145,7 @@ impl Invites<'_> {
                 inviter,
                 name,
                 email,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             "#,
             id
         )
@@ -158,7 +157,7 @@ impl Invites<'_> {
         };
 
         let player = sqlx::query_as!(
-            model::Player,
+            types::Player,
             r#"
             INSERT INTO players (
                 name,
@@ -179,7 +178,7 @@ impl Invites<'_> {
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: model::Millis",
+                created_ms AS "created_ms: types::Millis",
                 rating
             "#,
             invite.name,
@@ -191,8 +190,7 @@ impl Invites<'_> {
         )
         .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::Query)
-        .map(types::Player::from)?;
+        .map_err(Error::Query)?;
 
         tx.commit().await.map_err(Error::Query)?;
 
@@ -202,7 +200,7 @@ impl Invites<'_> {
     #[tracing::instrument(skip(self))]
     pub async fn reject(&self, id: types::Id) -> Result<Option<types::Invite>> {
         sqlx::query_as!(
-            model::Invite,
+            types::Invite,
             r#"
             DELETE FROM
                 invites
@@ -213,13 +211,12 @@ impl Invites<'_> {
                 inviter,
                 name,
                 email,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             "#,
             id
         )
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(types::Invite::from))
     }
 }

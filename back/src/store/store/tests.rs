@@ -1,12 +1,12 @@
-use super::model;
+use crate::types;
 
 async fn insert(
     name: &str,
     email: &str,
     pool: &sqlx::sqlite::SqlitePool,
-) -> Result<model::Player, sqlx::Error> {
+) -> Result<types::Player, sqlx::Error> {
     sqlx::query_as!(
-        model::Player,
+        types::Player,
         r#"
         INSERT INTO players (
             name,
@@ -25,7 +25,7 @@ async fn insert(
             name,
             email,
             inviter,
-            created_ms AS "created_ms: model::Millis",
+            created_ms AS "created_ms: types::Millis",
             rating
         "#,
         name,
@@ -36,7 +36,7 @@ async fn insert(
 }
 
 mod constraints {
-    use super::{insert, model};
+    use super::{insert, types};
 
     #[sqlx::test]
     async fn text_column_cannot_be_blank(pool: sqlx::sqlite::SqlitePool) {
@@ -66,7 +66,7 @@ mod constraints {
     #[sqlx::test]
     async fn not_null_cannot_be_null(pool: sqlx::sqlite::SqlitePool) {
         let error = sqlx::query_as!(
-            model::Player,
+            types::Player,
             r#"
             INSERT INTO players (
                 name,
@@ -85,7 +85,7 @@ mod constraints {
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: model::Millis",
+                created_ms AS "created_ms: types::Millis",
                 rating
             "#
         )
@@ -117,7 +117,7 @@ mod constraints {
     #[sqlx::test]
     async fn foreign_key_must_exist(pool: sqlx::sqlite::SqlitePool) {
         match sqlx::query_as!(
-            model::Match,
+            types::Match,
             r#"
             INSERT INTO matches (
                 player_one,
@@ -136,7 +136,7 @@ mod constraints {
                 score_one,
                 score_two,
                 accepted,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             "#,
         )
         .fetch_one(&pool)
@@ -156,7 +156,7 @@ mod constraints {
         let player = insert("name", "email", &pool).await.unwrap();
 
         match sqlx::query_as!(
-            model::Match,
+            types::Match,
             r#"
             INSERT INTO matches (
                 player_one,
@@ -175,7 +175,7 @@ mod constraints {
                 score_one,
                 score_two,
                 accepted,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             "#,
             player.id
         )
@@ -200,7 +200,7 @@ mod constraints {
         let two = insert("two", "two", &pool).await.unwrap();
 
         let ranking = sqlx::query_as!(
-            model::Match,
+            types::Match,
             r#"
             INSERT INTO matches (
                 player_one,
@@ -219,7 +219,7 @@ mod constraints {
                 score_one,
                 score_two,
                 accepted,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             "#,
             one.id,
             two.id,
@@ -232,7 +232,7 @@ mod constraints {
 
         assert_eq!(
             ranking,
-            model::Match {
+            types::Match {
                 id: ranking.id,
                 player_one: one.id,
                 player_two: two.id,
@@ -263,7 +263,7 @@ mod constraints {
         );
 
         assert!(sqlx::query_as!(
-            model::Match,
+            types::Match,
             r#"
             SELECT
                 id,
@@ -272,7 +272,7 @@ mod constraints {
                 score_one,
                 score_two,
                 accepted,
-                created_ms AS "created_ms: model::Millis"
+                created_ms AS "created_ms: types::Millis"
             FROM
                 matches
             "#,
@@ -285,14 +285,14 @@ mod constraints {
 }
 
 mod behavior {
-    use super::{insert, model};
+    use super::insert;
 
     #[sqlx::test]
     async fn updates_dont_return_optional(pool: sqlx::sqlite::SqlitePool) {
         let player = insert("name", "email", &pool).await.unwrap();
 
         let id = sqlx::query_as!(
-            model::Id,
+            super::super::Id,
             r#"
             UPDATE
                 players
@@ -313,7 +313,7 @@ mod behavior {
         assert_eq!(id, Some(player.id));
 
         let id = sqlx::query_as!(
-            model::Id,
+            super::super::Id,
             r#"
             UPDATE
                 players

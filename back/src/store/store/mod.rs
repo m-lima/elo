@@ -1,6 +1,9 @@
 mod invites;
 mod players;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Clone)]
 pub struct Store {
     pool: sqlx::sqlite::SqlitePool,
@@ -33,4 +36,9 @@ impl Store {
     pub fn invites(&self) -> invites::Invites<'_> {
         invites::Invites::from(self)
     }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct Id {
+    pub id: crate::types::Id,
 }

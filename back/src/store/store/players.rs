@@ -1,4 +1,4 @@
-use super::super::{error::Error, model};
+use super::super::error::Error;
 use crate::types;
 
 type Result<T = ()> = std::result::Result<T, Error>;
@@ -22,7 +22,7 @@ impl Players<'_> {
         }
 
         sqlx::query_as!(
-            model::User,
+            types::User,
             r#"
             SELECT
                 id,
@@ -38,20 +38,19 @@ impl Players<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(types::User::from))
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn get(&self, id: types::Id) -> Result<Option<types::Player>> {
         sqlx::query_as!(
-            model::Player,
+            types::Player,
             r#"
             SELECT
                 id,
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: model::Millis",
+                created_ms AS "created_ms: types::Millis",
                 rating
             FROM
                 players
@@ -63,20 +62,19 @@ impl Players<'_> {
         .fetch_optional(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|p| p.map(types::Player::from))
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::Player>> {
         sqlx::query_as!(
-            model::Player,
+            types::Player,
             r#"
             SELECT
                 id,
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: model::Millis",
+                created_ms AS "created_ms: types::Millis",
                 rating
             FROM
                 players
@@ -88,7 +86,6 @@ impl Players<'_> {
         .fetch_all(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.into_iter().map(types::Player::from).collect())
     }
 
     #[tracing::instrument(skip(self))]
@@ -99,7 +96,7 @@ impl Players<'_> {
         }
 
         sqlx::query_as!(
-            model::Id,
+            super::Id,
             r#"
             UPDATE
                 players

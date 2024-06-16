@@ -1,7 +1,6 @@
 pub type Id = i64;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
-#[serde(rename_all = "camelCase")]
 pub struct User {
     pub id: Id,
     pub name: String,
@@ -30,6 +29,7 @@ pub struct Invite {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Game {
     pub id: Id,
     pub player_one: Id,

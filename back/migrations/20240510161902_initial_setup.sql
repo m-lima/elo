@@ -5,13 +5,14 @@ CREATE TABLE players (
   email      TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0),
   inviter    INTEGER,
-  created_ms INTEGER NOT NULL
-    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   -- rating
   rating     REAL NOT NULL,
   deviation  REAL NOT NULL,
   volatility REAL NOT NULL,
+
+  created_ms INTEGER NOT NULL
+    DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(inviter) REFERENCES players(id) ON DELETE SET NULL
 );

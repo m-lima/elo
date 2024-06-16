@@ -1,5 +1,5 @@
 import { Socket, state } from '../socket';
-import { type Player } from '../types';
+import { type Player, type Game } from '../types';
 import { type Message, type Request } from './message';
 import { newRequestId, validateMessage } from './request';
 
@@ -8,6 +8,7 @@ export class Store {
 
   readonly self: Resource<number>;
   readonly players: Resource<Player[]>;
+  readonly games: Resource<Game[]>;
 
   public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
     return new Socket(url, checkUrl);
@@ -34,10 +35,24 @@ export class Store {
         return validated;
       });
     });
+
     this.players = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'list' } }, message => {
         const validated = validateMessage(id, 'players', message);
+
+        if (validated === undefined) {
+          return;
+        }
+
+        return validated;
+      });
+    });
+
+    this.games = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { game: 'list' } }, message => {
+        const validated = validateMessage(id, 'games', message);
 
         if (validated === undefined) {
           return;
@@ -54,6 +69,10 @@ export class Store {
 
   public getPlayers() {
     return this.players.get();
+  }
+
+  public getGames() {
+    return this.games.get();
   }
 
   private refresh() {

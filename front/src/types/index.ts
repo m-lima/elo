@@ -4,8 +4,18 @@ export type Player = {
   readonly id: number;
   readonly name: string;
   readonly email: string;
+  readonly inviter?: number;
   readonly rating: number;
-  readonly created: Date;
+  readonly createdMs: number;
+};
+
+export type Game = {
+  readonly id: number;
+  readonly playerOne: number;
+  readonly playerTwo: number;
+  readonly scoreOne: number;
+  readonly scoreTwo: number;
+  readonly createdMs: number;
 };
 
 // TODO: Use these

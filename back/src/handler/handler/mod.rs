@@ -1,3 +1,4 @@
+mod game;
 mod invite;
 mod player;
 
@@ -25,6 +26,7 @@ macro_rules! impl_access {
                     model::Request::Invite(request) => {
                         invite::Invite::new(handler).handle(request).await
                     }
+                    model::Request::Game(request) => game::Game::new(handler).handle(request).await,
                 }
             }
         }

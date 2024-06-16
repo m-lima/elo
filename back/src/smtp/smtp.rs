@@ -1,5 +1,5 @@
 use super::error::Error;
-use super::model::Payload;
+use super::payload::Payload;
 use crate::mailbox;
 
 #[derive(Debug, Clone)]

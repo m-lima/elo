@@ -5,32 +5,28 @@ use crate::{mailbox, store, types, ws};
 pub enum Request {
     Player(Player),
     Invite(Invite),
+    Game(Game),
 }
 
 impl std::fmt::Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Player(player) => match player {
+            Self::Player(resource) => match resource {
                 Player::Id => f.write_str("Player::Id"),
                 Player::List => f.write_str("Player::List"),
                 Player::Rename(_) => f.write_str("Player::Renmae"),
             },
-            Self::Invite(invite) => match invite {
+            Self::Invite(resource) => match resource {
                 Invite::Player(_) => f.write_str("Invite::Player"),
                 Invite::Cancel(_) => f.write_str("Invite::Cancel"),
                 Invite::Accept => f.write_str("Invite::Accept"),
                 Invite::Reject => f.write_str("Invite::Reject"),
             },
+            Self::Game(resource) => match resource {
+                Game::List => f.write_str("Game::List"),
+            },
         }
     }
-}
-
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum Response {
-    Id(types::Id),
-    Players(Vec<types::Player>),
-    Done,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -41,7 +37,7 @@ pub enum Player {
     Rename(String),
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Invite {
     Player(InvitePlayer),
@@ -50,10 +46,25 @@ pub enum Invite {
     Reject,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct InvitePlayer {
     pub name: String,
     pub email: String,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Game {
+    List,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Response {
+    Id(types::Id),
+    Players(Vec<types::Player>),
+    Games(Vec<types::Game>),
+    Done,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -65,7 +76,7 @@ pub enum Push {
     Joined(types::Player),
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Renamed {
     pub player: types::Id,
     pub name: String,

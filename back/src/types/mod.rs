@@ -30,7 +30,7 @@ pub struct Invite {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
-pub(crate) struct Match {
+pub(crate) struct Game {
     pub id: Id,
     pub player_one: Id,
     pub player_two: Id,

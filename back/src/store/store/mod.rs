@@ -1,3 +1,4 @@
+mod games;
 mod invites;
 mod players;
 
@@ -28,13 +29,18 @@ impl Store {
     }
 
     #[must_use]
-    pub fn players(&self) -> players::Players<'_> {
-        players::Players::from(self)
+    pub fn invites(&self) -> invites::Invites<'_> {
+        invites::Invites::from(self)
     }
 
     #[must_use]
-    pub fn invites(&self) -> invites::Invites<'_> {
-        invites::Invites::from(self)
+    pub fn games(&self) -> games::Games<'_> {
+        games::Games::from(self)
+    }
+
+    #[must_use]
+    pub fn players(&self) -> players::Players<'_> {
+        players::Players::from(self)
     }
 }
 

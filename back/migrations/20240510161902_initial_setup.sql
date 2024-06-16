@@ -29,7 +29,7 @@ CREATE TABLE invites (
   FOREIGN KEY(inviter) REFERENCES players(id) ON DELETE CASCADE
 );
 
-CREATE TABLE matches (
+CREATE TABLE games (
   id         INTEGER NOT NULL PRIMARY KEY,
   player_one INTEGER NOT NULL,
   player_two INTEGER NOT NULL
@@ -49,12 +49,12 @@ CREATE TABLE challenges (
   player_one INTEGER NOT NULL,
   player_two INTEGER NOT NULL
     CHECK(player_one <> player_two),
-  match      INTEGER,
+  game       INTEGER,
   refused    BOOLEAN NOT NULL DEFAULT false,
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(player_one) REFERENCES players(id) ON DELETE CASCADE,
   FOREIGN KEY(player_two) REFERENCES players(id) ON DELETE CASCADE,
-  FOREIGN KEY(match)      REFERENCES matches(id) ON DELETE SET NULL
+  FOREIGN KEY(game)      REFERENCES games(id) ON DELETE SET NULL
 );

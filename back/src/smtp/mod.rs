@@ -1,6 +1,6 @@
 mod error;
-mod model;
+mod payload;
 mod smtp;
 
-pub use model::Payload;
+pub use payload::Payload;
 pub use smtp::Smtp;

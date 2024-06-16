@@ -117,9 +117,9 @@ mod constraints {
     #[sqlx::test]
     async fn foreign_key_must_exist(pool: sqlx::sqlite::SqlitePool) {
         match sqlx::query_as!(
-            types::Match,
+            types::Game,
             r#"
-            INSERT INTO matches (
+            INSERT INTO games (
                 player_one,
                 player_two,
                 score_one,
@@ -156,9 +156,9 @@ mod constraints {
         let player = insert("name", "email", &pool).await.unwrap();
 
         match sqlx::query_as!(
-            types::Match,
+            types::Game,
             r#"
-            INSERT INTO matches (
+            INSERT INTO games (
                 player_one,
                 player_two,
                 score_one,
@@ -200,9 +200,9 @@ mod constraints {
         let two = insert("two", "two", &pool).await.unwrap();
 
         let ranking = sqlx::query_as!(
-            types::Match,
+            types::Game,
             r#"
-            INSERT INTO matches (
+            INSERT INTO games (
                 player_one,
                 player_two,
                 score_one,
@@ -232,7 +232,7 @@ mod constraints {
 
         assert_eq!(
             ranking,
-            types::Match {
+            types::Game {
                 id: ranking.id,
                 player_one: one.id,
                 player_two: two.id,
@@ -263,7 +263,7 @@ mod constraints {
         );
 
         assert!(sqlx::query_as!(
-            types::Match,
+            types::Game,
             r#"
             SELECT
                 id,
@@ -274,7 +274,7 @@ mod constraints {
                 accepted,
                 created_ms AS "created_ms: types::Millis"
             FROM
-                matches
+                games
             "#,
         )
         .fetch_all(&pool)

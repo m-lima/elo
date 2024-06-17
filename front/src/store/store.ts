@@ -1,5 +1,5 @@
 import { Socket, state } from '../socket';
-import { type Player, type Game } from '../types';
+import { type Player, type Game, playerFromTuple, gameFromTuple } from '../types';
 import { type Message, type Request } from './message';
 import { newRequestId, validateMessage } from './request';
 
@@ -45,7 +45,7 @@ export class Store {
           return;
         }
 
-        return validated;
+        return validated.map(playerFromTuple);
       });
     });
 
@@ -58,7 +58,7 @@ export class Store {
           return;
         }
 
-        return validated;
+        return validated.map(gameFromTuple);
       });
     });
   }

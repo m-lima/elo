@@ -45,9 +45,9 @@ for (( i = 0; i < ${maxGames}; i++ )); do
   loser_score=$(( RANDOM % 10 ))
 
   if (( RANDOM % 2 )); then
-    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, accepted) values ( ${player_one}, ${player_two}, 11, ${loser_score}, true);"
+    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, rating_one, rating_two, accepted) values ( ${player_one}, ${player_two}, 11, ${loser_score}, 500, 500, true);"
   else
-    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, accepted) values ( ${player_one}, ${player_two}, ${loser_score}, 11, true);"
+    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, rating_one, rating_two, accepted) values ( ${player_one}, ${player_two}, ${loser_score}, 11, 500, 500, true);"
   fi
 done
 
@@ -62,8 +62,8 @@ for (( i = 0; i < $(( maxGames / 10 )); i++ )); do
   loser_score=$(( RANDOM % 10 ))
 
   if (( RANDOM % 2 )); then
-    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, accepted) values ( ${player_one}, ${player_two}, 11, ${loser_score}, false);"
+    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, rating_one, rating_two, accepted) values ( ${player_one}, ${player_two}, 11, ${loser_score}, 500, 500, false);"
   else
-    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, accepted) values ( ${player_one}, ${player_two}, ${loser_score}, 11, false);"
+    sqlite3 "${1}" "insert into games (player_one, player_two, score_one, score_two, rating_one, rating_two, accepted) values ( ${player_one}, ${player_two}, ${loser_score}, 11, 500, 500, false);"
   fi
 done

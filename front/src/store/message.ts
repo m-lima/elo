@@ -1,4 +1,4 @@
-import { Game, Player } from '../types';
+import { GameTuple, PlayerTuple } from '../types';
 
 export type Ided = {
   id: number;
@@ -13,7 +13,7 @@ export type OkMessage = { id: number; ok: Ok };
 export type ErrorMessage = { id?: number; error: Error };
 export type PushMessage = { push: string };
 
-export type Ok = { id?: number; players?: Player[]; games?: Game[] };
+export type Ok = { id?: number; players?: PlayerTuple[]; games?: GameTuple[] };
 
 export type Error = {
   code: number;

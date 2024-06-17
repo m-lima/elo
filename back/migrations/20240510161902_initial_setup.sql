@@ -37,6 +37,8 @@ CREATE TABLE games (
     CHECK(player_one <> player_two),
   score_one  INTEGER NOT NULL,
   score_two  INTEGER NOT NULL,
+  rating_one REAL    NOT NULL,
+  rating_two REAL    NOT NULL,
   accepted   BOOLEAN NOT NULL DEFAULT false,
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),

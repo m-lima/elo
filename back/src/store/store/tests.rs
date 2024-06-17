@@ -117,25 +117,21 @@ mod constraints {
     #[sqlx::test]
     async fn foreign_key_must_exist(pool: sqlx::sqlite::SqlitePool) {
         match sqlx::query_as!(
-            types::Game,
+            types::Invite,
             r#"
-            INSERT INTO games (
-                player_one,
-                player_two,
-                score_one,
-                score_two
+            INSERT INTO invites (
+                inviter,
+                name,
+                email
             ) VALUES (
                 0,
-                1,
-                0,
-                0
+                "bla",
+                "email"
             ) RETURNING
                 id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                accepted,
+                inviter,
+                name,
+                email,
                 created_ms AS "created_ms: types::Millis"
             "#,
         )
@@ -162,10 +158,14 @@ mod constraints {
                 player_one,
                 player_two,
                 score_one,
-                score_two
+                score_two,
+                rating_one,
+                rating_two
             ) VALUES (
                 $1,
                 $1,
+                0,
+                0,
                 0,
                 0
             ) RETURNING
@@ -174,6 +174,8 @@ mod constraints {
                 player_two,
                 score_one,
                 score_two,
+                rating_one,
+                rating_two,
                 accepted,
                 created_ms AS "created_ms: types::Millis"
             "#,
@@ -196,55 +198,45 @@ mod constraints {
 
     #[sqlx::test]
     async fn cascade_deletes(pool: sqlx::sqlite::SqlitePool) {
-        let one = insert("one", "one", &pool).await.unwrap();
-        let two = insert("two", "two", &pool).await.unwrap();
+        let player = insert("name", "email", &pool).await.unwrap();
 
-        let ranking = sqlx::query_as!(
-            types::Game,
+        let invite = sqlx::query_as!(
+            types::Invite,
             r#"
-            INSERT INTO games (
-                player_one,
-                player_two,
-                score_one,
-                score_two
+            INSERT INTO invites (
+                inviter,
+                name,
+                email
             ) VALUES (
                 $1,
-                $2,
-                $3,
-                $4
+                "namer",
+                "emailer"
             ) RETURNING
                 id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                accepted,
+                inviter,
+                name,
+                email,
                 created_ms AS "created_ms: types::Millis"
             "#,
-            one.id,
-            two.id,
-            0,
-            0
+            player.id,
         )
         .fetch_one(&pool)
         .await
         .unwrap();
 
         assert_eq!(
-            ranking,
-            types::Game {
-                id: ranking.id,
-                player_one: one.id,
-                player_two: two.id,
-                score_one: 0,
-                score_two: 0,
-                accepted: false,
-                created_ms: ranking.created_ms,
+            invite,
+            types::Invite {
+                id: invite.id,
+                inviter: player.id,
+                name: String::from("namer"),
+                email: String::from("emailer"),
+                created_ms: invite.created_ms,
             }
         );
 
         assert_eq!(
-            Some(one.id),
+            Some(player.id),
             sqlx::query!(
                 r#"
                 DELETE FROM
@@ -254,7 +246,7 @@ mod constraints {
                 RETURNING
                     id
                 "#,
-                one.id
+                player.id
             )
             .map(|r| r.id)
             .fetch_optional(&pool)
@@ -263,18 +255,16 @@ mod constraints {
         );
 
         assert!(sqlx::query_as!(
-            types::Game,
+            types::Invite,
             r#"
             SELECT
                 id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                accepted,
+                inviter,
+                name,
+                email,
                 created_ms AS "created_ms: types::Millis"
             FROM
-                games
+                invites
             "#,
         )
         .fetch_all(&pool)

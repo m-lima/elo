@@ -249,7 +249,7 @@ mod tests {
         fn happy() {
             let payload = Push { push: OBJ };
 
-            let output = String::serialize(payload).unwrap();
+            let output = String::serialize(payload).unwrap().0;
 
             let expected = axum::extract::ws::Message::Text(format!(r#"{{"push":{STR}}}"#));
 
@@ -267,7 +267,7 @@ mod tests {
         fn happy() {
             let payload = Response { id: 27, ok: OBJ };
 
-            let output = String::serialize(payload).unwrap();
+            let output = String::serialize(payload).unwrap().0;
 
             let expected = axum::extract::ws::Message::Text(format!(r#"{{"id":27,"ok":{STR}}}"#,));
 
@@ -287,7 +287,7 @@ mod tests {
                 error: hyper::StatusCode::BAD_REQUEST.into(),
             };
 
-            let output = String::serialize(payload).unwrap();
+            let output = String::serialize(payload).unwrap().0;
 
             let expected =
                 axum::extract::ws::Message::Text(format!(r#"{{"id":27,"error":{STR}}}"#,));
@@ -302,7 +302,7 @@ mod tests {
                 error: hyper::StatusCode::BAD_REQUEST.into(),
             };
 
-            let output = String::serialize(payload).unwrap();
+            let output = String::serialize(payload).unwrap().0;
 
             let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":{STR}}}"#,));
 

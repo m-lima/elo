@@ -9,7 +9,9 @@ pub(crate) mod sealed {
         type DeserializeError: std::fmt::Display + std::fmt::Debug + Send;
 
         fn mode() -> &'static str;
-        fn serialize<T>(payload: T) -> Result<axum::extract::ws::Message, Self::SerializeError>
+        fn serialize<T>(
+            payload: T,
+        ) -> Result<(axum::extract::ws::Message, usize), Self::SerializeError>
         where
             T: serde::Serialize;
         fn deserialize<'b, 'de, T>(bytes: &'b [u8]) -> Result<T, Self::DeserializeError>
@@ -26,11 +28,16 @@ pub(crate) mod sealed {
             "text"
         }
 
-        fn serialize<T>(payload: T) -> Result<axum::extract::ws::Message, Self::SerializeError>
+        fn serialize<T>(
+            payload: T,
+        ) -> Result<(axum::extract::ws::Message, usize), Self::SerializeError>
         where
             T: serde::Serialize,
         {
-            serde_json::to_string(&payload).map(axum::extract::ws::Message::Text)
+            serde_json::to_string(&payload).map(|p| {
+                let len = p.as_bytes().len();
+                (axum::extract::ws::Message::Text(p), len)
+            })
         }
 
         fn deserialize<'b, 'de, T>(bytes: &'b [u8]) -> Result<T, Self::DeserializeError>
@@ -50,11 +57,16 @@ pub(crate) mod sealed {
             "binary"
         }
 
-        fn serialize<T>(payload: T) -> Result<axum::extract::ws::Message, Self::SerializeError>
+        fn serialize<T>(
+            payload: T,
+        ) -> Result<(axum::extract::ws::Message, usize), Self::SerializeError>
         where
             T: serde::Serialize,
         {
-            rmp_serde::to_vec_named(&payload).map(axum::extract::ws::Message::Binary)
+            rmp_serde::to_vec_named(&payload).map(|p| {
+                let len = p.len();
+                (axum::extract::ws::Message::Binary(p), len)
+            })
         }
 
         fn deserialize<'b, 'de, T>(bytes: &'b [u8]) -> Result<T, Self::DeserializeError>

@@ -151,11 +151,12 @@ where
         T: message::Message,
     {
         match M::serialize(message) {
-            Ok(message) => {
+            Ok((message, len)) => {
                 if let Err(error) = self.socket.send(message).await {
                     tracing::error!(%error, "Failed to send message");
                     FlowControl::Break
                 } else {
+                    tracing::debug!(bytes = %len, "Message sent");
                     FlowControl::Continue
                 }
             }

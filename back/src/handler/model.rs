@@ -62,8 +62,8 @@ pub enum Game {
 #[serde(rename_all = "camelCase")]
 pub enum Response {
     Id(types::Id),
-    Players(Vec<types::Player>),
-    Games(Vec<types::Game>),
+    Players(Vec<types::PlayerTuple>),
+    Games(Vec<types::GameTuple>),
     Done,
 }
 

@@ -42,22 +42,22 @@ mod constraints {
     async fn text_column_cannot_be_blank(pool: sqlx::sqlite::SqlitePool) {
         match insert("name", "", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
-                assert_eq!("275", db.code().unwrap());
                 assert_eq!(
                     "CHECK constraint failed: LENGTH(TRIM(email)) > 0",
                     db.message()
                 );
+                assert_eq!("275", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
 
         match insert("name", "    ", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
-                assert_eq!("275", db.code().unwrap());
                 assert_eq!(
                     "CHECK constraint failed: LENGTH(TRIM(email)) > 0",
                     db.message()
                 );
+                assert_eq!("275", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -95,8 +95,8 @@ mod constraints {
 
         match error {
             sqlx::Error::Database(db) => {
-                assert_eq!("1299", db.code().unwrap());
                 assert_eq!("NOT NULL constraint failed: players.email", db.message());
+                assert_eq!("1299", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -107,8 +107,8 @@ mod constraints {
         assert!(insert("name", "email", &pool).await.err().is_none());
         match insert("name", "email", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
-                assert_eq!("2067", db.code().unwrap());
                 assert_eq!("UNIQUE constraint failed: players.email", db.message());
+                assert_eq!("2067", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -144,8 +144,8 @@ mod constraints {
         .unwrap_err()
         {
             sqlx::Error::Database(db) => {
-                assert_eq!("787", db.code().unwrap());
                 assert_eq!("FOREIGN KEY constraint failed", db.message());
+                assert_eq!("787", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }
@@ -184,11 +184,11 @@ mod constraints {
         .unwrap_err()
         {
             sqlx::Error::Database(db) => {
-                assert_eq!("275", db.code().unwrap());
                 assert_eq!(
                     "CHECK constraint failed: player_one <> player_two",
                     db.message()
                 );
+                assert_eq!("275", db.code().unwrap());
             }
             err => panic!("Unexpected error: {err:?}"),
         }

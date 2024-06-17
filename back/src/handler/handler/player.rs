@@ -27,7 +27,7 @@ impl<'a> Player<'a, access::Regular> {
                 .list()
                 .await
                 .map_err(model::Error::Store)
-                .map(model::Response::Players),
+                .map(|r| model::Response::Players(r.into_iter().map(Into::into).collect())),
             model::Player::Rename(name) => {
                 players
                     .rename(self.handler.user.id(), &name)

@@ -293,7 +293,6 @@ dependencies = [
  "android-tzdata",
  "iana-time-zone",
  "num-traits",
- "serde",
  "windows-targets 0.52.5",
 ]
 
@@ -474,7 +473,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "boile-rs",
- "chrono",
  "clap",
  "hyper",
  "lettre",

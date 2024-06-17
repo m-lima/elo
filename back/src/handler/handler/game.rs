@@ -26,7 +26,7 @@ impl<'a> Game<'a, access::Regular> {
                 .list()
                 .await
                 .map_err(model::Error::Store)
-                .map(model::Response::Games),
+                .map(|r| model::Response::Games(r.into_iter().map(Into::into).collect())),
         }
     }
 }

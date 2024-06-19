@@ -45,7 +45,7 @@ where
         }
 
         let user = if cfg!(feature = "local") {
-            "me@email.com"
+            crate::consts::mock::USER_EMAIL
         } else {
             let header = crate::X_USER;
 

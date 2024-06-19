@@ -2,6 +2,9 @@ mod games;
 mod invites;
 mod players;
 
+#[cfg(feature = "local")]
+mod mock;
+
 #[cfg(test)]
 mod tests;
 

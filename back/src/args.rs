@@ -17,6 +17,8 @@ pub struct Args {
     pub verbosity: Verbosity,
     pub port: u16,
     pub db: std::path::PathBuf,
+    #[cfg(feature = "local")]
+    pub init: bool,
     pub smtp: Option<Smtp>,
 }
 
@@ -39,6 +41,11 @@ struct Inner {
     /// Path to databases directory
     #[arg(short, long, value_parser = parse_db)]
     db: std::path::PathBuf,
+
+    /// Initialize an empty database
+    #[cfg(feature = "local")]
+    #[arg(short, long)]
+    init: bool,
 
     #[command(flatten)]
     smtp: SmtpInner,
@@ -87,6 +94,8 @@ impl From<Inner> for Args {
             verbosity: value.verbosity.into(),
             port: value.port,
             db: value.db,
+            #[cfg(feature = "local")]
+            init: value.init,
             smtp,
         }
     }

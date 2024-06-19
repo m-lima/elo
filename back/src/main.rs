@@ -1,6 +1,7 @@
 #![allow(clippy::module_inception)]
 
 mod args;
+mod consts;
 mod handler;
 mod mailbox;
 mod server;
@@ -63,6 +64,14 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
+
+    #[cfg(feature = "local")]
+    if args.init {
+        if let Err(error) = handler::mock::initialize(store.clone()).await {
+            tracing::error!(?error, db = ?args.db, "Failed to initialize store");
+            return std::process::ExitCode::FAILURE;
+        }
+    }
 
     let smtp = if let Some(smtp) = args.smtp {
         match smtp::Smtp::new(smtp.link, smtp.smtp, smtp.from).await {

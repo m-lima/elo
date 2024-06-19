@@ -55,6 +55,7 @@ const playerTable = (players: Player[] = []) => {
           <th>#</th>
           <th>Player</th>
           <th>Rating</th>
+          <th>Games</th>
           <th>Wins</th>
           <th>Losses</th>
           <th>Points won</th>
@@ -81,6 +82,7 @@ const playerRow = (position: number, navigate: Navigator, player: Player, icon?:
       <td>{position}</td>
       <td>{player.name}</td>
       <td>{player.rating.toFixed(2)}</td>
+      <td>{player.wins + player.losses}</td>
       <td>{player.wins}</td>
       <td>{player.losses}</td>
       <td>{player.pointsWon}</td>

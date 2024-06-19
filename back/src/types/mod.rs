@@ -63,6 +63,22 @@ pub struct Invite {
     pub created_ms: Millis,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InviteTuple(pub Id, pub Id, pub String, pub String, pub Millis);
+
+impl From<Invite> for InviteTuple {
+    fn from(value: Invite) -> Self {
+        Self(
+            value.id,
+            value.inviter,
+            value.name,
+            value.email,
+            value.created_ms,
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Game {
@@ -78,7 +94,17 @@ pub(crate) struct Game {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub(crate) struct GameTuple(Id, Id, Id, i64, i64, f64, f64, bool, Millis);
+pub(crate) struct GameTuple(
+    pub Id,
+    pub Id,
+    pub Id,
+    pub i64,
+    pub i64,
+    pub f64,
+    pub f64,
+    pub bool,
+    pub Millis,
+);
 
 impl From<Game> for GameTuple {
     fn from(value: Game) -> Self {

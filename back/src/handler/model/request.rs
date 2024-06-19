@@ -17,6 +17,7 @@ impl std::fmt::Display for Request {
                 Player::Rename(_) => f.write_str("Player::Renmae"),
             },
             Self::Invite(resource) => match resource {
+                Invite::List => f.write_str("Invite::List"),
                 Invite::Player { .. } => f.write_str("Invite::Player"),
                 Invite::Cancel(_) => f.write_str("Invite::Cancel"),
                 Invite::Accept => f.write_str("Invite::Accept"),
@@ -43,6 +44,7 @@ pub enum Player {
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Invite {
+    List,
     Player { name: String, email: String },
     Cancel(types::Id),
     Accept,

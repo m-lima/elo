@@ -6,5 +6,6 @@ pub enum Response {
     Id(types::Id),
     Players(Vec<types::PlayerTuple>),
     Games(Vec<types::GameTuple>),
+    Invites(Vec<types::InviteTuple>),
     Done,
 }

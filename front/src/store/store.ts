@@ -1,5 +1,12 @@
 import { Socket, state } from '../socket';
-import { type Player, type Game, playerFromTuple, gameFromTuple } from '../types';
+import {
+  type Player,
+  type Game,
+  type Invite,
+  playerFromTuple,
+  gameFromTuple,
+  inviteFromTuple,
+} from '../types';
 import { type Message, type Request } from './message';
 import { newRequestId, validateMessage } from './request';
 
@@ -9,6 +16,7 @@ export class Store {
   readonly self: Resource<number>;
   readonly players: Resource<Player[]>;
   readonly games: Resource<Game[]>;
+  readonly invites: Resource<Invite[]>;
 
   public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
     return new Socket(url, checkUrl);
@@ -61,6 +69,19 @@ export class Store {
         return validated.map(gameFromTuple);
       });
     });
+
+    this.invites = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { invite: 'list' } }, message => {
+        const validated = validateMessage(id, 'invites', message);
+
+        if (validated === undefined) {
+          return;
+        }
+
+        return validated.map(inviteFromTuple);
+      });
+    });
   }
 
   public getSelf() {
@@ -75,6 +96,10 @@ export class Store {
     return this.games.get();
   }
 
+  public getInvites() {
+    return this.invites.get();
+  }
+
   private refresh() {
     if (this.self.isPresent()) {
       void this.self.get();
@@ -82,6 +107,14 @@ export class Store {
 
     if (this.players.isPresent()) {
       void this.players.get();
+    }
+
+    if (this.games.isPresent()) {
+      void this.games.get();
+    }
+
+    if (this.invites.isPresent()) {
+      void this.invites.get();
     }
   }
 }

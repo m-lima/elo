@@ -26,6 +26,11 @@ impl<'a> Invite<'a, access::Regular> {
         let invites = self.handler.store.invites();
 
         match request {
+            model::request::Invite::List => invites
+                .list()
+                .await
+                .map_err(model::Error::Store)
+                .map(|r| model::Response::Invites(r.into_iter().map(Into::into).collect())),
             model::request::Invite::Player { name, email } => {
                 let mailbox =
                     mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
@@ -83,6 +88,7 @@ impl<'a> Invite<'a, access::Pending> {
                     .map_err(model::Error::Store)
                     .and_then(|r| r.ok_or(model::Error::NotFound))?;
 
+                let id = player.id;
                 let inviter_id = player.inviter;
                 self.handler
                     .broadcaster
@@ -113,7 +119,7 @@ impl<'a> Invite<'a, access::Pending> {
                     }
                 }
 
-                Ok(model::Response::Done)
+                Ok(model::Response::Id(id))
             }
             model::request::Invite::Reject => {
                 let invite = invites
@@ -151,9 +157,9 @@ impl<'a> Invite<'a, access::Pending> {
 
                 Ok(model::Response::Done)
             }
-            model::request::Invite::Player { .. } | model::request::Invite::Cancel(_) => {
-                Err(model::Error::Forbidden)
-            }
+            model::request::Invite::List
+            | model::request::Invite::Player { .. }
+            | model::request::Invite::Cancel(_) => Err(model::Error::Forbidden),
         }
     }
 }

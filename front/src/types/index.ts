@@ -90,6 +90,26 @@ export const gameFromTuple = ([
   };
 };
 
+export type Invite = {
+  readonly id: number;
+  readonly inviter: number;
+  readonly name: string;
+  readonly email: string;
+  readonly createdMs: number;
+};
+
+export type InviteTuple = [number, number, string, string, number];
+
+export const inviteFromTuple = ([id, inviter, name, email, createdMs]: InviteTuple): Invite => {
+  return {
+    id,
+    inviter,
+    name,
+    email,
+    createdMs,
+  };
+};
+
 // TODO: Use these
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Create<T> = Omit<T, 'id' | 'created'>;

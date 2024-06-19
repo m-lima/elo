@@ -40,6 +40,26 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
+    pub async fn list(&self) -> Result<Vec<types::Invite>> {
+        sqlx::query_as!(
+            types::Invite,
+            r#"
+            SELECT
+                id,
+                inviter,
+                name,
+                email,
+                created_ms AS "created_ms: types::Millis"
+            FROM
+                invites
+            "#
+        )
+        .fetch_all(self.pool)
+        .await
+        .map_err(Error::Query)
+    }
+
+    #[tracing::instrument(skip(self))]
     pub async fn invite(&self, inviter: types::Id, name: &str, email: &str) -> Result<types::Id> {
         let name = name.trim();
         if name.is_empty() {

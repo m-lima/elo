@@ -60,3 +60,17 @@ export const useGames = (maybeStore?: Store) => {
 
   return games;
 };
+
+export const useInvites = (maybeStore?: Store) => {
+  const store = !maybeStore ? useStore() : maybeStore;
+  const [invites, { mutate }] = createResource(() => store.invites.get());
+
+  createEffect(() => {
+    const listener = store.invites.registerListener(mutate);
+    onCleanup(() => {
+      store.invites.unregisterListener(listener);
+    });
+  });
+
+  return invites;
+};

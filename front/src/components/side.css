@@ -7,6 +7,7 @@
 
   @media (orientation: landscape) {
     flex-direction: column;
+    overflow-y: scroll;
 
     &::after {
       margin-top: auto;
@@ -20,6 +21,8 @@
   }
 
   @media (orientation: portrait) {
+    overflow-x: scroll;
+
     & > * {
       flex-grow: 1;
       text-align: center;

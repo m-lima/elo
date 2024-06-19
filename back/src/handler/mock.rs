@@ -15,6 +15,8 @@ pub enum Error {
     PendingUser(String),
     #[error("Expected more users, but the list of names is empty")]
     WrongCount,
+    #[error("Could not build distribution: {0:?}")]
+    Distribution(#[from] rand::distributions::WeightedError),
 }
 
 pub async fn initialize(store: &store::Store) -> Result<(), Error> {
@@ -133,13 +135,16 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
         }
     };
 
+    let distribution =
+        rand::distributions::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
+
     for _ in 0..players.len() * 15 {
         let (user, opponent) = {
-            let one = rand.gen_range(0..players.len());
+            let one = rand.sample(&distribution);
             let two = {
-                let mut player = rand.gen_range(0..players.len());
+                let mut player = rand.sample(&distribution);
                 while player == one {
-                    player = rand.gen_range(0..players.len());
+                    player = rand.sample(&distribution);
                 }
                 player
             };

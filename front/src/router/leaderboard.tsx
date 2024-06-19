@@ -55,6 +55,10 @@ const playerTable = (players: Player[] = []) => {
           <th>#</th>
           <th>Player</th>
           <th>Rating</th>
+          <th>Wins</th>
+          <th>Losses</th>
+          <th>Points won</th>
+          <th>Points lost</th>
         </tr>
       </thead>
       <tbody>
@@ -76,7 +80,11 @@ const playerRow = (position: number, navigate: Navigator, player: Player, icon?:
       <td class='router-leaderboard-icon'>{icon}</td>
       <td>{position}</td>
       <td>{player.name}</td>
-      <td>{player.rating}</td>
+      <td>{player.rating.toFixed(2)}</td>
+      <td>{player.wins}</td>
+      <td>{player.losses}</td>
+      <td>{player.pointsWon}</td>
+      <td>{player.pointsLost}</td>
     </tr>
   );
 };

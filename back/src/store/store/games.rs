@@ -203,7 +203,8 @@ impl Games<'_> {
                 SET
                     wins = wins + 1,
                     points_won = points_won + $2,
-                    points_lost = points_lost + $3
+                    points_lost = points_lost + $3,
+                    rating = $4
                 WHERE
                     id = $1
                 RETURNING
@@ -221,6 +222,7 @@ impl Games<'_> {
                 game.player_one,
                 game.score_one,
                 game.score_two,
+                game.rating_one,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -234,7 +236,8 @@ impl Games<'_> {
                 SET
                     losses = losses + 1,
                     points_won = points_won + $2,
-                    points_lost = points_lost + $3
+                    points_lost = points_lost + $3,
+                    rating = $4
                 WHERE
                     id = $1
                 RETURNING
@@ -252,6 +255,7 @@ impl Games<'_> {
                 game.player_two,
                 game.score_two,
                 game.score_one,
+                game.rating_two,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -267,7 +271,8 @@ impl Games<'_> {
                 SET
                     losses = losses + 1,
                     points_won = points_won + $2,
-                    points_lost = points_lost + $3
+                    points_lost = points_lost + $3,
+                    rating = $4
                 WHERE
                     id = $1
                 RETURNING
@@ -285,6 +290,7 @@ impl Games<'_> {
                 game.player_one,
                 game.score_one,
                 game.score_two,
+                game.rating_one,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -298,7 +304,8 @@ impl Games<'_> {
                 SET
                     wins = wins + 1,
                     points_won = points_won + $2,
-                    points_lost = points_lost + $3
+                    points_lost = points_lost + $3,
+                    rating = $4
                 WHERE
                     id = $1
                 RETURNING
@@ -316,6 +323,7 @@ impl Games<'_> {
                 game.player_two,
                 game.score_two,
                 game.score_one,
+                game.rating_two,
             )
             .fetch_one(tx.as_mut())
             .await

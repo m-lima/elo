@@ -60,6 +60,10 @@ impl Players<'_> {
                 players
             ORDER BY
                 rating DESC,
+                wins DESC,
+                losses ASC,
+                points_won DESC,
+                points_lost ASC,
                 created_ms ASC
             "#
         )

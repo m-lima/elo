@@ -6,10 +6,25 @@ export type Player = {
   readonly email: string;
   readonly inviter?: number;
   readonly rating: number;
+  readonly wins: number;
+  readonly losses: number;
+  readonly pointsWon: number;
+  readonly pointsLost: number;
   readonly createdMs: number;
 };
 
-export type PlayerTuple = [number, string, string, number | null, number, number];
+export type PlayerTuple = [
+  number,
+  string,
+  string,
+  number | null,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
 
 export const playerFromTuple = ([
   id,
@@ -17,6 +32,10 @@ export const playerFromTuple = ([
   email,
   inviter,
   rating,
+  wins,
+  losses,
+  pointsWon,
+  pointsLost,
   createdMs,
 ]: PlayerTuple): Player => {
   return {
@@ -25,6 +44,10 @@ export const playerFromTuple = ([
     email,
     inviter: inviter !== null ? inviter : undefined,
     rating,
+    wins,
+    losses,
+    pointsWon,
+    pointsLost,
     createdMs,
   };
 };
@@ -35,10 +58,13 @@ export type Game = {
   readonly playerTwo: number;
   readonly scoreOne: number;
   readonly scoreTwo: number;
+  readonly ratingOne: number;
+  readonly ratingTwo: number;
+  readonly accepted: boolean;
   readonly createdMs: number;
 };
 
-export type GameTuple = [number, number, number, number, number, number, number, number];
+export type GameTuple = [number, number, number, number, number, number, number, boolean, number];
 
 export const gameFromTuple = ([
   id,
@@ -46,6 +72,9 @@ export const gameFromTuple = ([
   playerTwo,
   scoreOne,
   scoreTwo,
+  ratingOne,
+  ratingTwo,
+  accepted,
   createdMs,
 ]: GameTuple): Game => {
   return {
@@ -54,6 +83,9 @@ export const gameFromTuple = ([
     playerTwo,
     scoreOne,
     scoreTwo,
+    ratingOne,
+    ratingTwo,
+    accepted,
     createdMs,
   };
 };

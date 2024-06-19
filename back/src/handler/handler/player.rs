@@ -18,17 +18,20 @@ where
 }
 
 impl<'a> Player<'a, access::Regular> {
-    pub async fn handle(self, request: model::Player) -> Result<model::Response, model::Error> {
+    pub async fn handle(
+        self,
+        request: model::request::Player,
+    ) -> Result<model::Response, model::Error> {
         let players = self.handler.store.players();
 
         match request {
-            model::Player::Id => Ok(model::Response::Id(self.handler.user.id())),
-            model::Player::List => players
+            model::request::Player::Id => Ok(model::Response::Id(self.handler.user.id())),
+            model::request::Player::List => players
                 .list()
                 .await
                 .map_err(model::Error::Store)
                 .map(|r| model::Response::Players(r.into_iter().map(Into::into).collect())),
-            model::Player::Rename(name) => {
+            model::request::Player::Rename(name) => {
                 players
                     .rename(self.handler.user.id(), &name)
                     .await
@@ -38,7 +41,7 @@ impl<'a> Player<'a, access::Regular> {
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Renamed(model::Renamed {
+                    .send(model::Push::Player(model::push::Player::Renamed {
                         player: self.handler.user.id(),
                         name,
                     }));
@@ -52,7 +55,7 @@ impl<'a> Player<'a, access::Regular> {
 impl<'a> Player<'a, access::Pending> {
     // allow(clippy::unused_async): To match the expected signature
     #[allow(clippy::unused_async)]
-    pub async fn handle(self, _: model::Player) -> Result<model::Response, model::Error> {
+    pub async fn handle(self, _: model::request::Player) -> Result<model::Response, model::Error> {
         Err(model::Error::Forbidden)
     }
 }

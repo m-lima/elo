@@ -61,9 +61,11 @@ impl Invites<'_> {
             FROM
                 players
             WHERE
-                email = $1
+                name = $1 OR
+                email = $2
             "#,
-            email
+            name,
+            email,
         )
         .fetch_optional(tx.as_mut())
         .await
@@ -124,13 +126,7 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn accept(
-        &self,
-        id: types::Id,
-        rating: f64,
-        deviation: f64,
-        volatility: f64,
-    ) -> Result<Option<types::Player>> {
+    pub async fn accept(&self, id: types::Id, rating: f64) -> Result<Option<types::Player>> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let Some(invite) = sqlx::query_as!(
@@ -163,30 +159,28 @@ impl Invites<'_> {
                 name,
                 email,
                 inviter,
-                rating,
-                deviation,
-                volatility
+                rating
             ) VALUES (
                 $1,
                 $2,
                 $3,
-                $4,
-                $5,
-                $6
+                $4
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: types::Millis",
-                rating
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
             "#,
             invite.name,
             invite.email,
             invite.inviter,
             rating,
-            deviation,
-            volatility
         )
         .fetch_one(tx.as_mut())
         .await

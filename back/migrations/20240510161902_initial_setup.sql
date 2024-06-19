@@ -1,17 +1,19 @@
 CREATE TABLE players (
-  id         INTEGER NOT NULL PRIMARY KEY,
-  name       TEXT    NOT NULL
+  id          INTEGER NOT NULL PRIMARY KEY,
+  name        TEXT    NOT NULL
     CHECK(LENGTH(TRIM(name)) > 0),
-  email      TEXT    NOT NULL UNIQUE
+  email       TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0),
-  inviter    INTEGER,
+  inviter     INTEGER,
 
-  -- rating
-  rating     REAL NOT NULL,
-  deviation  REAL NOT NULL,
-  volatility REAL NOT NULL,
+  -- Cached stats
+  rating      REAL NOT NULL,
+  wins        INTEGER NOT NULL DEFAULT 0,
+  losses      INTEGER NOT NULL DEFAULT 0,
+  points_won  INTEGER NOT NULL DEFAULT 0,
+  points_lost INTEGER NOT NULL DEFAULT 0,
 
-  created_ms INTEGER NOT NULL
+  created_ms  INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(inviter) REFERENCES players(id) ON DELETE SET NULL
@@ -36,7 +38,8 @@ CREATE TABLE games (
   player_two INTEGER NOT NULL
     CHECK(player_one <> player_two),
   score_one  INTEGER NOT NULL,
-  score_two  INTEGER NOT NULL,
+  score_two  INTEGER NOT NULL
+    CHECK(score_one <> score_two),
   rating_one REAL    NOT NULL,
   rating_two REAL    NOT NULL,
   accepted   BOOLEAN NOT NULL DEFAULT false,

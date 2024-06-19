@@ -6,6 +6,8 @@ pub enum Error {
     BlankValue(&'static str),
     #[error("Entry already exists")]
     AlreadyExists,
+    #[error("Conflicting values")]
+    Conflict,
 }
 
 impl From<sqlx::Error> for Error {

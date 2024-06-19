@@ -44,7 +44,7 @@ where
     user: access::User<A>,
     store: store::Store,
     smtp: smtp::Smtp,
-    broadcaster: broadcaster::Broadcaster<model::Push>,
+    broadcaster: broadcaster::Broadcaster,
 }
 
 impl<A> Handler<A>

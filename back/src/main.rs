@@ -67,7 +67,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
 
     #[cfg(feature = "local")]
     if args.init {
-        if let Err(error) = handler::mock::initialize(store.clone()).await {
+        if let Err(error) = handler::mock::initialize(&store).await {
             tracing::error!(?error, db = ?args.db, "Failed to initialize store");
             return std::process::ExitCode::FAILURE;
         }

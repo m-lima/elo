@@ -50,8 +50,12 @@ impl Players<'_> {
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: types::Millis",
-                rating
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
             FROM
                 players
             ORDER BY
@@ -74,8 +78,12 @@ impl Players<'_> {
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: types::Millis",
-                rating
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
             FROM
                 players
             ORDER BY
@@ -95,7 +103,49 @@ impl Players<'_> {
             return Err(Error::BlankValue("name"));
         }
 
-        sqlx::query_as!(
+        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+
+        if sqlx::query_as!(
+            super::Id,
+            r#"
+            SELECT
+                id
+            FROM
+                players
+            WHERE
+                name = $1
+            "#,
+            name
+        )
+        .fetch_optional(tx.as_mut())
+        .await
+        .map_err(Error::Query)?
+        .is_some()
+        {
+            return Err(Error::AlreadyExists);
+        }
+
+        if sqlx::query_as!(
+            super::Id,
+            r#"
+            SELECT
+                id
+            FROM
+                invites
+            WHERE
+                name = $1
+            "#,
+            name
+        )
+        .fetch_optional(tx.as_mut())
+        .await
+        .map_err(Error::Query)?
+        .is_some()
+        {
+            return Err(Error::AlreadyExists);
+        }
+
+        let id = sqlx::query_as!(
             super::Id,
             r#"
             UPDATE
@@ -110,9 +160,13 @@ impl Players<'_> {
             id,
             name
         )
-        .fetch_optional(self.pool)
+        .fetch_optional(tx.as_mut())
         .await
         .map_err(Error::from)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.map(|id| id.id))?;
+
+        tx.commit().await.map_err(Error::Query)?;
+
+        Ok(id)
     }
 }

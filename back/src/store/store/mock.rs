@@ -2,12 +2,7 @@ use super::Store;
 use crate::types;
 
 impl Store {
-    pub async fn migrate(
-        &self,
-        rating: f64,
-        deviation: f64,
-        volatility: f64,
-    ) -> Result<types::Player, sqlx::Error> {
+    pub async fn migrate(&self, rating: f64) -> Result<types::Player, sqlx::Error> {
         sqlx::migrate!().run(&self.pool).await?;
 
         sqlx::query_as!(
@@ -16,28 +11,26 @@ impl Store {
             INSERT INTO players (
                 name,
                 email,
-                rating,
-                deviation,
-                volatility
+                rating
             ) VALUES (
                 $1,
                 $2,
-                $3,
-                $4,
-                $5
+                $3
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: types::Millis",
-                rating
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
             "#,
             crate::consts::mock::USER_NAME,
             crate::consts::mock::USER_EMAIL,
             rating,
-            deviation,
-            volatility,
         )
         .fetch_one(&self.pool)
         .await

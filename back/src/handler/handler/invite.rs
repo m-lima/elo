@@ -19,11 +19,14 @@ where
 }
 
 impl<'a> Invite<'a, access::Regular> {
-    pub async fn handle(self, request: model::Invite) -> Result<model::Response, model::Error> {
+    pub async fn handle(
+        self,
+        request: model::request::Invite,
+    ) -> Result<model::Response, model::Error> {
         let invites = self.handler.store.invites();
 
         match request {
-            model::Invite::Player(model::InvitePlayer { name, email }) => {
+            model::request::Invite::Player { name, email } => {
                 let mailbox =
                     mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
 
@@ -35,7 +38,7 @@ impl<'a> Invite<'a, access::Regular> {
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Invited(model::InvitePlayer {
+                    .send(model::Push::Player(model::push::Player::Invited {
                         name: String::from(mailbox.name()),
                         email: String::from(mailbox.email()),
                     }));
@@ -44,42 +47,46 @@ impl<'a> Invite<'a, access::Regular> {
 
                 Ok(id)
             }
-            model::Invite::Cancel(id) => {
+            model::request::Invite::Cancel(id) => {
                 let id = invites
                     .cancel(self.handler.user.id(), id)
                     .await
                     .map_err(model::Error::Store)
                     .and_then(|r| r.ok_or(model::Error::NotFound))?;
 
-                self.handler.broadcaster.send(model::Push::Uninvited(id));
+                self.handler
+                    .broadcaster
+                    .send(model::Push::Player(model::push::Player::Uninvited(id)));
 
                 Ok(model::Response::Done)
             }
-            model::Invite::Accept | model::Invite::Reject => Err(model::Error::Forbidden),
+            model::request::Invite::Accept | model::request::Invite::Reject => {
+                Err(model::Error::Forbidden)
+            }
         }
     }
 }
 
 impl<'a> Invite<'a, access::Pending> {
-    pub async fn handle(self, request: model::Invite) -> Result<model::Response, model::Error> {
+    pub async fn handle(
+        self,
+        request: model::request::Invite,
+    ) -> Result<model::Response, model::Error> {
         let invites = self.handler.store.invites();
 
         match request {
-            model::Invite::Accept => {
-                let rating = skillratings::glicko2::Glicko2Rating::new();
+            model::request::Invite::Accept => {
+                let rating = skillratings::elo::EloRating::new().rating;
                 let player = invites
-                    .accept(
-                        self.handler.user.id(),
-                        rating.rating,
-                        rating.deviation,
-                        rating.volatility,
-                    )
+                    .accept(self.handler.user.id(), rating)
                     .await
                     .map_err(model::Error::Store)
                     .and_then(|r| r.ok_or(model::Error::NotFound))?;
 
                 let inviter_id = player.inviter;
-                self.handler.broadcaster.send(model::Push::Joined(player));
+                self.handler
+                    .broadcaster
+                    .send(model::Push::Player(model::push::Player::Joined(player)));
 
                 if self.handler.smtp.present() {
                     if let Some(inviter_id) = inviter_id {
@@ -108,7 +115,7 @@ impl<'a> Invite<'a, access::Pending> {
 
                 Ok(model::Response::Done)
             }
-            model::Invite::Reject => {
+            model::request::Invite::Reject => {
                 let invite = invites
                     .reject(self.handler.user.id())
                     .await
@@ -117,7 +124,9 @@ impl<'a> Invite<'a, access::Pending> {
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Uninvited(invite.id));
+                    .send(model::Push::Player(model::push::Player::Uninvited(
+                        invite.id,
+                    )));
 
                 if self.handler.smtp.present() {
                     match self.handler.store.players().get(invite.inviter).await {
@@ -142,7 +151,9 @@ impl<'a> Invite<'a, access::Pending> {
 
                 Ok(model::Response::Done)
             }
-            model::Invite::Player(_) | model::Invite::Cancel(_) => Err(model::Error::Forbidden),
+            model::request::Invite::Player { .. } | model::request::Invite::Cancel(_) => {
+                Err(model::Error::Forbidden)
+            }
         }
     }
 }

@@ -15,11 +15,26 @@ pub struct Player {
     pub email: String,
     pub inviter: Option<Id>,
     pub rating: f64,
+    pub wins: i64,
+    pub losses: i64,
+    pub points_won: i64,
+    pub points_lost: i64,
     pub created_ms: Millis,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct PlayerTuple(Id, String, String, Option<Id>, f64, Millis);
+pub struct PlayerTuple(
+    pub Id,
+    pub String,
+    pub String,
+    pub Option<Id>,
+    pub f64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub Millis,
+);
 
 impl From<Player> for PlayerTuple {
     fn from(value: Player) -> Self {
@@ -29,6 +44,10 @@ impl From<Player> for PlayerTuple {
             value.email,
             value.inviter,
             value.rating,
+            value.wins,
+            value.losses,
+            value.points_won,
+            value.points_lost,
             value.created_ms,
         )
     }

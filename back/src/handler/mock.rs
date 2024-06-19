@@ -17,19 +17,29 @@ pub enum Error {
     WrongCount,
 }
 
-pub async fn initialize(store: store::Store) -> Result<(), Error> {
-    use ws::Service;
-
-    let user = {
-        let rating = skillratings::glicko2::Glicko2Rating::new();
-        store
-            .migrate(rating.rating, rating.deviation, rating.volatility)
-            .await
-    }?;
-
+pub async fn initialize(store: &store::Store) -> Result<(), Error> {
     let auth = access::Auth::new(store.clone());
 
-    // invite::Invite::new(self).handle(model::Invite::Player())
+    populate_users(store, &auth).await?;
+    populate_games(store, &auth).await?;
+
+    Ok(())
+}
+
+async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(), Error> {
+    use ws::Service;
+
+    fn make_player(name: &str) -> (String, String) {
+        let email = name.to_lowercase().replace(' ', ".");
+        let email = format!("{email}@email.com");
+        let name = String::from(name);
+
+        (name, email)
+    }
+
+    let user = store
+        .migrate(skillratings::elo::EloRating::new().rating)
+        .await?;
 
     // USER
     // |- A
@@ -71,35 +81,108 @@ pub async fn initialize(store: store::Store) -> Result<(), Error> {
             continue;
         }
 
-        let user = match get_user(&auth, &user).await? {
+        let user = match get_user(auth, &user).await? {
             access::UserAccess::Regular(user) => user,
             access::UserAccess::Pending(user) => {
                 let email = user.email().clone();
                 let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
                 handler
-                    .call(model::Request::Invite(model::Invite::Accept))
+                    .call(model::Request::Invite(model::request::Invite::Accept))
                     .await?;
-
-                match get_user(&auth, &email).await? {
-                    access::UserAccess::Regular(user) => user,
-                    access::UserAccess::Pending(_) => return Err(Error::PendingUser(email)),
-                }
+                get_registered_user(auth, &email).await?
             }
         };
 
         let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
         for _ in 0..amount {
             let (invitee, amount) = players.next().ok_or(Error::WrongCount)?;
-            let invitee = make_invite(invitee);
-            let email = invitee.email.clone();
+            let (invitee_name, invitee_email) = make_player(invitee);
 
             match handler
-                .call(model::Request::Invite(model::Invite::Player(invitee)))
+                .call(model::Request::Invite(model::request::Invite::Player {
+                    name: invitee_name,
+                    email: invitee_email.clone(),
+                }))
                 .await?
             {
-                model::Response::Id(_) => stack.push_back((email, amount)),
+                model::Response::Id(_) => stack.push_back((invitee_email, amount)),
                 _ => unreachable!("Unexpected response"),
             };
+        }
+    }
+
+    Ok(())
+}
+
+async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(), Error> {
+    use rand::Rng;
+    use ws::Service;
+
+    let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
+
+    let players = {
+        let user = get_registered_user(auth, consts::mock::USER_EMAIL).await?;
+
+        let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
+        match handler
+            .call(model::Request::Player(model::request::Player::List))
+            .await?
+        {
+            model::Response::Players(players) => players,
+            _ => unreachable!("Unexpected response"),
+        }
+    };
+
+    for _ in 0..players.len() * 15 {
+        let (user, opponent) = {
+            let one = rand.gen_range(0..players.len());
+            let two = {
+                let mut player = rand.gen_range(0..players.len());
+                while player == one {
+                    player = rand.gen_range(0..players.len());
+                }
+                player
+            };
+
+            (&players[one], &players[two])
+        };
+
+        let winner_score = if rand.gen_bool(0.1) { 12 } else { 11 };
+        let loser_score = if winner_score == 12 {
+            10
+        } else {
+            rand.gen_range(0..10)
+        };
+
+        let (user_score, opponent_score) = if rand.gen_bool(0.5) {
+            (winner_score, loser_score)
+        } else {
+            (loser_score, winner_score)
+        };
+
+        let model::Response::Id(id) = handler::Handler::new(
+            get_registered_user(auth, &user.2).await?,
+            store.clone(),
+            smtp::Smtp::empty(),
+        )
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: opponent.0,
+            score: user_score,
+            opponent_score,
+        }))
+        .await?
+        else {
+            unreachable!("Unexpected response")
+        };
+
+        if rand.gen_bool(0.99) {
+            handler::Handler::new(
+                get_registered_user(auth, &opponent.2).await?,
+                store.clone(),
+                smtp::Smtp::empty(),
+            )
+            .call(model::Request::Game(model::request::Game::Accept(id)))
+            .await?;
         }
     }
 
@@ -114,10 +197,17 @@ async fn get_user(auth: &access::Auth, email: &str) -> Result<access::UserAccess
         .ok_or(Error::NotFound(String::from(email)))
 }
 
-fn make_invite(name: &str) -> model::InvitePlayer {
-    let email = name.to_lowercase().replace(' ', ".");
-    let email = format!("{email}@email.com");
-    let name = String::from(name);
+async fn get_registered_user(
+    auth: &access::Auth,
+    email: &str,
+) -> Result<access::User<access::Regular>, Error> {
+    use server::auth::Provider;
 
-    model::InvitePlayer { name, email }
+    auth.auth(email)
+        .await?
+        .ok_or(Error::NotFound(String::from(email)))
+        .and_then(|u| match u {
+            access::UserAccess::Regular(user) => Ok(user),
+            access::UserAccess::Pending(_) => Err(Error::PendingUser(String::from(email))),
+        })
 }

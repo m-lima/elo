@@ -1,31 +1,24 @@
+use super::model;
+
 #[derive(Debug)]
-pub struct Broadcaster<T>
-where
-    T: Clone,
-{
-    sender: tokio::sync::broadcast::Sender<T>,
+pub struct Broadcaster {
+    sender: tokio::sync::broadcast::Sender<model::Push>,
 }
 
-impl<T> Broadcaster<T>
-where
-    T: Clone,
-{
+impl Broadcaster {
     pub fn new() -> Self {
         let (sender, _) = tokio::sync::broadcast::channel(16);
         Self { sender }
     }
 
-    pub fn subscribe(&self) -> tokio::sync::broadcast::Receiver<T> {
+    pub fn subscribe(&self) -> tokio::sync::broadcast::Receiver<model::Push> {
         self.sender.subscribe()
     }
 
-    pub fn send(&self, payload: T) {
+    pub fn send(&self, payload: model::Push) {
+        let message = payload.to_string();
         if let Ok(count) = self.sender.send(payload) {
-            if count == 1 {
-                tracing::debug!("Broadcasting to 1 listener");
-            } else {
-                tracing::debug!("Broadcasting to {count} listeners");
-            }
+            tracing::info!(listeners = %count, "Push {message}");
         }
     }
 }

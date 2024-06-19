@@ -11,22 +11,22 @@ async fn insert(
         INSERT INTO players (
             name,
             email,
-            rating,
-            deviation,
-            volatility
+            rating
         ) VALUES (
             $1,
             $2,
-            0,
-            0,
             0
         ) RETURNING
             id,
             name,
             email,
             inviter,
-            created_ms AS "created_ms: types::Millis",
-            rating
+            rating,
+            wins,
+            losses,
+            points_won,
+            points_lost,
+            created_ms AS "created_ms: types::Millis"
         "#,
         name,
         email
@@ -71,22 +71,22 @@ mod constraints {
             INSERT INTO players (
                 name,
                 email,
-                rating,
-                deviation,
-                volatility
+                rating
             ) VALUES (
                 "bla",
                 NULL,
-                0,
-                0,
                 0
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                created_ms AS "created_ms: types::Millis",
-                rating
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
             "#
         )
         .fetch_one(&pool)
@@ -321,5 +321,25 @@ mod behavior {
         .unwrap();
 
         assert_eq!(id, None);
+
+        let error = sqlx::query_as!(
+            super::super::Id,
+            r#"
+            UPDATE
+                players
+            SET
+                name = "other"
+            WHERE
+                id = 27
+            RETURNING
+                id AS "id!: _"
+            "#
+        )
+        .fetch_one(&pool)
+        .await
+        .map(|r| r.id)
+        .unwrap_err();
+
+        assert!(matches!(error, sqlx::Error::RowNotFound));
     }
 }

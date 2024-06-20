@@ -17,6 +17,8 @@ pub enum Error {
     WrongCount,
     #[error("Could not build distribution: {0:?}")]
     Distribution(#[from] rand::distributions::WeightedError),
+    #[error("Could not receive push: {0:?}")]
+    Push(#[from] tokio::sync::broadcast::error::RecvError),
 }
 
 pub async fn initialize(store: &store::Store) -> Result<(), Error> {
@@ -100,16 +102,17 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
             let (invitee, amount) = players.next().ok_or(Error::WrongCount)?;
             let (invitee_name, invitee_email) = make_player(invitee);
 
-            match handler
+            let model::Response::Done = handler
                 .call(model::Request::Invite(model::request::Invite::Player {
                     name: invitee_name,
                     email: invitee_email.clone(),
                 }))
                 .await?
-            {
-                model::Response::Id(_) => stack.push_back((invitee_email, amount)),
-                _ => unreachable!("Unexpected response"),
+            else {
+                unreachable!("Unexpected response")
             };
+
+            stack.push_back((invitee_email, amount));
         }
     }
 
@@ -126,13 +129,13 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
         let user = get_registered_user(auth, consts::mock::USER_EMAIL).await?;
 
         let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
-        match handler
+        let model::Response::Players(players) = handler
             .call(model::Request::Player(model::request::Player::List))
             .await?
-        {
-            model::Response::Players(players) => players,
-            _ => unreachable!("Unexpected response"),
-        }
+        else {
+            unreachable!("Unexpected response")
+        };
+        players
     };
 
     let distribution =
@@ -165,19 +168,26 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
             (loser_score, winner_score)
         };
 
-        let model::Response::Id(id) = handler::Handler::new(
+        let mut handler = handler::Handler::new(
             get_registered_user(auth, &user.2).await?,
             store.clone(),
             smtp::Smtp::empty(),
-        )
-        .call(model::Request::Game(model::request::Game::Register {
-            opponent: opponent.0,
-            score: user_score,
-            opponent_score,
-        }))
-        .await?
+        );
+        let mut pushes = handler.subscribe();
+
+        let model::Response::Done = handler
+            .call(model::Request::Game(model::request::Game::Register {
+                opponent: opponent.0,
+                score: user_score,
+                opponent_score,
+            }))
+            .await?
         else {
             unreachable!("Unexpected response")
+        };
+
+        let model::Push::Game(model::push::Game::Registered(game)) = pushes.recv().await? else {
+            unreachable!("Unexpected push")
         };
 
         if rand.gen_bool(0.99) {
@@ -186,7 +196,7 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
                 store.clone(),
                 smtp::Smtp::empty(),
             )
-            .call(model::Request::Game(model::request::Game::Accept(id)))
+            .call(model::Request::Game(model::request::Game::Accept(game.id)))
             .await?;
         }
     }

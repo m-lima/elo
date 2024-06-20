@@ -50,6 +50,9 @@ CREATE TABLE games (
   FOREIGN KEY(player_two) REFERENCES players(id) ON DELETE CASCADE
 );
 
+CREATE INDEX games_player_one_idx ON games(player_one);
+CREATE INDEX games_player_two_idx ON games(player_two);
+
 CREATE TABLE challenges (
   id         INTEGER NOT NULL PRIMARY KEY,
   player_one INTEGER NOT NULL,

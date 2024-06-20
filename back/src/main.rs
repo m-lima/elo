@@ -56,7 +56,40 @@ fn main() -> std::process::ExitCode {
     }
 }
 
+#[cfg(feature = "local")]
+async fn initialize(db: std::path::PathBuf) -> std::process::ExitCode {
+    if let Err(error) = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&db)
+    {
+        tracing::warn!(?error, ?db, "Could not truncate database");
+    }
+
+    let store = match store::Store::new(&db).await {
+        Ok(store) => store,
+        Err(error) => {
+            tracing::error!(?error, ?db, "Failed to open store");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+
+    if let Err(error) = handler::mock::initialize(&store).await {
+        tracing::error!(?error, ?db, "Failed to initialize store");
+        std::process::ExitCode::FAILURE
+    } else {
+        tracing::info!(?db, "Successfully initialized db");
+        std::process::ExitCode::SUCCESS
+    }
+}
+
 async fn async_main(args: args::Args) -> std::process::ExitCode {
+    #[cfg(feature = "local")]
+    if args.init {
+        return initialize(args.db).await;
+    }
+
     let store = match store::Store::new(&args.db).await {
         Ok(store) => store,
         Err(error) => {
@@ -64,14 +97,6 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
-
-    #[cfg(feature = "local")]
-    if args.init {
-        if let Err(error) = handler::mock::initialize(&store).await {
-            tracing::error!(?error, db = ?args.db, "Failed to initialize store");
-            return std::process::ExitCode::FAILURE;
-        }
-    }
 
     let smtp = if let Some(smtp) = args.smtp {
         match smtp::Smtp::new(smtp.link, smtp.smtp, smtp.from).await {

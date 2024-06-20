@@ -110,7 +110,28 @@ impl Games<'_> {
         let (rating_one, rating_two) =
             rating_updater(rating_one, rating_two, score_one > score_two);
 
-        let (one, two) = if score_one > score_two {
+        let (winner, loser, winner_score, loser_score, winner_rating, loser_rating) =
+            if score_one > score_two {
+                (
+                    game.player_one,
+                    game.player_two,
+                    game.score_one,
+                    game.score_two,
+                    rating_one,
+                    rating_two,
+                )
+            } else {
+                (
+                    game.player_two,
+                    game.player_one,
+                    game.score_two,
+                    game.score_one,
+                    rating_two,
+                    rating_one,
+                )
+            };
+
+        let (one, two) = {
             let one = sqlx::query_as!(
                 types::Player,
                 r#"
@@ -135,10 +156,10 @@ impl Games<'_> {
                     points_lost AS "points_lost!: _",
                     created_ms AS "created_ms!: types::Millis"
                 "#,
-                game.player_one,
-                game.score_one,
-                game.score_two,
-                rating_one,
+                winner,
+                winner_score,
+                loser_score,
+                winner_rating,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -168,78 +189,10 @@ impl Games<'_> {
                     points_lost AS "points_lost!: _",
                     created_ms AS "created_ms!: types::Millis"
                 "#,
-                game.player_two,
-                game.score_two,
-                game.score_one,
-                rating_two,
-            )
-            .fetch_one(tx.as_mut())
-            .await
-            .map_err(Error::Query)?;
-
-            (one, two)
-        } else {
-            let one = sqlx::query_as!(
-                types::Player,
-                r#"
-                UPDATE
-                    players
-                SET
-                    losses = losses + 1,
-                    points_won = points_won + $2,
-                    points_lost = points_lost + $3,
-                    rating = $4
-                WHERE
-                    id = $1
-                RETURNING
-                    id AS "id!: _",
-                    name AS "name!: _",
-                    email AS "email!: _",
-                    inviter AS "inviter!: _",
-                    rating AS "rating!: _",
-                    wins AS "wins!: _",
-                    losses AS "losses!: _",
-                    points_won AS "points_won!: _",
-                    points_lost AS "points_lost!: _",
-                    created_ms AS "created_ms!: types::Millis"
-                "#,
-                game.player_one,
-                game.score_one,
-                game.score_two,
-                rating_one,
-            )
-            .fetch_one(tx.as_mut())
-            .await
-            .map_err(Error::Query)?;
-
-            let two = sqlx::query_as!(
-                types::Player,
-                r#"
-                UPDATE
-                    players
-                SET
-                    wins = wins + 1,
-                    points_won = points_won + $2,
-                    points_lost = points_lost + $3,
-                    rating = $4
-                WHERE
-                    id = $1
-                RETURNING
-                    id AS "id!: _",
-                    name AS "name!: _",
-                    email AS "email!: _",
-                    inviter AS "inviter!: _",
-                    rating AS "rating!: _",
-                    wins AS "wins!: _",
-                    losses AS "losses!: _",
-                    points_won AS "points_won!: _",
-                    points_lost AS "points_lost!: _",
-                    created_ms AS "created_ms!: types::Millis"
-                "#,
-                game.player_two,
-                game.score_two,
-                game.score_one,
-                rating_two,
+                loser,
+                loser_score,
+                winner_score,
+                loser_rating,
             )
             .fetch_one(tx.as_mut())
             .await

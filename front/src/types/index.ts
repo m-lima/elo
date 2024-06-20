@@ -60,11 +60,10 @@ export type Game = {
   readonly scoreTwo: number;
   readonly ratingOne: number;
   readonly ratingTwo: number;
-  readonly accepted: boolean;
   readonly createdMs: number;
 };
 
-export type GameTuple = [number, number, number, number, number, number, number, boolean, number];
+export type GameTuple = [number, number, number, number, number, number, number, number];
 
 export const gameFromTuple = ([
   id,
@@ -74,7 +73,6 @@ export const gameFromTuple = ([
   scoreTwo,
   ratingOne,
   ratingTwo,
-  accepted,
   createdMs,
 ]: GameTuple): Game => {
   return {
@@ -85,7 +83,6 @@ export const gameFromTuple = ([
     scoreTwo,
     ratingOne,
     ratingTwo,
-    accepted,
     createdMs,
   };
 };

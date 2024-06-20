@@ -86,8 +86,8 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
         }
 
         let user = match get_user(auth, &user).await? {
-            access::UserAccess::Regular(user) => user,
-            access::UserAccess::Pending(user) => {
+            access::Dynamic::Regular(user) => user,
+            access::Dynamic::Pending(user) => {
                 let email = user.email().clone();
                 let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
                 handler
@@ -173,7 +173,6 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
             store.clone(),
             smtp::Smtp::empty(),
         );
-        let mut pushes = handler.subscribe();
 
         let model::Response::Done = handler
             .call(model::Request::Game(model::request::Game::Register {
@@ -185,26 +184,12 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
         else {
             unreachable!("Unexpected response")
         };
-
-        let model::Push::Game(model::push::Game::Registered(game)) = pushes.recv().await? else {
-            unreachable!("Unexpected push")
-        };
-
-        if rand.gen_bool(0.99) {
-            handler::Handler::new(
-                get_registered_user(auth, &opponent.2).await?,
-                store.clone(),
-                smtp::Smtp::empty(),
-            )
-            .call(model::Request::Game(model::request::Game::Accept(game.id)))
-            .await?;
-        }
     }
 
     Ok(())
 }
 
-async fn get_user(auth: &access::Auth, email: &str) -> Result<access::UserAccess, Error> {
+async fn get_user(auth: &access::Auth, email: &str) -> Result<access::Dynamic, Error> {
     use server::auth::Provider;
 
     auth.auth(email)
@@ -222,7 +207,7 @@ async fn get_registered_user(
         .await?
         .ok_or(Error::NotFound(String::from(email)))
         .and_then(|u| match u {
-            access::UserAccess::Regular(user) => Ok(user),
-            access::UserAccess::Pending(_) => Err(Error::PendingUser(String::from(email))),
+            access::Dynamic::Regular(user) => Ok(user),
+            access::Dynamic::Pending(_) => Err(Error::PendingUser(String::from(email))),
         })
 }

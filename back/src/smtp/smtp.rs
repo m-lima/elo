@@ -33,10 +33,6 @@ impl Smtp {
             }
         }
     }
-
-    pub fn present(&self) -> bool {
-        self.tx.is_some()
-    }
 }
 
 struct Worker {

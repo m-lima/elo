@@ -3,6 +3,11 @@ use crate::types;
 
 type Result<T = ()> = std::result::Result<T, Error>;
 
+// TODO: Whenever `games` is modified (created, accepted, deleted), recalculate all ratings
+// TODO: The rating on the game should be the incoming rating
+// TODO: We get the rating for a match by getting the latest match and applying the rating
+// calculator; falling back to a default value if a previous match does not exist
+
 pub struct Games<'a> {
     pool: &'a sqlx::sqlite::SqlitePool,
 }
@@ -27,7 +32,6 @@ impl Games<'_> {
                 score_two,
                 rating_one,
                 rating_two,
-                accepted,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 games
@@ -47,10 +51,11 @@ impl Games<'_> {
         player_two: types::Id,
         score_one: u8,
         score_two: u8,
+        default_rating: f64,
         rating_updater: F,
-    ) -> Result<types::Game>
+    ) -> Result<(types::Game, types::Player, types::Player)>
     where
-        F: Fn(f64, f64) -> (f64, f64),
+        F: Copy + Fn(f64, f64, bool) -> (f64, f64),
     {
         if player_one == player_two || score_one == score_two {
             return Err(Error::Conflict);
@@ -58,57 +63,10 @@ impl Games<'_> {
 
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
-        let player_one = sqlx::query_as!(
-            types::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                players
-            WHERE
-                id = $1
-            "#,
-            player_one,
-        )
-        .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
-
-        let player_two = sqlx::query_as!(
-            types::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                players
-            WHERE
-                id = $1
-            "#,
-            player_two,
-        )
-        .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
-
-        let (rating_one, rating_two) = rating_updater(player_one.rating, player_two.rating);
+        let rating_one =
+            Self::get_rating(player_one, default_rating, rating_updater, &mut tx).await?;
+        let rating_two =
+            Self::get_rating(player_two, default_rating, rating_updater, &mut tx).await?;
 
         let game = sqlx::query_as!(
             types::Game,
@@ -136,11 +94,10 @@ impl Games<'_> {
                 score_two,
                 rating_one,
                 rating_two,
-                accepted,
                 created_ms AS "created_ms: types::Millis"
             "#,
-            player_one.id,
-            player_two.id,
+            player_one,
+            player_two,
             score_one,
             score_two,
             rating_one,
@@ -150,48 +107,10 @@ impl Games<'_> {
         .await
         .map_err(Error::Query)?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        let (rating_one, rating_two) =
+            rating_updater(rating_one, rating_two, score_one > score_two);
 
-        Ok(game)
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub async fn accept(
-        &self,
-        player: types::Id,
-        id: types::Id,
-    ) -> Result<(types::Id, types::Player, types::Player)> {
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
-
-        let game = sqlx::query_as!(
-            types::Game,
-            r#"
-            UPDATE
-                games
-            SET
-                accepted = true
-            WHERE
-                id = $1 AND
-                player_two = $2
-            RETURNING
-                id AS "id!: _",
-                player_one AS "player_one!: _",
-                player_two AS "player_two!: _",
-                score_one AS "score_one!: _",
-                score_two AS "score_two!: _",
-                rating_one AS "rating_one!: _",
-                rating_two AS "rating_two!: _",
-                accepted AS "accepted!: _",
-                created_ms AS "created_ms!: types::Millis"
-            "#,
-            id,
-            player,
-        )
-        .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
-
-        let (one, two) = if game.score_one > game.score_two {
+        let (one, two) = if score_one > score_two {
             let one = sqlx::query_as!(
                 types::Player,
                 r#"
@@ -219,7 +138,7 @@ impl Games<'_> {
                 game.player_one,
                 game.score_one,
                 game.score_two,
-                game.rating_one,
+                rating_one,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -252,7 +171,7 @@ impl Games<'_> {
                 game.player_two,
                 game.score_two,
                 game.score_one,
-                game.rating_two,
+                rating_two,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -287,7 +206,7 @@ impl Games<'_> {
                 game.player_one,
                 game.score_one,
                 game.score_two,
-                game.rating_one,
+                rating_one,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -320,7 +239,7 @@ impl Games<'_> {
                 game.player_two,
                 game.score_two,
                 game.score_one,
-                game.rating_two,
+                rating_two,
             )
             .fetch_one(tx.as_mut())
             .await
@@ -331,28 +250,65 @@ impl Games<'_> {
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok((game.id, one, two))
+        Ok((game, one, two))
     }
 
-    #[tracing::instrument(skip(self))]
-    pub async fn cancel(&self, player: types::Id, id: types::Id) -> Result<types::Id> {
-        sqlx::query_as!(
-            super::Id,
+    async fn get_rating<'a, F>(
+        player: types::Id,
+        default_rating: f64,
+        rating_updater: F,
+        tx: &mut sqlx::Transaction<'a, sqlx::Sqlite>,
+    ) -> Result<f64>
+    where
+        F: Fn(f64, f64, bool) -> (f64, f64),
+    {
+        sqlx::query!(
             r#"
-            DELETE FROM
-                games
-            WHERE
-                id = $1 AND
-                player_one = $2
-            RETURNING
-                id
+            SELECT
+                rating,
+                opponent_rating,
+                score,
+                opponent_score
+            FROM
+            (
+                SELECT
+                    id,
+                    rating_one as rating,
+                    rating_two as opponent_rating,
+                    score_one as score,
+                    score_two as opponent_score,
+                    created_ms
+                FROM
+                    games
+                WHERE
+                    player_two = $1
+                UNION SELECT
+                    id,
+                    rating_two as rating,
+                    rating_one as opponent_rating,
+                    score_two as score,
+                    score_one as opponent_score,
+                    created_ms
+                FROM
+                    games
+                WHERE
+                    player_two = $1
+            )
+            ORDER BY
+                created_ms DESC,
+                id DESC
+            LIMIT
+                1
             "#,
-            id,
             player,
         )
-        .fetch_one(self.pool)
+        .fetch_optional(tx.as_mut())
         .await
-        .map_err(Error::Query)
-        .map(|r| r.id)
+        .map(|r| {
+            r.map_or(default_rating, |r| {
+                rating_updater(r.rating, r.opponent_rating, r.score > r.opponent_score).0
+            })
+        })
+        .map_err(Into::into)
     }
 }

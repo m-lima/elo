@@ -35,17 +35,18 @@ impl<'a> Game<'a, access::Regular> {
                 score,
                 opponent_score,
             } => {
-                let game = games
+                let (game, player_one, player_two) = games
                     .register(
                         self.handler.user.id(),
                         opponent,
                         score,
                         opponent_score,
-                        |one, two| {
+                        skillratings::elo::EloRating::new().rating,
+                        |one, two, won| {
                             let ratings = skillratings::elo::elo(
                                 &skillratings::elo::EloRating { rating: one },
                                 &skillratings::elo::EloRating { rating: two },
-                                if score > opponent_score {
+                                if won {
                                     &skillratings::Outcomes::WIN
                                 } else {
                                     &skillratings::Outcomes::LOSS
@@ -60,35 +61,9 @@ impl<'a> Game<'a, access::Regular> {
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Game(model::push::Game::Registered(game)));
-
-                Ok(model::Response::Done)
-            }
-            model::request::Game::Accept(id) => {
-                let (id, player_one, player_two) = games
-                    .accept(self.handler.user.id(), id)
-                    .await
-                    .map_err(model::Error::Store)?;
-
-                self.handler
-                    .broadcaster
-                    .send(model::Push::Game(model::push::Game::Accepted {
-                        id,
-                        player_one,
-                        player_two,
-                    }));
-
-                Ok(model::Response::Done)
-            }
-            model::request::Game::Cancel(id) => {
-                let id = games
-                    .cancel(self.handler.user.id(), id)
-                    .await
-                    .map_err(model::Error::Store)?;
-
-                self.handler
-                    .broadcaster
-                    .send(model::Push::Game(model::push::Game::Unregistered(id)));
+                    .send(model::Push::Game(model::push::Game::Registered(
+                        game, player_one, player_two,
+                    )));
 
                 Ok(model::Response::Done)
             }

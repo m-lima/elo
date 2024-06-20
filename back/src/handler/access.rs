@@ -19,10 +19,6 @@ where
         self.id
     }
 
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
     pub fn email(&self) -> &String {
         &self.email
     }
@@ -36,7 +32,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub enum UserAccess {
+pub enum Dynamic {
     Regular(User<Regular>),
     Pending(User<Pending>),
 }
@@ -69,12 +65,12 @@ impl Auth {
 }
 
 impl server::auth::Provider for Auth {
-    type Ok = UserAccess;
+    type Ok = Dynamic;
     type Error = store::Error;
 
     async fn auth(&self, user: &str) -> Result<Option<Self::Ok>, Self::Error> {
         if let Some(user) = self.store.players().auth(user).await? {
-            return Ok(Some(UserAccess::Regular(User {
+            return Ok(Some(Dynamic::Regular(User {
                 id: user.id,
                 name: user.name,
                 email: user.email,
@@ -83,7 +79,7 @@ impl server::auth::Provider for Auth {
         }
 
         if let Ok(Some(user)) = self.store.invites().auth(user).await {
-            return Ok(Some(UserAccess::Pending(User {
+            return Ok(Some(Dynamic::Pending(User {
                 id: user.id,
                 name: user.name,
                 email: user.email,

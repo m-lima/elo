@@ -26,8 +26,6 @@ impl std::fmt::Display for Request {
             Self::Game(resource) => match resource {
                 Game::List => f.write_str("Game::List"),
                 Game::Register { .. } => f.write_str("Game::Register"),
-                Game::Accept(_) => f.write_str("Game::Accept"),
-                Game::Cancel(_) => f.write_str("Game::Cancel"),
             },
         }
     }
@@ -60,6 +58,4 @@ pub enum Game {
         score: u8,
         opponent_score: u8,
     },
-    Accept(types::Id),
-    Cancel(types::Id),
 }

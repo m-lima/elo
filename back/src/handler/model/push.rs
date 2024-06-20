@@ -17,9 +17,7 @@ impl std::fmt::Display for Push {
                 Player::Joined(_) => f.write_str("Player::Joined"),
             },
             Self::Game(resource) => match resource {
-                Game::Registered(_) => f.write_str("Game::Registered"),
-                Game::Accepted { .. } => f.write_str("Game::Accepted"),
-                Game::Unregistered(_) => f.write_str("Game::Unregistered"),
+                Game::Registered(_, _, _) => f.write_str("Game::Registered"),
             },
         }
     }
@@ -37,11 +35,5 @@ pub enum Player {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Game {
-    Registered(types::Game),
-    Accepted {
-        id: types::Id,
-        player_one: types::Player,
-        player_two: types::Player,
-    },
-    Unregistered(types::Id),
+    Registered(types::Game, types::Player, types::Player),
 }

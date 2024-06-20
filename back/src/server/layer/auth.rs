@@ -44,9 +44,11 @@ where
             };
         }
 
-        let user = if cfg!(feature = "local") {
-            crate::consts::mock::USER_EMAIL
-        } else {
+        #[cfg(feature = "local")]
+        let user = crate::consts::mock::USER_EMAIL;
+
+        #[cfg(not(feature = "local"))]
+        let user = {
             let header = crate::X_USER;
 
             let Some(user_header) = request.headers().get(&header) else {

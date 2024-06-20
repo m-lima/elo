@@ -35,29 +35,24 @@ impl<'a> Invite<'a, access::Regular> {
                 let mailbox =
                     mailbox::Mailbox::new(name, email).map_err(model::Error::InvalidEmail)?;
 
-                let id = invites
+                let invite = invites
                     .invite(self.handler.user.id(), mailbox.name(), mailbox.email())
                     .await
-                    .map_err(model::Error::Store)
-                    .map(model::Response::Id)?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Player(model::push::Player::Invited {
-                        name: String::from(mailbox.name()),
-                        email: String::from(mailbox.email()),
-                    }));
+                    .send(model::Push::Player(model::push::Player::Invited(invite)));
 
                 self.handler.smtp.send(smtp::Payload::Invite(mailbox)).await;
 
-                Ok(id)
+                Ok(model::Response::Done)
             }
             model::request::Invite::Cancel(id) => {
                 let id = invites
                     .cancel(self.handler.user.id(), id)
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
@@ -82,78 +77,50 @@ impl<'a> Invite<'a, access::Pending> {
         match request {
             model::request::Invite::Accept => {
                 let rating = skillratings::elo::EloRating::new().rating;
-                let player = invites
-                    .accept(self.handler.user.id(), rating)
+                let (player, initiator) = invites
+                    .accept(self.handler.user.id(), self.handler.user.email(), rating)
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
+                    .map_err(model::Error::Store)?;
 
-                let id = player.id;
-                let inviter_id = player.inviter;
                 self.handler
                     .broadcaster
                     .send(model::Push::Player(model::push::Player::Joined(player)));
 
-                if self.handler.smtp.present() {
-                    if let Some(inviter_id) = inviter_id {
-                        match self.handler.store.players().get(inviter_id).await {
-                            Ok(Some(inviter_player)) => {
-                                self.handler
-                                    .smtp
-                                    .send(smtp::Payload::InviteOutcome {
-                                        inviter: mailbox::Proto {
-                                            name: inviter_player.name,
-                                            email: inviter_player.email,
-                                        },
-                                        invitee: self.handler.user.make_proto(),
-                                        accepted: true,
-                                    })
-                                    .await;
-                            }
-                            Ok(None) | Err(_) => {
-                                tracing::warn!(
-                                    "Could not get the original inviter's name and email for acceptance email"
-                                );
-                            }
-                        }
-                    }
-                }
+                self.handler
+                    .smtp
+                    .send(smtp::Payload::InviteOutcome {
+                        inviter: mailbox::Proto {
+                            name: initiator.name,
+                            email: initiator.email,
+                        },
+                        invitee: self.handler.user.make_proto(),
+                        accepted: true,
+                    })
+                    .await;
 
-                Ok(model::Response::Id(id))
+                Ok(model::Response::Done)
             }
             model::request::Invite::Reject => {
-                let invite = invites
-                    .reject(self.handler.user.id())
+                let (id, initiator) = invites
+                    .reject(self.handler.user.id(), self.handler.user.email())
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Player(model::push::Player::Uninvited(
-                        invite.id,
-                    )));
+                    .send(model::Push::Player(model::push::Player::Uninvited(id)));
 
-                if self.handler.smtp.present() {
-                    match self.handler.store.players().get(invite.inviter).await {
-                        Ok(Some(inviter_player)) => {
-                            self.handler
-                                .smtp
-                                .send(smtp::Payload::InviteOutcome {
-                                    inviter: mailbox::Proto {
-                                        name: inviter_player.name,
-                                        email: inviter_player.email,
-                                    },
-                                    invitee: self.handler.user.make_proto(),
-                                    accepted: false,
-                                })
-                                .await;
-                        }
-                        Ok(None) | Err(_) => {
-                            tracing::warn!("Could not get the original inviter's name and email for rejection email");
-                        }
-                    }
-                }
+                self.handler
+                    .smtp
+                    .send(smtp::Payload::InviteOutcome {
+                        inviter: mailbox::Proto {
+                            name: initiator.name,
+                            email: initiator.email,
+                        },
+                        invitee: self.handler.user.make_proto(),
+                        accepted: false,
+                    })
+                    .await;
 
                 Ok(model::Response::Done)
             }

@@ -60,7 +60,12 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn invite(&self, inviter: types::Id, name: &str, email: &str) -> Result<types::Id> {
+    pub async fn invite(
+        &self,
+        inviter: types::Id,
+        name: &str,
+        email: &str,
+    ) -> Result<types::Invite> {
         let name = name.trim();
         if name.is_empty() {
             return Err(Error::BlankValue("name"));
@@ -95,8 +100,8 @@ impl Invites<'_> {
             return Err(Error::AlreadyExists);
         }
 
-        let id = sqlx::query_as!(
-            super::Id,
+        let invite = sqlx::query_as!(
+            types::Invite,
             r#"
             INSERT INTO invites (
                 inviter,
@@ -107,7 +112,11 @@ impl Invites<'_> {
                 $2,
                 $3
             ) RETURNING
-                id
+                id,
+                inviter,
+                name,
+                email,
+                created_ms AS "created_ms: types::Millis"
             "#,
             inviter,
             name,
@@ -115,16 +124,15 @@ impl Invites<'_> {
         )
         .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::Query)
-        .map(|r| r.id)?;
+        .map_err(Error::Query)?;
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(id)
+        Ok(invite)
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn cancel(&self, inviter: types::Id, id: types::Id) -> Result<Option<types::Id>> {
+    pub async fn cancel(&self, inviter: types::Id, id: types::Id) -> Result<types::Id> {
         sqlx::query_as!(
             super::Id,
             r#"
@@ -139,23 +147,29 @@ impl Invites<'_> {
             id,
             inviter
         )
-        .fetch_optional(self.pool)
+        .fetch_one(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.id)
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn accept(&self, id: types::Id, rating: f64) -> Result<Option<types::Player>> {
+    pub async fn accept(
+        &self,
+        id: types::Id,
+        email: &str,
+        rating: f64,
+    ) -> Result<(types::Player, types::User)> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
-        let Some(invite) = sqlx::query_as!(
+        let invite = sqlx::query_as!(
             types::Invite,
             r#"
             DELETE FROM
                 invites
             WHERE
-                id = $1
+                id = $1 AND
+                email = $2
             RETURNING
                 id,
                 inviter,
@@ -163,14 +177,12 @@ impl Invites<'_> {
                 email,
                 created_ms AS "created_ms: types::Millis"
             "#,
-            id
+            id,
+            email,
         )
-        .fetch_optional(tx.as_mut())
+        .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::Query)?
-        else {
-            return Ok(None);
-        };
+        .map_err(Error::Query)?;
 
         let player = sqlx::query_as!(
             types::Player,
@@ -206,20 +218,41 @@ impl Invites<'_> {
         .await
         .map_err(Error::Query)?;
 
+        let inviter = sqlx::query_as!(
+            types::User,
+            r#"
+            SELECT
+                id,
+                name,
+                email
+            FROM
+                players
+            WHERE
+                id = $1
+            "#,
+            invite.inviter,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map_err(Error::Query)?;
+
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(Some(player))
+        Ok((player, inviter))
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn reject(&self, id: types::Id) -> Result<Option<types::Invite>> {
-        sqlx::query_as!(
+    pub async fn reject(&self, id: types::Id, email: &str) -> Result<(types::Id, types::User)> {
+        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+
+        let invite = sqlx::query_as!(
             types::Invite,
             r#"
             DELETE FROM
                 invites
             WHERE
-                id = $1
+                id = $1 AND
+                email = $2
             RETURNING
                 id,
                 inviter,
@@ -227,10 +260,33 @@ impl Invites<'_> {
                 email,
                 created_ms AS "created_ms: types::Millis"
             "#,
-            id
+            id,
+            email,
         )
-        .fetch_optional(self.pool)
+        .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::Query)
+        .map_err(Error::Query)?;
+
+        let inviter = sqlx::query_as!(
+            types::User,
+            r#"
+            SELECT
+                id,
+                name,
+                email
+            FROM
+                players
+            WHERE
+                id = $1
+            "#,
+            invite.inviter,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map_err(Error::Query)?;
+
+        tx.commit().await.map_err(Error::Query)?;
+
+        Ok((invite.id, inviter))
     }
 }

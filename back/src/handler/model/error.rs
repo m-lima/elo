@@ -32,6 +32,7 @@ impl From<Error> for ws::Error {
                 store::Error::AlreadyExists | store::Error::Conflict => {
                     Self::from(hyper::StatusCode::CONFLICT)
                 }
+                store::Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
             },
             Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
             Error::InvalidEmail(error) => {
@@ -47,7 +48,10 @@ impl Error {
         match self {
             Self::Store(store::Error::Query(_)) => false,
             Self::Store(
-                store::Error::BlankValue(_) | store::Error::AlreadyExists | store::Error::Conflict,
+                store::Error::BlankValue(_)
+                | store::Error::AlreadyExists
+                | store::Error::Conflict
+                | store::Error::NotFound,
             )
             | Self::NotFound
             | Self::InvalidEmail(_)

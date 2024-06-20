@@ -56,23 +56,19 @@ impl<'a> Game<'a, access::Regular> {
                         },
                     )
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
-
-                let id = game.id;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
                     .send(model::Push::Game(model::push::Game::Registered(game)));
 
-                Ok(model::Response::Id(id))
+                Ok(model::Response::Done)
             }
             model::request::Game::Accept(id) => {
                 let (id, player_one, player_two) = games
                     .accept(self.handler.user.id(), id)
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
@@ -88,8 +84,7 @@ impl<'a> Game<'a, access::Regular> {
                 let id = games
                     .cancel(self.handler.user.id(), id)
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster

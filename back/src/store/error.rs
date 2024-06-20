@@ -8,6 +8,8 @@ pub enum Error {
     AlreadyExists,
     #[error("Conflicting values")]
     Conflict,
+    #[error("Not found")]
+    NotFound,
 }
 
 impl From<sqlx::Error> for Error {
@@ -16,6 +18,7 @@ impl From<sqlx::Error> for Error {
             sqlx::Error::Database(e) if e.code().map_or(false, |c| c == "2067") => {
                 Error::AlreadyExists
             }
+            sqlx::Error::RowNotFound => Error::NotFound,
             e => Error::Query(e),
         }
     }

@@ -41,7 +41,7 @@ impl Players<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get(&self, id: types::Id) -> Result<Option<types::Player>> {
+    pub async fn list(&self) -> Result<Vec<types::Player>> {
         sqlx::query_as!(
             types::Player,
             r#"
@@ -67,41 +67,13 @@ impl Players<'_> {
                 created_ms ASC
             "#
         )
-        .fetch_optional(self.pool)
-        .await
-        .map_err(Error::Query)
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub async fn list(&self) -> Result<Vec<types::Player>> {
-        sqlx::query_as!(
-            types::Player,
-            r#"
-            SELECT
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                players
-            ORDER BY
-                rating DESC,
-                created_ms ASC
-            "#
-        )
         .fetch_all(self.pool)
         .await
         .map_err(Error::Query)
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn rename(&self, id: types::Id, name: &str) -> Result<Option<types::Id>> {
+    pub async fn rename(&self, id: types::Id, name: &str) -> Result<types::Id> {
         let name = name.trim();
         if name.is_empty() {
             return Err(Error::BlankValue("name"));
@@ -118,20 +90,7 @@ impl Players<'_> {
                 players
             WHERE
                 name = $1
-            "#,
-            name
-        )
-        .fetch_optional(tx.as_mut())
-        .await
-        .map_err(Error::Query)?
-        .is_some()
-        {
-            return Err(Error::AlreadyExists);
-        }
-
-        if sqlx::query_as!(
-            super::Id,
-            r#"
+            UNION
             SELECT
                 id
             FROM
@@ -164,10 +123,10 @@ impl Players<'_> {
             id,
             name
         )
-        .fetch_optional(tx.as_mut())
+        .fetch_one(tx.as_mut())
         .await
         .map_err(Error::from)
-        .map(|r| r.map(|id| id.id))?;
+        .map(|r| r.id)?;
 
         tx.commit().await.map_err(Error::Query)?;
 

@@ -29,7 +29,7 @@ impl std::fmt::Display for Push {
 #[serde(rename_all = "camelCase")]
 pub enum Player {
     Renamed { player: types::Id, name: String },
-    Invited { name: String, email: String },
+    Invited(types::Invite),
     Uninvited(types::Id),
     Joined(types::Player),
 }

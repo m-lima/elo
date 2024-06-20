@@ -48,7 +48,7 @@ impl Games<'_> {
         score_one: u8,
         score_two: u8,
         rating_updater: F,
-    ) -> Result<Option<types::Game>>
+    ) -> Result<types::Game>
     where
         F: Fn(f64, f64) -> (f64, f64),
     {
@@ -58,7 +58,7 @@ impl Games<'_> {
 
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
-        let players = sqlx::query_as!(
+        let player_one = sqlx::query_as!(
             types::Player,
             r#"
             SELECT
@@ -75,37 +75,38 @@ impl Games<'_> {
             FROM
                 players
             WHERE
-                id IN ($1, $2)
+                id = $1
             "#,
             player_one,
-            player_two,
         )
-        .fetch_all(tx.as_mut())
+        .fetch_one(tx.as_mut())
         .await
         .map_err(Error::Query)?;
 
-        if players.len() != 2 {
-            return Ok(None);
-        }
-
-        let (player_one, player_two) = {
-            let mut players = players.into_iter();
-            let (Some(one), Some(two)) = (players.next(), players.next()) else {
-                return Ok(None);
-            };
-
-            if one.id == player_one {
-                if two.id == player_two {
-                    (one, two)
-                } else {
-                    return Ok(None);
-                }
-            } else if two.id == player_one {
-                (two, one)
-            } else {
-                return Ok(None);
-            }
-        };
+        let player_two = sqlx::query_as!(
+            types::Player,
+            r#"
+            SELECT
+                id,
+                name,
+                email,
+                inviter,
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
+            FROM
+                players
+            WHERE
+                id = $1
+            "#,
+            player_two,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map_err(Error::Query)?;
 
         let (rating_one, rating_two) = rating_updater(player_one.rating, player_two.rating);
 
@@ -151,7 +152,7 @@ impl Games<'_> {
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(Some(game))
+        Ok(game)
     }
 
     #[tracing::instrument(skip(self))]
@@ -159,10 +160,10 @@ impl Games<'_> {
         &self,
         player: types::Id,
         id: types::Id,
-    ) -> Result<Option<(types::Id, types::Player, types::Player)>> {
+    ) -> Result<(types::Id, types::Player, types::Player)> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
-        let Some(game) = sqlx::query_as!(
+        let game = sqlx::query_as!(
             types::Game,
             r#"
             UPDATE
@@ -186,13 +187,9 @@ impl Games<'_> {
             id,
             player,
         )
-        .fetch_optional(tx.as_mut())
+        .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::Query)?
-        else {
-            tx.commit().await.map_err(Error::Query)?;
-            return Ok(None);
-        };
+        .map_err(Error::Query)?;
 
         let (one, two) = if game.score_one > game.score_two {
             let one = sqlx::query_as!(
@@ -334,11 +331,11 @@ impl Games<'_> {
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(Some((game.id, one, two)))
+        Ok((game.id, one, two))
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn cancel(&self, player: types::Id, id: types::Id) -> Result<Option<types::Id>> {
+    pub async fn cancel(&self, player: types::Id, id: types::Id) -> Result<types::Id> {
         sqlx::query_as!(
             super::Id,
             r#"
@@ -353,9 +350,9 @@ impl Games<'_> {
             id,
             player,
         )
-        .fetch_optional(self.pool)
+        .fetch_one(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.map(|id| id.id))
+        .map(|r| r.id)
     }
 }

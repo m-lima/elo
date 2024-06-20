@@ -35,9 +35,7 @@ impl<'a> Player<'a, access::Regular> {
                 players
                     .rename(self.handler.user.id(), &name)
                     .await
-                    .map_err(model::Error::Store)
-                    .and_then(|r| r.ok_or(model::Error::NotFound))
-                    .map(model::Response::Id)?;
+                    .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster

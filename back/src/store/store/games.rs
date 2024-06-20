@@ -63,10 +63,36 @@ impl Games<'_> {
 
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
-        let rating_one =
-            Self::get_rating(player_one, default_rating, rating_updater, &mut tx).await?;
-        let rating_two =
-            Self::get_rating(player_two, default_rating, rating_updater, &mut tx).await?;
+        let (rating_one, rating_two) = sqlx::query!(
+            r#"
+            SELECT
+                one.rating as one,
+                two.rating as two
+            FROM
+                (
+                    SELECT
+                        rating
+                    from
+                        players
+                    where
+                        id = $1
+                ) as one,
+                (
+                    select
+                        rating
+                    from
+                        players
+                    where
+                        id = $2
+                ) as two;
+            "#,
+            player_one,
+            player_two,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map_err(Error::Query)
+        .map(|r| (r.one, r.two))?;
 
         let game = sqlx::query_as!(
             types::Game,
@@ -204,64 +230,5 @@ impl Games<'_> {
         tx.commit().await.map_err(Error::Query)?;
 
         Ok((game, one, two))
-    }
-
-    async fn get_rating<'a, F>(
-        player: types::Id,
-        default_rating: f64,
-        rating_updater: F,
-        tx: &mut sqlx::Transaction<'a, sqlx::Sqlite>,
-    ) -> Result<f64>
-    where
-        F: Fn(f64, f64, bool) -> (f64, f64),
-    {
-        sqlx::query!(
-            r#"
-            SELECT
-                rating,
-                opponent_rating,
-                score,
-                opponent_score
-            FROM
-            (
-                SELECT
-                    id,
-                    rating_one as rating,
-                    rating_two as opponent_rating,
-                    score_one as score,
-                    score_two as opponent_score,
-                    created_ms
-                FROM
-                    games
-                WHERE
-                    player_two = $1
-                UNION SELECT
-                    id,
-                    rating_two as rating,
-                    rating_one as opponent_rating,
-                    score_two as score,
-                    score_one as opponent_score,
-                    created_ms
-                FROM
-                    games
-                WHERE
-                    player_two = $1
-            )
-            ORDER BY
-                created_ms DESC,
-                id DESC
-            LIMIT
-                1
-            "#,
-            player,
-        )
-        .fetch_optional(tx.as_mut())
-        .await
-        .map(|r| {
-            r.map_or(default_rating, |r| {
-                rating_updater(r.rating, r.opponent_rating, r.score > r.opponent_score).0
-            })
-        })
-        .map_err(Into::into)
     }
 }

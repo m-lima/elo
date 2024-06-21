@@ -13,6 +13,7 @@
   -moz-osx-font-smoothing: grayscale;
 
   --color-foreground: #cccccc;
+  --color-foreground-dark: #a0a0a0;
   --color-background: #242424;
   --color-background-bright: #303030;
   --color-background-dark: #1d1d1d;

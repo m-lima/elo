@@ -5,12 +5,52 @@ import { usePlayers, useInvites } from '../store';
 import { type Invite, type Player } from '../types';
 
 type User = {
-  id?: number;
-  name: string;
-  email: string;
-  inviter?: number;
-  children: User[];
-  createdMs: number;
+  readonly id?: number;
+  readonly name: string;
+  readonly email: string;
+  readonly inviter?: number;
+  readonly children: User[];
+  readonly createdMs: number;
+};
+
+export const Invites = () => {
+  const players = usePlayers();
+  const invites = useInvites();
+
+  return <Suspense fallback={<Loading />}>{wrapRender(players(), invites())}</Suspense>;
+};
+
+const wrapRender = (players: Player[] = [], invites: Invite[] = []) => {
+  const roots = players
+    .filter(p => p.inviter === undefined)
+    .map(p => buildHierarchy(p, players, invites));
+
+  return (
+    <table>
+      <tbody>
+        <For each={roots}>{u => userRow(u, 0)}</For>
+      </tbody>
+    </table>
+  );
+};
+
+const userRow = (user: User, depth: number) => {
+  return (
+    <>
+      <tr>
+        <td>
+          {depthToIndent(depth)}
+          {user.name}
+          {user.id !== undefined ? '' : ' *'}
+        </td>
+      </tr>
+      <For each={user.children}>{u => userRow(u, depth + 1)}</For>
+    </>
+  );
+};
+
+const depthToIndent = (depth: number): string => {
+  return Array(depth).fill('-').join('');
 };
 
 const buildHierarchy = (player: Player, players: Player[], invites: Invite[]): User => {
@@ -42,44 +82,4 @@ const buildHierarchy = (player: Player, players: Player[], invites: Invite[]): U
     children,
     createdMs: player.createdMs,
   };
-};
-
-const depthToIndent = (depth: number): string => {
-  return Array(depth).fill('-').join('');
-};
-
-const userRow = (user: User, depth: number) => {
-  return (
-    <>
-      <tr>
-        <td>
-          {depthToIndent(depth)}
-          {user.name}
-          {user.id !== undefined ? '' : ' *'}
-        </td>
-      </tr>
-      <For each={user.children}>{u => userRow(u, depth + 1)}</For>
-    </>
-  );
-};
-
-const wrapRender = (players: Player[] = [], invites: Invite[] = []) => {
-  const roots = players
-    .filter(p => p.inviter === undefined)
-    .map(p => buildHierarchy(p, players, invites));
-
-  return (
-    <table>
-      <tbody>
-        <For each={roots}>{u => userRow(u, 0)}</For>
-      </tbody>
-    </table>
-  );
-};
-
-export const Invites = () => {
-  const players = usePlayers();
-  const invites = useInvites();
-
-  return <Suspense fallback={<Loading />}>{wrapRender(players(), invites())}</Suspense>;
 };

@@ -63,6 +63,17 @@ export type Game = {
   readonly createdMs: number;
 };
 
+export type ParsedGame = {
+  readonly id: number;
+  readonly playerOne?: Player;
+  readonly playerTwo?: Player;
+  readonly scoreOne: number;
+  readonly scoreTwo: number;
+  readonly ratingOne?: number;
+  readonly ratingTwo?: number;
+  readonly created: Date;
+};
+
 export type GameTuple = [number, number, number, number, number, number, number, number];
 
 export const gameFromTuple = ([

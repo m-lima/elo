@@ -1,0 +1,24 @@
+.components-games-align-right {
+  text-align: right;
+}
+
+.components-games-align-center {
+  text-align: center;
+}
+
+.components-games-rating-positive {
+  color: #80cc80;
+}
+
+.components-games-rating-negative {
+  color: #cc8080;
+}
+
+.components-games-unknown {
+  color: var(--color-foreground-dark);
+}
+
+.components-games-date {
+  color: var(--color-foreground-dark);
+}
+

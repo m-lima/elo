@@ -25,7 +25,7 @@ impl<'a> Player<'a, access::Regular> {
         let players = self.handler.store.players();
 
         match request {
-            model::request::Player::Id => Ok(model::Response::Id(self.handler.user.id())),
+            model::request::Player::Id => Ok(model::Response::User(self.handler.user.id())),
             model::request::Player::List => players
                 .list()
                 .await
@@ -53,7 +53,13 @@ impl<'a> Player<'a, access::Regular> {
 impl<'a> Player<'a, access::Pending> {
     // allow(clippy::unused_async): To match the expected signature
     #[allow(clippy::unused_async)]
-    pub async fn handle(self, _: model::request::Player) -> Result<model::Response, model::Error> {
-        Err(model::Error::Forbidden)
+    pub async fn handle(
+        self,
+        request: model::request::Player,
+    ) -> Result<model::Response, model::Error> {
+        match request {
+            model::request::Player::Id => Ok(model::Response::Pending(self.handler.user.id())),
+            _ => Err(model::Error::Forbidden),
+        }
     }
 }

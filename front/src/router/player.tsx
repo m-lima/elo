@@ -3,7 +3,7 @@ import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
 import { useGames, usePlayers, useSelf, useStore } from '../store';
 import { type Game, type Player as PlayerType } from '../types';
-import { icon, Loading, Games } from '../components';
+import { icon, error, Loading, Games } from '../components';
 
 import './player.css';
 
@@ -33,7 +33,7 @@ const wrapRender = (param?: string, self?: number, players?: PlayerType[]) => {
   const playerPosition = players.findIndex(p => p.id === id);
 
   return (
-    <Show when={playerPosition >= 0} fallback={<NotFound />}>
+    <Show when={playerPosition >= 0} fallback={<error.NotFound />}>
       <div class='router-player'>
         <PlayerHeader
           self={id === self}
@@ -122,17 +122,6 @@ const PlayerStats = (props: { player: PlayerType }) => (
     {props.player.createdMs}
   </div>
 );
-
-const NotFound = () => {
-  return (
-    <div class='router-player-not-found'>
-      <div class='router-player-not-found-icon'>
-        <icon.Magnifier />
-      </div>
-      <h1>Player not found</h1>
-    </div>
-  );
-};
 
 const getId = (navigate: Navigator, self: number, param?: string) => {
   if (param === undefined) {

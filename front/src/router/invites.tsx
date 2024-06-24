@@ -1,8 +1,12 @@
 import { For, Suspense } from 'solid-js';
+import { A } from '@solidjs/router';
 
-import { Loading } from '../components';
+import { icon, Loading } from '../components';
 import { usePlayers, useInvites } from '../store';
-import { type Invite, type Player } from '../types';
+import { type Invite, type Player as PlayerType } from '../types';
+
+import './invites.css';
+import { monthToString } from '../util';
 
 type User = {
   readonly id?: number;
@@ -10,7 +14,7 @@ type User = {
   readonly email: string;
   readonly inviter?: number;
   readonly children: User[];
-  readonly createdMs: number;
+  readonly created: Date;
 };
 
 export const Invites = () => {
@@ -20,40 +24,20 @@ export const Invites = () => {
   return <Suspense fallback={<Loading />}>{wrapRender(players(), invites())}</Suspense>;
 };
 
-const wrapRender = (players: Player[] = [], invites: Invite[] = []) => {
+const wrapRender = (players: PlayerType[] = [], invites: Invite[] = []) => {
   const roots = players
     .filter(p => p.inviter === undefined)
     .map(p => buildHierarchy(p, players, invites));
 
   return (
-    <table>
-      <tbody>
-        <For each={roots}>{u => userRow(u, 0)}</For>
-      </tbody>
-    </table>
-  );
-};
-
-const userRow = (user: User, depth: number) => {
-  return (
     <>
-      <tr>
-        <td>
-          {depthToIndent(depth)}
-          {user.name}
-          {user.id !== undefined ? '' : ' *'}
-        </td>
-      </tr>
-      <For each={user.children}>{u => userRow(u, depth + 1)}</For>
+      <button>Invite</button>
+      <For each={roots}>{u => <Player root user={u} />}</For>
     </>
   );
 };
 
-const depthToIndent = (depth: number): string => {
-  return Array(depth).fill('-').join('');
-};
-
-const buildHierarchy = (player: Player, players: Player[], invites: Invite[]): User => {
+const buildHierarchy = (player: PlayerType, players: PlayerType[], invites: Invite[]): User => {
   const children = players
     .filter(p => p.inviter === player.id)
     .map(p => buildHierarchy(p, players, invites));
@@ -67,12 +51,12 @@ const buildHierarchy = (player: Player, players: Player[], invites: Invite[]): U
           email: i.email,
           inviter: i.inviter,
           children: [],
-          createdMs: i.createdMs,
+          created: new Date(i.createdMs),
         };
       }),
   );
 
-  children.sort((a, b) => a.createdMs - b.createdMs);
+  children.sort((a, b) => a.created.getTime() - b.created.getTime());
 
   return {
     id: player.id,
@@ -80,6 +64,32 @@ const buildHierarchy = (player: Player, players: Player[], invites: Invite[]): U
     email: player.email,
     inviter: player.inviter,
     children,
-    createdMs: player.createdMs,
+    created: new Date(player.createdMs),
   };
 };
+
+const Player = (props: { root?: boolean; user: User }) => (
+  <div class='router-invites-player'>
+    {props.root || <div class='router-invites-player-line' />}
+    <div class='router-invites-player-details'>
+      {props.user.id !== undefined ? (
+        <>
+          <icon.User />
+          <A href={`/player/${props.user.id}`}>{props.user.name}</A>
+        </>
+      ) : (
+        <>
+          <icon.UserOutline />
+          <span>{props.user.name}</span>
+        </>
+      )}
+      {printDate(props.user.created)}
+    </div>
+    <div class='router-invites-children'>
+      <For each={props.user.children}>{u => <Player user={u} />}</For>
+    </div>
+  </div>
+);
+
+const printDate = (date: Date) =>
+  `${date.getDate()}/${String(monthToString(date.getMonth())).padStart(2, '0')}/${date.getFullYear() % 1000}`;

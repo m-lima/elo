@@ -32,7 +32,9 @@ const wrapRender = (players: PlayerType[] = [], invites: Invite[] = []) => {
   return (
     <>
       <button>Invite</button>
-      <For each={roots}>{u => <Player root user={u} />}</For>
+      <div class='router-invites'>
+        <For each={roots}>{u => <Player root user={u} />}</For>
+      </div>
     </>
   );
 };
@@ -85,7 +87,7 @@ const Player = (props: { root?: boolean; user: User }) => (
       )}
       {printDate(props.user.created)}
     </div>
-    <div class='router-invites-children'>
+    <div class='router-invites'>
       <For each={props.user.children}>{u => <Player user={u} />}</For>
     </div>
   </div>

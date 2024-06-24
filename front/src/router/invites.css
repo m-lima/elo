@@ -1,8 +1,4 @@
-.router-invites-player {
-  display: grid;
-}
-
-.router-invites-children {
+.router-invites {
   display: grid;
 
   grid-auto-flow: column;
@@ -10,6 +6,10 @@
   column-gap: 24px;
 
   align-items: start;
+}
+
+.router-invites-player {
+  display: grid;
 }
 
 .router-invites-player-details {

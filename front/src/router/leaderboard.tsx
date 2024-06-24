@@ -1,7 +1,7 @@
 import { For, JSX, Suspense } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
-import { usePlayers } from '../store';
+import { usePlayers, useSelf } from '../store';
 import { type Player } from '../types';
 import { icon, Loading } from '../components';
 
@@ -9,10 +9,11 @@ import './leaderboard.css';
 
 export const Leaderboard = () => {
   const players = usePlayers();
-  return <Suspense fallback={<Loading />}>{playerTable(players())}</Suspense>;
+  const self = useSelf();
+  return <Suspense fallback={<Loading />}>{playerTable(players(), self()?.id)}</Suspense>;
 };
 
-const playerTable = (players: Player[] = []) => {
+const playerTable = (players: Player[] = [], self?: number) => {
   const navigate = useNavigate();
 
   const getIcon = (i: number, l: number) => {
@@ -64,16 +65,23 @@ const playerTable = (players: Player[] = []) => {
       </thead>
       <tbody>
         <For each={players}>
-          {(p, i) => playerRow(i() + 1, navigate, p, getIcon(i(), players.length))}
+          {(p, i) => playerRow(i() + 1, navigate, p, getIcon(i(), players.length), self)}
         </For>
       </tbody>
     </table>
   );
 };
 
-const playerRow = (position: number, navigate: Navigator, player: Player, icon?: JSX.Element) => {
+const playerRow = (
+  position: number,
+  navigate: Navigator,
+  player: Player,
+  icon?: JSX.Element,
+  self?: number,
+) => {
   return (
     <tr
+      class={self === player.id ? 'router-leaderboard-self' : undefined}
       onClick={() => {
         navigate(`/player/${player.id}`);
       }}

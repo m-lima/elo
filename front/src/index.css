@@ -84,6 +84,26 @@ button {
   }
 }
 
+button.secondary {
+  color: var(--color-accent);
+  background-color: var(--color-background-dark);
+  transition: background-color var(--duration-hover);
+
+  &:hover {
+    background-color: var(--color-background);
+
+    &:active {
+      transition: unset;
+      background-color: var(--color-background-bright);
+    }
+  }
+
+  &:active {
+    transition: unset;
+    background-color: var(--color-background-bright);
+  }
+}
+
 table {
   width: 100%;
 

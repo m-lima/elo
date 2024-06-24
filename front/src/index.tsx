@@ -1,10 +1,10 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import { ErrorBoundary, Match, ParentProps, Switch, createSignal } from 'solid-js';
+import { ErrorBoundary, Match, ParentProps, Show, Suspense, Switch, createSignal } from 'solid-js';
 
 import { Router } from './router';
-import { status, error, Side, Loading } from './components';
-import { Store, WithStore } from './store';
+import { status, error, Side, Loading, Invite } from './components';
+import { Store, WithStore, useSelf } from './store';
 import { state } from './socket';
 
 import './index.css';
@@ -17,8 +17,22 @@ socket.registerStateListener(state => setSocketState(state));
 
 const store = new Store(socket);
 
+const InviteWrnapper = (props: ParentProps) => {
+  const self = useSelf(store);
+  console.debug('Current self:', self());
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <Show when={self()?.pending === false} fallback={<Invite />}>
+        <div>{props.children}</div>
+      </Show>
+    </Suspense>
+  );
+};
+
 const App = (props: ParentProps) => {
   console.debug('Current state:', state.toString(socketState()));
+
   return (
     <>
       <Side />
@@ -28,7 +42,7 @@ const App = (props: ParentProps) => {
           return <h1>{JSON.stringify(error)}</h1>;
         }}
       >
-        <Switch fallback={<div>{props.children}</div>}>
+        <Switch fallback={<InviteWrnapper>{props.children}</InviteWrnapper>}>
           <Match when={socketState() === state.Disconnected.Connecting}>
             <Loading />
           </Match>

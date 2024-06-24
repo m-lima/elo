@@ -1,4 +1,4 @@
-import { Match, Show, Suspense, Switch, createSignal } from 'solid-js';
+import { Match, Show, Suspense, Switch } from 'solid-js';
 import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
 import { useGames, usePlayers, useSelf, useStore } from '../store';
@@ -14,7 +14,7 @@ export const Player = () => {
   const players = usePlayers(store);
   void store.getGames();
 
-  return <Suspense fallback={<Loading />}>{wrapRender(params.id, self(), players())}</Suspense>;
+  return <Suspense fallback={<Loading />}>{wrapRender(params.id, self()?.id, players())}</Suspense>;
 };
 
 const wrapRender = (param?: string, self?: number, players?: PlayerType[]) => {
@@ -59,54 +59,49 @@ const PlayerHeader = (props: {
   player: PlayerType;
   position: number;
   players: number;
-}) => {
-  const [name, setName] = createSignal(props.player.name);
-  const [editigName, setEditingName] = createSignal(false);
-
-  return (
-    <div class='router-player-header'>
-      <Switch>
-        <Match when={props.position === 1}>
-          <span class='router-player-header-badge first'>
-            <icon.Crown />
-          </span>
-        </Match>
-        <Match when={props.position === 2}>
-          <span class='router-player-header-badge second'>
-            <icon.Medal />
-          </span>
-        </Match>
-        <Match when={props.position === 3}>
-          <span class='router-player-header-badge third'>
-            <icon.Certificate />
-          </span>
-        </Match>
-        <Match when={props.position === props.players - 3}>
-          <span class='router-player-header-badge'>
-            <icon.Mosquito />
-          </span>
-        </Match>
-        <Match when={props.position === props.players - 2}>
-          <span class='router-player-header-badge'>
-            <icon.Poop />
-          </span>
-        </Match>
-        <Match when={props.position === props.players - 1}>
-          <span class='router-player-header-badge'>
-            <icon.Worm />
-          </span>
-        </Match>
-        <Match when={props.position === props.players - 0}>
-          <span class='router-player-header-badge'>
-            <icon.Skull />
-          </span>
-        </Match>
-      </Switch>
-      <span class='router-player-header-name'>{props.player.name}</span>
-      <span class='router-player-header-score'># {props.position}</span>
-    </div>
-  );
-};
+}) => (
+  <div class='router-player-header'>
+    <Switch>
+      <Match when={props.position === 1}>
+        <span class='router-player-header-badge first'>
+          <icon.Crown />
+        </span>
+      </Match>
+      <Match when={props.position === 2}>
+        <span class='router-player-header-badge second'>
+          <icon.Medal />
+        </span>
+      </Match>
+      <Match when={props.position === 3}>
+        <span class='router-player-header-badge third'>
+          <icon.Certificate />
+        </span>
+      </Match>
+      <Match when={props.position === props.players - 3}>
+        <span class='router-player-header-badge'>
+          <icon.Mosquito />
+        </span>
+      </Match>
+      <Match when={props.position === props.players - 2}>
+        <span class='router-player-header-badge'>
+          <icon.Poop />
+        </span>
+      </Match>
+      <Match when={props.position === props.players - 1}>
+        <span class='router-player-header-badge'>
+          <icon.Worm />
+        </span>
+      </Match>
+      <Match when={props.position === props.players - 0}>
+        <span class='router-player-header-badge'>
+          <icon.Skull />
+        </span>
+      </Match>
+    </Switch>
+    <span class='router-player-header-name'>{props.player.name}</span>
+    <span class='router-player-header-score'># {props.position}</span>
+  </div>
+);
 
 const PlayerStats = (props: { player: PlayerType }) => (
   <div class='router-player-stats'>

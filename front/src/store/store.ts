@@ -3,17 +3,18 @@ import {
   type Player,
   type Game,
   type Invite,
+  type User,
   playerFromTuple,
   gameFromTuple,
   inviteFromTuple,
 } from '../types';
 import { type Message, type Request } from './message';
-import { newRequestId, validateMessage } from './request';
+import { newRequestId, validateMessage, validateMessages } from './request';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
 
-  readonly self: Resource<number>;
+  readonly self: Resource<User>;
   readonly players: Resource<Player[]>;
   readonly games: Resource<Game[]>;
   readonly invites: Resource<Invite[]>;
@@ -34,13 +35,17 @@ export class Store {
     this.self = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = validateMessage(id, 'id', message);
+        const validated = validateMessages(id, ['user', 'pending'], message);
 
         if (validated === undefined) {
           return;
         }
 
-        return validated;
+        if (validated.user !== undefined) {
+          return { id: validated.user, pending: false };
+        } else if (validated.pending !== undefined) {
+          return { id: validated.pending, pending: true };
+        }
       });
     });
 
@@ -81,6 +86,13 @@ export class Store {
 
         return validated.map(inviteFromTuple);
       });
+    });
+  }
+
+  public async invitationRsvp(rsvp: boolean) {
+    const id = newRequestId();
+    await this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message => {
+      const validated = validateMessage(id, 'done');
     });
   }
 

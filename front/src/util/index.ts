@@ -1,3 +1,5 @@
+export const name = 'EloPong';
+
 export const monthToString = (month: number) => {
   switch (month) {
     case 0:

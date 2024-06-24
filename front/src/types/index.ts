@@ -1,5 +1,10 @@
 // TODO: Move into types/index.ts
 
+export type User = {
+  id: number;
+  pending: boolean;
+};
+
 export type Player = {
   readonly id: number;
   readonly name: string;

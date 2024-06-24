@@ -43,7 +43,7 @@ mod constraints {
         match insert("name", "", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!(
-                    "CHECK constraint failed: LENGTH(TRIM(email)) > 0",
+                    "CHECK constraint failed: LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128",
                     db.message()
                 );
                 assert_eq!("275", db.code().unwrap());
@@ -54,7 +54,7 @@ mod constraints {
         match insert("name", "    ", &pool).await.err().unwrap() {
             sqlx::Error::Database(db) => {
                 assert_eq!(
-                    "CHECK constraint failed: LENGTH(TRIM(email)) > 0",
+                    "CHECK constraint failed: LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128",
                     db.message()
                 );
                 assert_eq!("275", db.code().unwrap());
@@ -270,6 +270,115 @@ mod constraints {
         .await
         .unwrap()
         .is_empty());
+    }
+
+    #[sqlx::test]
+    async fn cascade_set_null(pool: sqlx::sqlite::SqlitePool) {
+        let player = insert("name", "email", &pool).await.unwrap();
+
+        let new_player = sqlx::query_as!(
+            types::Player,
+            r#"
+            INSERT INTO players (
+                inviter,
+                name,
+                email,
+                rating
+            ) VALUES (
+                $1,
+                "namer",
+                "emailer",
+                0
+            ) RETURNING
+                id,
+                name,
+                email,
+                inviter,
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
+            "#,
+            player.id,
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(
+            new_player,
+            types::Player {
+                id: new_player.id,
+                name: String::from("namer"),
+                email: String::from("emailer"),
+                inviter: Some(player.id),
+                rating: 0.0,
+                wins: 0,
+                losses: 0,
+                points_won: 0,
+                points_lost: 0,
+                created_ms: new_player.created_ms,
+            }
+        );
+
+        assert_eq!(
+            Some(player.id),
+            sqlx::query!(
+                r#"
+                DELETE FROM
+                    players
+                WHERE
+                    id = $1
+                RETURNING
+                    id
+                "#,
+                player.id
+            )
+            .map(|r| r.id)
+            .fetch_optional(&pool)
+            .await
+            .unwrap()
+        );
+
+        let new_player = sqlx::query_as!(
+            types::Player,
+            r#"
+            SELECT
+                id,
+                name,
+                email,
+                inviter,
+                rating,
+                wins,
+                losses,
+                points_won,
+                points_lost,
+                created_ms AS "created_ms: types::Millis"
+            FROM
+                players
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(
+            new_player,
+            types::Player {
+                id: new_player.id,
+                name: String::from("namer"),
+                email: String::from("emailer"),
+                inviter: None,
+                rating: 0.0,
+                wins: 0,
+                losses: 0,
+                points_won: 0,
+                points_lost: 0,
+                created_ms: new_player.created_ms,
+            }
+        );
     }
 }
 

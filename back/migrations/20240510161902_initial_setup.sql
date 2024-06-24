@@ -1,9 +1,9 @@
 CREATE TABLE players (
   id          INTEGER NOT NULL PRIMARY KEY,
   name        TEXT    NOT NULL
-    CHECK(LENGTH(TRIM(name)) > 0),
+    CHECK(LENGTH(TRIM(name)) > 0 AND LENGTH(name) <= 32),
   email       TEXT    NOT NULL UNIQUE
-    CHECK(LENGTH(TRIM(email)) > 0),
+    CHECK(LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128),
   inviter     INTEGER,
 
   -- Cached stats
@@ -23,9 +23,9 @@ CREATE TABLE invites (
   id         INTEGER NOT NULL PRIMARY KEY,
   inviter    INTEGER NOT NULL,
   name       TEXT    NOT NULL
-    CHECK(LENGTH(TRIM(name)) > 0),
+    CHECK(LENGTH(TRIM(name)) > 0 AND LENGTH(name) <= 32),
   email      TEXT    NOT NULL UNIQUE
-    CHECK(LENGTH(TRIM(email) > 0)),
+    CHECK(LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128),
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 

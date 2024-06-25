@@ -44,7 +44,7 @@
     &:not(.components-side-ignore) {
       cursor: pointer;
       will-change: background-color;
-      transition: background-color var(--duration-hover);
+      transition: background-color var(--duration-animation);
 
       &:hover {
         background-color: var(--color-background-bright);

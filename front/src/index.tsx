@@ -23,7 +23,7 @@ const InviteWrnapper = (props: ParentProps) => {
 
   return (
     <Suspense fallback={<Loading />}>
-      <Show when={self()?.pending === false} fallback={<Invite />}>
+      <Show when={self()?.pending !== false} fallback={<Invite />}>
         <div>{props.children}</div>
       </Show>
     </Suspense>

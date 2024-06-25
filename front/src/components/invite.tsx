@@ -85,11 +85,20 @@ export const Invite = () => {
   const store = useStore();
 
   return (
-    <div class='components-invite'>
-      <Switch fallback={<Initial decider={setWillAccept} />}>
-        <Match when={willAccept() === true}>
-          <WillAccept
-            decider={decision => {
+    <div>
+      <div class={`components-invite right ${willAccept() === undefined && 'visible'}`}>
+        <Initial
+          decider={decision => {
+            if (willAccept() === undefined) {
+              setWillAccept(decision);
+            }
+          }}
+        />
+      </div>
+      <div class={`components-invite left ${willAccept() === true && 'visible'}`}>
+        <WillAccept
+          decider={decision => {
+            if (willAccept() === true) {
               if (decision) {
                 void store.invitationRsvp(true).finally(() => {
                   window.location.reload();
@@ -97,13 +106,14 @@ export const Invite = () => {
               } else {
                 setWillAccept();
               }
-            }}
-          />
-        </Match>
-        <Match when={willAccept() === false}>
-          {' '}
-          <WillReject
-            decider={decision => {
+            }
+          }}
+        />
+      </div>
+      <div class={`components-invite left ${willAccept() === false && 'visible'}`}>
+        <WillReject
+          decider={decision => {
+            if (willAccept() === false) {
               if (decision) {
                 void store.invitationRsvp(false).finally(() => {
                   window.location.reload();
@@ -111,10 +121,10 @@ export const Invite = () => {
               } else {
                 setWillAccept();
               }
-            }}
-          />
-        </Match>
-      </Switch>
+            }
+          }}
+        />
+      </div>
     </div>
   );
 };

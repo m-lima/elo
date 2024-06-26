@@ -57,6 +57,7 @@ class RequestHandlerInnerImpl<Message, Response> implements RequestHandlerInner<
 
 export class Socket<Request, Message> {
   private readonly requests: RequestHandlerInner<Message>[];
+  private readonly awaitingRequests: Accept<void>[];
   private readonly handlers: Handler<Message>[];
   private readonly stateListeners: state.Listener[];
   private readonly encoder: Encoder;
@@ -68,6 +69,7 @@ export class Socket<Request, Message> {
 
   public constructor(url: string | URL, checkUrl?: string | URL) {
     this.requests = [];
+    this.awaitingRequests = [];
     this.handlers = [];
     this.stateListeners = [];
     this.encoder = new Encoder();
@@ -169,6 +171,14 @@ export class Socket<Request, Message> {
       for (const listener of this.stateListeners) {
         listener(this.state);
       }
+
+      if (newState === state.Connected.Open) {
+        console.debug('Dequeueing');
+        for (const awaitingRequest of this.awaitingRequests) {
+          awaitingRequest();
+        }
+        this.awaitingRequests.splice(0, this.awaitingRequests.length);
+      }
     }
   }
 
@@ -195,32 +205,39 @@ export class Socket<Request, Message> {
     console.error('Unprocessed message received', JSON.stringify(message));
   }
 
-  public request<Response>(
+  public async request<Response>(
     request: Request,
     handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
   ): Promise<Response> {
     if (state.isDisconnected(this.state)) {
-      return Promise.reject(new error.Disconnected(this.state as state.Disconnected));
+      await new Promise(accept => {
+        console.debug('Equeueing');
+        this.awaitingRequests.push(accept);
+      });
     }
 
-    // TODO: maybe queue requests if the socket is not ready
+    console.debug('Continuing request');
     const payload = this.encoder.encode(request);
     let requestInstance: RequestHandlerInnerImpl<Message, Response>;
     return new Promise<Response>((accept, reject) => {
       requestInstance = new RequestHandlerInnerImpl(handler, accept, reject, timeout);
-      this.requests.push(requestInstance);
-      this.setState(state.Connected.Fetching);
-      this.socket.send(payload);
-    }).finally(() => {
-      const index = this.requests.indexOf(requestInstance);
-      if (index >= 0) {
-        this.requests.splice(index, 1);
-        if (this.requests.length === 0 && this.state === state.Connected.Fetching) {
-          this.setState(state.Connected.Ready);
+    })
+      .then(r => {
+        this.requests.push(requestInstance);
+        this.setState(state.Connected.Fetching);
+        this.socket.send(payload);
+        return r;
+      })
+      .finally(() => {
+        const index = this.requests.indexOf(requestInstance);
+        if (index >= 0) {
+          this.requests.splice(index, 1);
+          if (this.requests.length === 0 && this.state === state.Connected.Fetching) {
+            this.setState(state.Connected.Ready);
+          }
         }
-      }
-    });
+      });
   }
 
   public getState() {

@@ -71,11 +71,6 @@ button {
 
   &:hover {
     background-color: var(--color-accent);
-
-    &:active {
-      transition: unset;
-      background-color: var(--color-accent-brighter);
-    }
   }
 
   &:active {
@@ -91,11 +86,6 @@ button.secondary {
 
   &:hover {
     background-color: var(--color-background);
-
-    &:active {
-      transition: unset;
-      background-color: var(--color-background-bright);
-    }
   }
 
   &:active {

@@ -9,7 +9,13 @@ import {
   inviteFromTuple,
 } from '../types';
 import { type Message, type Request } from './message';
-import { newRequestId, validateMessage, validateMessages } from './request';
+import {
+  FetchError,
+  newRequestId,
+  preValidateMessage,
+  validateMessage,
+  validateMessages,
+} from './request';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
@@ -92,7 +98,17 @@ export class Store {
   public async invitationRsvp(rsvp: boolean) {
     const id = newRequestId();
     await this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message => {
-      const validated = validateMessage(id, 'done');
+      const validated = preValidateMessage(id, message);
+
+      if (validated === undefined) {
+        return;
+      }
+
+      if (validated === 'done') {
+        return true;
+      } else {
+        throw new FetchError(id, -400, "Did not receive a 'done' field");
+      }
     });
   }
 

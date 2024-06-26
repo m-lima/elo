@@ -1,4 +1,4 @@
-import { icon } from '.';
+import { icon } from '../components';
 
 import './error.css';
 

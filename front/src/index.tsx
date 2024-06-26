@@ -1,13 +1,13 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
-import { ErrorBoundary, Match, ParentProps, Show, Suspense, Switch, createSignal } from 'solid-js';
+import { ParentProps, createSignal } from 'solid-js';
 
 import { Router } from './router';
-import { status, error, Side, Loading, Invite } from './components';
-import { Store, WithStore, useSelf } from './store';
-import { state } from './socket';
+import { Status, Side } from './components';
+import { Store, WithStore } from './store';
 
 import './index.css';
+import { Page } from './page';
 
 const root = document.getElementById('root');
 
@@ -17,60 +17,21 @@ socket.registerStateListener(state => setSocketState(state));
 
 const store = new Store(socket);
 
-const InviteWrnapper = (props: ParentProps) => {
-  const self = useSelf(store);
-  console.debug('Current self:', self());
-
-  return (
-    <Suspense fallback={<Loading />}>
-      <Show when={self()?.pending !== true} fallback={<Invite />}>
-        <div>{props.children}</div>
-      </Show>
-    </Suspense>
-  );
-};
-
-const App = (props: ParentProps) => {
-  console.debug('Current state:', state.toString(socketState()));
-
-  return (
-    <>
-      <Side />
-      <ErrorBoundary
-        fallback={error => {
-          console.log('INNER CAUGHT', error);
-          return <h1>{JSON.stringify(error)}</h1>;
-        }}
-      >
-        <Switch fallback={<InviteWrnapper>{props.children}</InviteWrnapper>}>
-          <Match when={socketState() === state.Disconnected.Connecting}>
-            <Loading />
-          </Match>
-          <Match when={socketState() === state.Disconnected.Unauthorized}>
-            <error.Unauthorized />
-          </Match>
-          <Match when={state.isDisconnected(socketState())}>
-            <div></div>
-          </Match>
-        </Switch>
-      </ErrorBoundary>
-    </>
-  );
-};
+const App = (props: ParentProps) => (
+  <>
+    <Side />
+    <Page state={socketState()}>
+      <div>{props.children}</div>
+    </Page>
+  </>
+);
 
 // TODO: Better global fallback
 render(
   () => {
     return (
       <WithStore store={store}>
-        <Switch>
-          <Match when={socketState() === state.Disconnected.Connecting}>
-            <status.Connecting />
-          </Match>
-          <Match when={socketState() === state.Connected.Fetching}>
-            <status.Loading />
-          </Match>
-        </Switch>
+        <Status state={socketState()} />
         <Router root={App} />
       </WithStore>
     );

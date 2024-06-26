@@ -3,7 +3,7 @@ import { JSXElement, createSignal } from 'solid-js';
 import * as util from '../util';
 import { useStore } from '../store';
 
-import './invite.css';
+import './welcome.css';
 
 const Prompt = (props: {
   position?: 'left' | 'right';
@@ -18,10 +18,10 @@ const Prompt = (props: {
     action: () => void;
   };
 }) => (
-  <div class={`components-invite-prompt ${props.position}`}>
+  <div class={`router-welcome-prompt ${props.position}`}>
     <h1>{props.header}</h1>
     <h3>{props.text}</h3>
-    <div class='components-invite-prompt-buttons'>
+    <div class='router-welcome-prompt-buttons'>
       <button onClick={props.ok.action}>{props.ok.text}</button>
       <button class='secondary' onClick={props.cancel.action}>
         {props.cancel.text}
@@ -30,12 +30,12 @@ const Prompt = (props: {
   </div>
 );
 
-export const Invite = () => {
+export const Welcome = () => {
   const [willAccept, setWillAccept] = createSignal<boolean | undefined>();
   const store = useStore();
 
   return (
-    <div class='components-invite' style={{ overflow: 'hidden' }}>
+    <div class='router-welcome' style={{ overflow: 'hidden' }}>
       <Prompt
         position={willAccept() !== undefined ? 'left' : undefined}
         header="You've been invited!!"

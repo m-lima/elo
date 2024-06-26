@@ -2,7 +2,7 @@ import type { Message, Ok, OkResponse } from './message';
 
 export const newRequestId = () => Math.floor(Math.random() * 1024 * 1024);
 
-class FetchError extends Error {
+export class FetchError extends Error {
   constructor(id: number, code: number, message?: string) {
     super(
       message !== undefined

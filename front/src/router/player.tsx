@@ -3,7 +3,8 @@ import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
 import { useGames, usePlayers, useSelf, useStore } from '../store';
 import { type Game, type Player as PlayerType } from '../types';
-import { icon, error, Loading, Games } from '../components';
+import { icon, Loading, Games } from '../components';
+import { error } from '../page';
 
 import './player.css';
 

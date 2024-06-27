@@ -211,7 +211,7 @@ export class Socket<Request, Message> {
     timeout: number = 30000,
     connectionTimeout: number = 30000,
   ): Promise<Response> {
-    if (state.isAwaitingConnection(this.state)) {
+    if (this.state === state.Disconnected.Connecting) {
       const timedOut = await new Promise<boolean>(accept => {
         this.awaitingRequests.push(accept);
         setTimeout(() => {
@@ -221,7 +221,8 @@ export class Socket<Request, Message> {
           }
           accept(true);
         }, connectionTimeout);
-      }).catch(() => true);
+      });
+
       if (timedOut) {
         return Promise.reject(new error.Timeout(connectionTimeout));
       }

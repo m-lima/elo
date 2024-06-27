@@ -1,9 +1,10 @@
 import { For, Suspense } from 'solid-js';
 import { A } from '@solidjs/router';
 
-import { icon, Loading } from '../components';
-import { usePlayers, useInvites } from '../store';
+import { Loading } from '../page';
+import { icon } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
+import { usePlayers, useInvites } from '../store';
 
 import './invites.css';
 import { monthToString } from '../util';

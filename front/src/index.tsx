@@ -7,7 +7,7 @@ import { Status, Side } from './components';
 import { Store, WithStore } from './store';
 
 import './index.css';
-import { Page } from './page';
+import { Wrapper } from './page';
 
 const root = document.getElementById('root');
 
@@ -20,9 +20,9 @@ const store = new Store(socket);
 const App = (props: ParentProps) => (
   <>
     <Side />
-    <Page state={socketState()}>
+    <Wrapper state={socketState()}>
       <div>{props.children}</div>
-    </Page>
+    </Wrapper>
   </>
 );
 

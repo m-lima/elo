@@ -210,34 +210,28 @@ export class Socket<Request, Message> {
     handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
   ): Promise<Response> {
-    if (state.isDisconnected(this.state)) {
+    if (state.isAwaitingConnection(this.state)) {
       await new Promise(accept => {
-        console.debug('Equeueing');
         this.awaitingRequests.push(accept);
       });
     }
 
-    console.debug('Continuing request');
     const payload = this.encoder.encode(request);
     let requestInstance: RequestHandlerInnerImpl<Message, Response>;
     return new Promise<Response>((accept, reject) => {
       requestInstance = new RequestHandlerInnerImpl(handler, accept, reject, timeout);
-    })
-      .then(r => {
-        this.requests.push(requestInstance);
-        this.setState(state.Connected.Fetching);
-        this.socket.send(payload);
-        return r;
-      })
-      .finally(() => {
-        const index = this.requests.indexOf(requestInstance);
-        if (index >= 0) {
-          this.requests.splice(index, 1);
-          if (this.requests.length === 0 && this.state === state.Connected.Fetching) {
-            this.setState(state.Connected.Ready);
-          }
+      this.requests.push(requestInstance);
+      this.setState(state.Connected.Fetching);
+      this.socket.send(payload);
+    }).finally(() => {
+      const index = this.requests.indexOf(requestInstance);
+      if (index >= 0) {
+        this.requests.splice(index, 1);
+        if (this.requests.length === 0 && this.state === state.Connected.Fetching) {
+          this.setState(state.Connected.Ready);
         }
-      });
+      }
+    });
   }
 
   public getState() {

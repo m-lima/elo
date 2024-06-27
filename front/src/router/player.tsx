@@ -1,10 +1,10 @@
 import { Match, Show, Suspense, Switch } from 'solid-js';
 import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
-import { useGames, usePlayers, useSelf, useStore } from '../store';
+import { error, Loading } from '../page';
+import { icon, Games } from '../components';
 import { type Game, type Player as PlayerType } from '../types';
-import { icon, Loading, Games } from '../components';
-import { error } from '../page';
+import { useGames, usePlayers, useSelf, useStore } from '../store';
 
 import './player.css';
 

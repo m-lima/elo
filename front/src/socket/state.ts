@@ -22,6 +22,9 @@ export const isDisconnected = (state: State) =>
 export const isConnected = (state: State) =>
   state === Connected.Open || state === Connected.Ready || state === Connected.Fetching;
 
+export const isAwaitingConnection = (state: State) =>
+  isDisconnected(state) && state !== Disconnected.Unauthorized;
+
 export const isPending = (state: State) =>
   state === Disconnected.Connecting || state === Connected.Fetching;
 

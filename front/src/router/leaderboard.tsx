@@ -1,9 +1,10 @@
 import { For, JSX, Suspense } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
-import { usePlayers, useSelf } from '../store';
+import { Loading } from '../page';
+import { icon } from '../components';
 import { type Player } from '../types';
-import { icon, Loading } from '../components';
+import { usePlayers, useSelf } from '../store';
 
 import './leaderboard.css';
 

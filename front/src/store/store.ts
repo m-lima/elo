@@ -130,19 +130,19 @@ export class Store {
 
   private refresh() {
     if (this.self.isPresent()) {
-      void this.self.get();
+      void this.self.get(true);
     }
 
     if (this.players.isPresent()) {
-      void this.players.get();
+      void this.players.get(true);
     }
 
     if (this.games.isPresent()) {
-      void this.games.get();
+      void this.games.get(true);
     }
 
     if (this.invites.isPresent()) {
-      void this.invites.get();
+      void this.invites.get(true);
     }
   }
 }
@@ -170,8 +170,8 @@ class Resource<T> {
     return this.data;
   }
 
-  public get(): Promise<T> {
-    if (this.data !== undefined) {
+  public get(forceUpdate: boolean = false): Promise<T> {
+    if (!forceUpdate && this.data !== undefined) {
       return Promise.resolve(this.data);
     }
 

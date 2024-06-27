@@ -13,7 +13,8 @@ export const Player = () => {
   const store = useStore();
   const self = useSelf(store);
   const players = usePlayers(store);
-  void store.getGames();
+  // Prefetch because we will use it later
+  void store.games.get();
 
   return <Suspense fallback={<Loading />}>{wrapRender(params.id, self()?.id, players())}</Suspense>;
 };

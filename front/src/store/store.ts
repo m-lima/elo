@@ -112,22 +112,6 @@ export class Store {
     });
   }
 
-  public getSelf() {
-    return this.self.get();
-  }
-
-  public getPlayers() {
-    return this.players.get();
-  }
-
-  public getGames() {
-    return this.games.get();
-  }
-
-  public getInvites() {
-    return this.invites.get();
-  }
-
   private refresh() {
     if (this.self.isPresent()) {
       void this.self.get(true);

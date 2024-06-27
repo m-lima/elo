@@ -57,7 +57,7 @@ class RequestHandlerInnerImpl<Message, Response> implements RequestHandlerInner<
 
 export class Socket<Request, Message> {
   private readonly requests: RequestHandlerInner<Message>[];
-  private readonly awaitingRequests: Accept<void>[];
+  private readonly awaitingRequests: Accept<boolean>[];
   private readonly handlers: Handler<Message>[];
   private readonly stateListeners: state.Listener[];
   private readonly encoder: Encoder;
@@ -175,7 +175,7 @@ export class Socket<Request, Message> {
       if (newState === state.Connected.Open) {
         console.debug('Dequeueing');
         for (const awaitingRequest of this.awaitingRequests) {
-          awaitingRequest();
+          awaitingRequest(false);
         }
         this.awaitingRequests.splice(0, this.awaitingRequests.length);
       }
@@ -209,11 +209,22 @@ export class Socket<Request, Message> {
     request: Request,
     handler: RequestHandler<Message, Response>,
     timeout: number = 30000,
+    connectionTimeout: number = 30000,
   ): Promise<Response> {
     if (state.isAwaitingConnection(this.state)) {
-      await new Promise(accept => {
+      const timedOut = await new Promise<boolean>(accept => {
         this.awaitingRequests.push(accept);
-      });
+        setTimeout(() => {
+          const index = this.awaitingRequests.indexOf(accept);
+          if (index >= 0) {
+            this.awaitingRequests.splice(index, 1);
+          }
+          accept(true);
+        }, connectionTimeout);
+      }).catch(() => true);
+      if (timedOut) {
+        return Promise.reject(new error.Timeout(connectionTimeout));
+      }
     }
 
     const payload = this.encoder.encode(request);

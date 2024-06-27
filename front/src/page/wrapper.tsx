@@ -16,21 +16,11 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
         return <h1>{JSON.stringify(error)}</h1>;
       }}
     >
-      <Suspense
-        fallback={
-          <div>
-            Suspense
-            <Loading />
-          </div>
-        }
-      >
+      <Suspense fallback={<Loading />}>
         <Show when={self()?.pending !== true} fallback={<Welcome />}>
           <Switch fallback={<div>{props.children}</div>}>
             <Match when={props.state === state.Disconnected.Connecting}>
-              <div>
-                Match top
-                <Loading />
-              </div>
+              <Loading />
             </Match>
             <Match when={props.state === state.Disconnected.Unauthorized}>
               <Unauthorized />

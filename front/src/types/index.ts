@@ -1,5 +1,3 @@
-// TODO: Move into types/index.ts
-
 export type User = {
   id: number;
   pending: boolean;

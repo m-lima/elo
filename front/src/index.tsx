@@ -26,7 +26,6 @@ const App = (props: ParentProps) => (
   </>
 );
 
-// TODO: Better global fallback
 render(
   () => {
     return (

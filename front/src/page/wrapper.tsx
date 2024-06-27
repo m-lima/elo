@@ -9,6 +9,7 @@ import { useSelf } from '../store';
 export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
   const self = useSelf();
 
+  // TODO: Replace raw messages with error pages
   return (
     <Switch fallback={<div>{props.children}</div>}>
       <Match when={props.state === state.Disconnected.Connecting}>
@@ -18,7 +19,7 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
         <Unauthorized />
       </Match>
       <Match when={state.isDisconnected(props.state)}>
-        <div>Disconnected</div>
+        <div>Something went wrong</div>
       </Match>
       <Match when={true}>
         <ErrorBoundary

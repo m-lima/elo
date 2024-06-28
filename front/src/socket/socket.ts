@@ -173,7 +173,6 @@ export class Socket<Request, Message> {
       }
 
       if (newState === state.Connected.Open) {
-        console.debug('Dequeueing');
         for (const awaitingRequest of this.awaitingRequests) {
           awaitingRequest(false);
         }

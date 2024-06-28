@@ -134,12 +134,6 @@ const getId = (navigate: Navigator, self: number, param?: string) => {
 };
 
 const wrapGames = (id: number, players: PlayerType[], games?: Game[]) => {
-  console.debug('id:', id);
-  console.debug('players:', players);
-  console.debug('games:', games);
-
-  console.debug('memo games:', games);
-
   return (
     <Show when={games !== undefined}>
       <Games

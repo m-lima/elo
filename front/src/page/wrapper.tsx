@@ -1,7 +1,7 @@
 import { ErrorBoundary, Match, ParentProps, Show, Suspense, Switch } from 'solid-js';
 
 import { state } from '../socket';
-import { Unauthorized } from './error';
+import { TimeOut, GenericError, Unauthorized } from './error';
 import { Welcome } from './welcome';
 import { Loading } from './loading';
 import { useSelf } from '../store';
@@ -19,17 +19,17 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
         <Unauthorized />
       </Match>
       <Match when={state.isDisconnected(props.state)}>
-        <div>Something went wrong</div>
+        <GenericError />
       </Match>
       <Match when={true}>
         <ErrorBoundary
           fallback={error => {
             console.debug('INNER CAUGHT', error);
             if ('millis' in error) {
-              return <div>Timed out {error.millis / 1000}s</div>;
+              return <TimeOut />;
             }
 
-            return <div>Something went wrong</div>;
+            return <GenericError />;
           }}
         >
           <Suspense fallback={<Loading />}>

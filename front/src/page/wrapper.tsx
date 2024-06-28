@@ -13,7 +13,7 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
   return (
     <Switch fallback={<div>{props.children}</div>}>
       <Match when={props.state === state.Disconnected.Connecting}>
-        <Loading />
+        <Loading id='main' />
       </Match>
       <Match when={props.state === state.Disconnected.Unauthorized}>
         <Unauthorized />
@@ -33,8 +33,8 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
           }}
         >
           <Suspense fallback={<Loading />}>
-            <Show when={self()?.pending !== true} fallback={<Welcome />}>
-              <div>{props.children}</div>
+            <Show when={self()?.pending === true} fallback={<Welcome />}>
+              <div id='main'>{props.children}</div>
             </Show>
           </Suspense>
         </ErrorBoundary>

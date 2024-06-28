@@ -1,10 +1,9 @@
-.router-welcome {
+.page-welcome {
   position: relative;
 
   white-space: wrap;
-  overflow: hidden;
 
-  & > .router-welcome-prompt {
+  & > .page-welcome-prompt {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -33,7 +32,7 @@
       right: -100%;
     }
 
-    & > .router-welcome-prompt-buttons {
+    & > .page-welcome-prompt-buttons {
       display: flex;
 
       gap: 8px;

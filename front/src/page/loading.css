@@ -1,4 +1,4 @@
-.components-loading {
+.page-loading {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -10,12 +10,12 @@
     height: 100%;
 
     & > #paddle-ball {
-      animation: components_loading_ball 400ms cubic-bezier(1, 0, 1, 1) alternate infinite;
+      animation: page_loading_ball 400ms cubic-bezier(1, 0, 1, 1) alternate infinite;
     }
   }
 }
 
-@keyframes components_loading_ball {
+@keyframes page_loading_ball {
   from {
     transform: translateY(-100px);
   }

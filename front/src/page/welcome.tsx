@@ -18,10 +18,10 @@ const Prompt = (props: {
     action: () => void;
   };
 }) => (
-  <div class={`router-welcome-prompt ${props.position}`}>
+  <div class={`page-welcome-prompt ${props.position}`}>
     <h1>{props.header}</h1>
     <h3>{props.text}</h3>
-    <div class='router-welcome-prompt-buttons'>
+    <div class='page-welcome-prompt-buttons'>
       <button onClick={props.ok.action}>{props.ok.text}</button>
       <button class='secondary' onClick={props.cancel.action}>
         {props.cancel.text}
@@ -35,7 +35,7 @@ export const Welcome = () => {
   const store = useStore();
 
   return (
-    <div class='router-welcome' style={{ overflow: 'hidden' }}>
+    <div class='page-welcome' id='main' style={{ overflow: 'hidden' }}>
       <Prompt
         position={willAccept() !== undefined ? 'left' : undefined}
         header="You've been invited!!"

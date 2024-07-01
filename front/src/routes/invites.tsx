@@ -1,8 +1,8 @@
 import { For, Suspense } from 'solid-js';
 import { A } from '@solidjs/router';
 
-import { Loading } from '../page';
-import { icon } from '../components';
+import { Loading, Main } from '../pages';
+import { Action, Actions, icon } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
 import { usePlayers, useInvites } from '../store';
 
@@ -32,10 +32,20 @@ const wrapRender = (players: PlayerType[] = [], invites: Invite[] = []) => {
 
   return (
     <>
-      <button>Invite</button>
-      <div class='router-invites'>
-        <For each={roots}>{u => <Player root user={u} />}</For>
-      </div>
+      <Actions>
+        <Action
+          icon={<icon.Add />}
+          text='New invite'
+          action={() => {
+            console.debug('Clicked');
+          }}
+        />
+      </Actions>
+      <Main>
+        <div class='routes-invites' id='main'>
+          <For each={roots}>{u => <Player root user={u} />}</For>
+        </div>
+      </Main>
     </>
   );
 };
@@ -72,9 +82,9 @@ const buildHierarchy = (player: PlayerType, players: PlayerType[], invites: Invi
 };
 
 const Player = (props: { root?: boolean; user: User }) => (
-  <div class='router-invites-player'>
-    {props.root || <div class='router-invites-player-line' />}
-    <div class='router-invites-player-details'>
+  <div class='routes-invites-player'>
+    {props.root || <div class='routes-invites-player-line' />}
+    <div class='routes-invites-player-details'>
       {props.user.id !== undefined ? (
         <>
           <icon.User />
@@ -88,7 +98,7 @@ const Player = (props: { root?: boolean; user: User }) => (
       )}
       {printDate(props.user.created)}
     </div>
-    <div class='router-invites'>
+    <div class='routes-invites'>
       <For each={props.user.children}>{u => <Player user={u} />}</For>
     </div>
   </div>

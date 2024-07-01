@@ -11,9 +11,9 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
 
   // TODO: Replace raw messages with error pages
   return (
-    <Switch fallback={<div>{props.children}</div>}>
+    <Switch>
       <Match when={props.state === state.Disconnected.Connecting}>
-        <Loading id='main' />
+        <Loading />
       </Match>
       <Match when={props.state === state.Disconnected.Unauthorized}>
         <Unauthorized />
@@ -33,8 +33,8 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
           }}
         >
           <Suspense fallback={<Loading />}>
-            <Show when={self()?.pending === true} fallback={<Welcome />}>
-              <div id='main'>{props.children}</div>
+            <Show when={self()?.pending !== true} fallback={<Welcome />}>
+              {props.children}
             </Show>
           </Suspense>
         </ErrorBoundary>

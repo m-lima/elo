@@ -2,12 +2,12 @@
 import { render } from 'solid-js/web';
 import { ParentProps, createSignal } from 'solid-js';
 
-import { Router } from './router';
+import { Routes } from './routes';
 import { Status, Side } from './components';
 import { Store, WithStore } from './store';
 
 import './index.css';
-import { Wrapper } from './page';
+import { Wrapper } from './pages';
 
 const root = document.getElementById('root');
 
@@ -20,9 +20,7 @@ const store = new Store(socket);
 const App = (props: ParentProps) => (
   <>
     <Side />
-    <Wrapper state={socketState()}>
-      <div>{props.children}</div>
-    </Wrapper>
+    <Wrapper state={socketState()}>{props.children}</Wrapper>
   </>
 );
 
@@ -31,7 +29,7 @@ render(
     return (
       <WithStore store={store}>
         <Status state={socketState()} />
-        <Router root={App} />
+        <Routes root={App} />
       </WithStore>
     );
   },

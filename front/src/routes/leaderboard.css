@@ -1,26 +1,26 @@
-.router-leaderboard-self {
+.routes-leaderboard-self {
   color: var(--color-accent);
 }
 
-.router-leaderboard-icon {
+.routes-leaderboard-icon {
   width: 1em;
   text-align: center;
 
-  & .router-leaderboard-first {
+  & .routes-leaderboard-first {
     color: gold;
     & > svg {
       filter: drop-shadow(0 0 4px);
     }
   }
 
-  & .router-leaderboard-second {
+  & .routes-leaderboard-second {
     color: white;
     & > svg {
       filter: drop-shadow(0 0 4px);
     }
   }
 
-  & .router-leaderboard-third {
+  & .routes-leaderboard-third {
     color: burlywood;
     & > svg {
       filter: drop-shadow(0 0 4px);

@@ -1,4 +1,4 @@
-.router-invites {
+.routes-invites {
   display: grid;
 
   grid-auto-flow: column;
@@ -8,11 +8,11 @@
   align-items: start;
 }
 
-.router-invites-player {
+.routes-invites-player {
   display: grid;
 }
 
-.router-invites-player-details {
+.routes-invites-player-details {
   display: flex;
 
   flex-direction: column;
@@ -28,7 +28,7 @@
   }
 }
 
-.router-invites-player-line {
+.routes-invites-player-line {
   background-color: var(--color-accent);
   width: 2px;
   height: 24px;

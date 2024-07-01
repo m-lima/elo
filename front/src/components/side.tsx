@@ -18,7 +18,7 @@ export const Side = () => {
   const [expanded, setExpanded] = createSignal(true);
 
   return (
-    <aside class='components-side'>
+    <aside class='components-side' id='side'>
       <A href='/' end>
         <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
       </A>

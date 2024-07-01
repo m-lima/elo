@@ -41,23 +41,21 @@
     padding-left: 0.4em;
     padding-right: 0.4em;
 
-    &:not(.components-side-ignore) {
-      cursor: pointer;
-      will-change: background-color;
-      transition: background-color var(--duration-animation);
+    cursor: pointer;
+    will-change: background-color;
+    transition: background-color var(--duration-animation);
 
-      &:hover {
-        background-color: var(--color-background-bright);
-      }
+    &:hover {
+      background-color: var(--color-background-bright);
+    }
 
-      &.active {
-        color: var(--color-background-dark);
-        background-color: var(--color-accent);
-      }
+    &.active {
+      color: var(--color-background-dark);
+      background-color: var(--color-accent);
+    }
 
-      &.inactive {
-        color: currentColor;
-      }
+    &.inactive {
+      color: currentColor;
     }
   }
 
@@ -65,12 +63,12 @@
     display: none;
     margin-left: 1ch;
 
+    font-size: 1rem;
+    vertical-align: middle;
+
     @media (orientation: portrait) and (min-width: 600px) {
       display: unset;
     }
-
-    font-size: 1rem;
-    vertical-align: middle;
 
     &#visible {
       @media (orientation: landscape) or (min-width: 600px) {

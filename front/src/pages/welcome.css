@@ -1,9 +1,9 @@
-.page-welcome {
+.pages-welcome {
   position: relative;
 
   white-space: wrap;
 
-  & > .page-welcome-prompt {
+  & > .pages-welcome-prompt {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -32,7 +32,7 @@
       right: -100%;
     }
 
-    & > .page-welcome-prompt-buttons {
+    & > .pages-welcome-prompt-buttons {
       display: flex;
 
       gap: 8px;

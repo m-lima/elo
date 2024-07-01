@@ -1,4 +1,4 @@
-.router-player-not-found {
+.routes-player-not-found {
   height: 100%;
 
   display: flex;
@@ -7,20 +7,20 @@
   text-align: center;
   gap: 1em;
 
-  & > .router-player-not-found-icon {
+  & > .routes-player-not-found-icon {
     font-size: 7em;
   }
 }
 
-.router-player {
-  .router-player-header {
+.routes-player {
+  .routes-player-header {
     display: flex;
 
     background-color: var(--color-background-dark);
 
     border-radius: 16px;
 
-    & .router-player-header-badge {
+    & .routes-player-header-badge {
       padding-left: 16px;
       padding-right: 16px;
 
@@ -60,7 +60,7 @@
       }
     }
 
-    & .router-player-header-name {
+    & .routes-player-header-name {
       display: inline-block;
 
       color: var(--color-accent);
@@ -72,7 +72,7 @@
       margin-right: 32px;
     }
 
-    & .router-player-header-score {
+    & .routes-player-header-score {
       font-weight: bold;
       font-size: 4em;
 
@@ -81,7 +81,7 @@
     }
   }
 
-  .router-player-stats {
+  .routes-player-stats {
     display: grid;
   }
 }

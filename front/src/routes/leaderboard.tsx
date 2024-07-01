@@ -1,8 +1,8 @@
 import { For, JSX, Suspense } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
-import { Loading } from '../page';
-import { icon } from '../components';
+import { Loading, Main } from '../pages';
+import { Action, Actions, icon } from '../components';
 import { type Player } from '../types';
 import { usePlayers, useSelf } from '../store';
 
@@ -11,29 +11,29 @@ import './leaderboard.css';
 export const Leaderboard = () => {
   const players = usePlayers();
   const self = useSelf();
-  return <Suspense fallback={<Loading />}>{playerTable(players(), self()?.id)}</Suspense>;
+  return <Suspense fallback={<Loading />}>{wrapRender(players(), self()?.id)}</Suspense>;
 };
 
-const playerTable = (players: Player[] = [], self?: number) => {
+const wrapRender = (players: Player[] = [], self?: number) => {
   const navigate = useNavigate();
 
   const getIcon = (i: number, l: number) => {
     switch (i) {
       case 0:
         return (
-          <span class='router-leaderboard-first'>
+          <span class='routes-leaderboard-first'>
             <icon.Crown />
           </span>
         );
       case 1:
         return (
-          <span class='router-leaderboard-second'>
+          <span class='routes-leaderboard-second'>
             <icon.Medal />
           </span>
         );
       case 2:
         return (
-          <span class='router-leaderboard-third'>
+          <span class='routes-leaderboard-third'>
             <icon.Certificate />
           </span>
         );
@@ -50,26 +50,39 @@ const playerTable = (players: Player[] = [], self?: number) => {
   };
 
   return (
-    <table class='clickable'>
-      <thead>
-        <tr>
-          <th />
-          <th>#</th>
-          <th>Player</th>
-          <th>Rating</th>
-          <th>Games</th>
-          <th>Wins</th>
-          <th>Losses</th>
-          <th>Points won</th>
-          <th>Points lost</th>
-        </tr>
-      </thead>
-      <tbody>
-        <For each={players}>
-          {(p, i) => playerRow(i() + 1, navigate, p, getIcon(i(), players.length), self)}
-        </For>
-      </tbody>
-    </table>
+    <>
+      <Actions>
+        <Action
+          icon={<icon.Add />}
+          text='New game'
+          action={() => {
+            console.debug('Clicked');
+          }}
+        />
+      </Actions>
+      <Main>
+        <table class='clickable'>
+          <thead>
+            <tr>
+              <th />
+              <th>#</th>
+              <th>Player</th>
+              <th>Rating</th>
+              <th>Games</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Points won</th>
+              <th>Points lost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={players}>
+              {(p, i) => playerRow(i() + 1, navigate, p, getIcon(i(), players.length), self)}
+            </For>
+          </tbody>
+        </table>
+      </Main>
+    </>
   );
 };
 
@@ -82,12 +95,12 @@ const playerRow = (
 ) => {
   return (
     <tr
-      class={self === player.id ? 'router-leaderboard-self' : undefined}
+      class={self === player.id ? 'routes-leaderboard-self' : undefined}
       onClick={() => {
         navigate(`/player/${player.id}`);
       }}
     >
-      <td class='router-leaderboard-icon'>{icon}</td>
+      <td class='routes-leaderboard-icon'>{icon}</td>
       <td>{position}</td>
       <td>{player.name}</td>
       <td>{player.rating.toFixed(2)}</td>

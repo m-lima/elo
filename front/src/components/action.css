@@ -1,0 +1,40 @@
+.components-action {
+  display: grid;
+
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+
+  & > .components-action-content {
+    display: flex;
+
+    padding: 12px;
+
+    color: var(--color-background);
+    font-size: 2.4em;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    background-color: var(--color-accent-dark);
+    transition: background-color var(--duration-animation);
+
+    &:hover {
+      background-color: var(--color-accent);
+    }
+
+    &:active {
+      transition: unset;
+      background-color: var(--color-accent-brighter);
+    }
+
+    & .components-action-text {
+      margin-left: 1ch;
+
+      vertical-align: middle;
+
+      font-size: 0.5em;
+      font-weight: bold;
+    }
+  }
+}

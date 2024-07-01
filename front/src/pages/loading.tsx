@@ -21,8 +21,8 @@ const Paddle = () => {
   );
 };
 
-export const Loading = (props: { id?: string }) => (
-  <div class='page-loading' id={props.id}>
+export const Loading = () => (
+  <div class='pages-loading' id='main'>
     <Paddle />
   </div>
 );

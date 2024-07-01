@@ -53,6 +53,7 @@ pub enum Invite {
 #[serde(rename_all = "camelCase")]
 pub enum Game {
     List,
+    #[serde(rename_all = "camelCase")]
     Register {
         opponent: types::Id,
         score: u8,

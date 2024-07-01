@@ -8,14 +8,8 @@ import {
   gameFromTuple,
   inviteFromTuple,
 } from '../types';
-import { type Message, type Request } from './message';
-import {
-  FetchError,
-  newRequestId,
-  preValidateMessage,
-  validateMessage,
-  validateMessages,
-} from './request';
+import { type Message, type Request, type Ided } from './message';
+import { FetchError, newRequestId, validateDone, validateMessage } from './request';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
@@ -38,10 +32,45 @@ export class Store {
       }
     });
 
+    this.socket.registerHandler(message => {
+      if ('push' in message) {
+        if ('player' in message.push) {
+          if ('renamed' in message.push.player) {
+            const rename = message.push.player.renamed;
+
+            this.players.set(players =>
+              players.map(p => (p.id === rename.player ? { ...p, name: rename.name } : p)),
+            );
+          } else if ('invited' in message.push.player) {
+            const invite = message.push.player.invited;
+            this.invites.set(invites => upsert(invites, invite));
+          } else if ('uninvited' in message.push.player) {
+            const uninvite = message.push.player.uninvited;
+            this.invites.set(invites => invites.filter(i => i.id !== uninvite));
+          } else if ('joined' in message.push.player) {
+            const join = message.push.player.joined;
+            this.invites.set(invites => invites.filter(i => i.email !== join.email));
+            this.players.set(players => upsert(players, join));
+          }
+        } else if ('game' in message.push) {
+          if ('registered' in message.push.game) {
+            const [game, playerOne, playerTwo] = message.push.game.registered;
+            this.games.set(games => upsert(games, game));
+            this.players.set(players => {
+              upsert(players, playerOne);
+              upsert(players, playerTwo);
+              return players;
+            });
+          }
+        }
+      }
+      return true;
+    });
+
     this.self = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = validateMessages(id, ['user', 'pending'], message);
+        const validated = validateMessage(id, ['user', 'pending'], message);
 
         if (validated === undefined) {
           return;
@@ -64,7 +93,7 @@ export class Store {
           return;
         }
 
-        return validated.map(playerFromTuple);
+        return validated.players.map(playerFromTuple);
       });
     });
 
@@ -77,7 +106,7 @@ export class Store {
           return;
         }
 
-        return validated.map(gameFromTuple);
+        return validated.games.map(gameFromTuple);
       });
     });
 
@@ -90,26 +119,45 @@ export class Store {
           return;
         }
 
-        return validated.map(inviteFromTuple);
+        return validated.invites.map(inviteFromTuple);
       });
     });
   }
 
+  public async renamePlayer(name: string) {
+    const id = newRequestId();
+    return this.socket.request({ id, do: { player: { rename: name } } }, message =>
+      validateDone(id, message),
+    );
+  }
+
+  public async invitePlayer(name: string, email: string) {
+    const id = newRequestId();
+    return this.socket.request({ id, do: { invite: { player: { name, email } } } }, message =>
+      validateDone(id, message),
+    );
+  }
+
+  public async cancelInvitattion(cancel: number) {
+    const id = newRequestId();
+    return this.socket.request({ id, do: { invite: { cancel } } }, message =>
+      validateDone(id, message),
+    );
+  }
+
   public async invitationRsvp(rsvp: boolean) {
     const id = newRequestId();
-    await this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message => {
-      const validated = preValidateMessage(id, message);
+    await this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message =>
+      validateDone(id, message),
+    );
+  }
 
-      if (validated === undefined) {
-        return;
-      }
-
-      if (validated === 'done') {
-        return true;
-      } else {
-        throw new FetchError(id, -400, "Did not receive a 'done' field");
-      }
-    });
+  public async registerGame(opponent: number, score: number, opponentScore: number) {
+    const id = newRequestId();
+    await this.socket.request(
+      { id, do: { game: { register: { opponent, score, opponentScore } } } },
+      message => validateDone(id, message),
+    );
   }
 
   private refresh() {
@@ -159,10 +207,10 @@ class Resource<T> {
       return Promise.resolve(this.data);
     }
 
-    if (!this.debouncer) {
+    if (this.debouncer === undefined) {
       this.debouncer = this.fetcher()
         .then(data => {
-          this.set(data);
+          this.replace(data);
           return data;
         })
         .finally(() => (this.debouncer = undefined));
@@ -171,13 +219,21 @@ class Resource<T> {
     return this.debouncer;
   }
 
-  // TODO: Maybe do a deeper compare?
-  // TODO: If doing deep compare, set only fields that don't match?
-  public set(data: T) {
-    if (this.debouncer !== undefined) {
-      // TODO: Cancel debouncer from updating after setting
+  public set(setter: (current: T) => T) {
+    if (this.data === undefined) {
+      return;
     }
 
+    // TODO: Cancel debouncer from updating after setting
+    // if (this.debouncer !== undefined) {
+    // }
+
+    this.replace(setter(this.data));
+  }
+
+  // TODO: Maybe do a deeper compare?
+  // TODO: If doing deep compare, set only fields that don't match?
+  private replace(data: T) {
     if (this.data !== data) {
       this.data = data;
       this.listeners.forEach(l => {
@@ -198,3 +254,13 @@ class Resource<T> {
     }
   }
 }
+
+const upsert = <T extends Ided>(data: T[], datum: T) => {
+  const idx = data.findIndex(d => d.id === datum.id);
+  if (idx < 0) {
+    data.push(datum);
+  } else {
+    data[idx] = datum;
+  }
+  return data;
+};

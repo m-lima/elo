@@ -54,8 +54,11 @@ export class Store {
           }
         } else if ('game' in message.push) {
           if ('registered' in message.push.game) {
+            console.debug('Game registering', this.games.data?.length);
             const [game, playerOne, playerTwo] = message.push.game.registered;
+            console.debug(JSON.stringify([game, playerOne, playerTwo]));
             this.games.set(games => upsert(games, game));
+            console.debug('Game registered', this.games.data?.length);
             this.players.set(players => {
               upsert(players, playerOne);
               upsert(players, playerTwo);
@@ -184,7 +187,7 @@ type Listener<T> = (data: T) => void;
 class Resource<T> {
   private readonly fetcher: () => Promise<T>;
 
-  private data?: T;
+  data?: T;
   private debouncer?: Promise<T>;
   private listeners: Listener<T>[];
 
@@ -234,12 +237,11 @@ class Resource<T> {
   // TODO: Maybe do a deeper compare?
   // TODO: If doing deep compare, set only fields that don't match?
   private replace(data: T) {
-    if (this.data !== data) {
-      this.data = data;
-      this.listeners.forEach(l => {
-        l(data);
-      });
-    }
+    this.data = data;
+    console.debug('Notifying listeners');
+    this.listeners.forEach(l => {
+      l(data);
+    });
   }
 
   public registerListener(listener: Listener<T>): Listener<T> {

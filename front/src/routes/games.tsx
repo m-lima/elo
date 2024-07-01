@@ -1,30 +1,44 @@
 import { Suspense } from 'solid-js';
 
-import { useGames, usePlayers } from '../store';
+import { Store, useGames, usePlayers, useStore } from '../store';
 import { type Game, type Player } from '../types';
 import { icon, Action, Games as GameTable, Actions } from '../components';
 import { Loading, Main } from '../pages';
 
 export const Games = () => {
-  const games = useGames();
-  const players = usePlayers();
+  const store = useStore();
+  const games = useGames(store);
+  const players = usePlayers(store);
 
-  return <Suspense fallback={<Loading />}>{wrapRender(games(), players())}</Suspense>;
+  console.debug('Outer', games);
+
+  return (
+    <>
+      Outer: {games()?.length}
+      <br />
+      <Suspense fallback={<Loading />}>{wrapRender(store, games(), players())}</Suspense>
+    </>
+  );
 };
 
-const wrapRender = (games: Game[] = [], players: Player[] = []) => (
-  <>
-    <Actions>
-      <Action
-        icon={<icon.Add />}
-        text='New game'
-        action={() => {
-          console.debug('Clicked');
-        }}
-      />
-    </Actions>
-    <Main>
-      <GameTable players={players} games={games} />
-    </Main>
-  </>
-);
+const wrapRender = (store: Store, games: Game[] = [], players: Player[] = []) => {
+  console.debug('Inner', games);
+  return (
+    <>
+      Inner: {games.length}
+      <br />
+      <Actions>
+        <Action
+          icon={<icon.Add />}
+          text='New game'
+          action={() => {
+            void store.registerGame(7, 17, 21);
+          }}
+        />
+      </Actions>
+      <Main>
+        <GameTable players={players} games={games} />
+      </Main>
+    </>
+  );
+};

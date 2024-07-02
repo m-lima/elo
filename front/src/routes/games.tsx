@@ -1,32 +1,16 @@
 import { Suspense } from 'solid-js';
 
-import { Store, useGames, usePlayers, useStore } from '../store';
-import { type Game, type Player } from '../types';
+import { useStore } from '../store';
 import { icon, Action, Games as GameTable, Actions } from '../components';
 import { Loading, Main } from '../pages';
 
 export const Games = () => {
   const store = useStore();
-  const games = useGames(store);
-  const players = usePlayers(store);
-
-  console.debug('Outer', games);
+  const games = store.getGames();
+  const players = store.getPlayers();
 
   return (
-    <>
-      Outer: {games()?.length}
-      <br />
-      <Suspense fallback={<Loading />}>{wrapRender(store, games(), players())}</Suspense>
-    </>
-  );
-};
-
-const wrapRender = (store: Store, games: Game[] = [], players: Player[] = []) => {
-  console.debug('Inner', games);
-  return (
-    <>
-      Inner: {games.length}
-      <br />
+    <Suspense fallback={<Loading />}>
       <Actions>
         <Action
           icon={<icon.Add />}
@@ -39,6 +23,6 @@ const wrapRender = (store: Store, games: Game[] = [], players: Player[] = []) =>
       <Main>
         <GameTable players={players} games={games} />
       </Main>
-    </>
+    </Suspense>
   );
 };

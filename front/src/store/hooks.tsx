@@ -1,11 +1,4 @@
-import {
-  ParentProps,
-  createContext,
-  createEffect,
-  createResource,
-  onCleanup,
-  useContext,
-} from 'solid-js';
+import { ParentProps, createContext, useContext } from 'solid-js';
 
 import { Store } from './store';
 
@@ -18,59 +11,3 @@ export const WithStore = (props: ParentProps<{ store: Store }>) => (
 // Allowed because if misused, better to throw errors instead of paying for runtime checks
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const useStore = () => useContext(StoreContext)!;
-
-export const useSelf = (maybeStore?: Store) => {
-  const store = !maybeStore ? useStore() : maybeStore;
-  const [self, { mutate }] = createResource(() => store.self.get());
-
-  createEffect(() => {
-    const listener = store.self.registerListener(mutate);
-    onCleanup(() => {
-      store.self.unregisterListener(listener);
-    });
-  });
-
-  return self;
-};
-
-export const usePlayers = (maybeStore?: Store) => {
-  const store = !maybeStore ? useStore() : maybeStore;
-  const [players, { mutate }] = createResource(() => store.players.get());
-
-  createEffect(() => {
-    const listener = store.players.registerListener(mutate);
-    onCleanup(() => {
-      store.players.unregisterListener(listener);
-    });
-  });
-
-  return players;
-};
-
-export const useGames = (maybeStore?: Store) => {
-  const store = !maybeStore ? useStore() : maybeStore;
-  const [games, { mutate }] = createResource(() => store.games.get());
-
-  createEffect(() => {
-    const listener = store.games.registerListener(mutate);
-    onCleanup(() => {
-      store.games.unregisterListener(listener);
-    });
-  });
-
-  return games;
-};
-
-export const useInvites = (maybeStore?: Store) => {
-  const store = !maybeStore ? useStore() : maybeStore;
-  const [invites, { mutate }] = createResource(() => store.invites.get());
-
-  createEffect(() => {
-    const listener = store.invites.registerListener(mutate);
-    onCleanup(() => {
-      store.invites.unregisterListener(listener);
-    });
-  });
-
-  return invites;
-};

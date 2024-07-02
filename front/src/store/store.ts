@@ -1,3 +1,5 @@
+import { createResource, createSignal, ResourceActions, Resource as SolidResource } from 'solid-js';
+
 import { Socket, state } from '../socket';
 import {
   type Player,
@@ -9,15 +11,16 @@ import {
   inviteFromTuple,
 } from '../types';
 import { type Message, type Request, type Ided } from './message';
-import { FetchError, newRequestId, validateDone, validateMessage } from './request';
+import { newRequestId, validateDone, validateMessage } from './request';
+import { compareLists } from '../util';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
 
-  readonly self: Resource<User>;
-  readonly players: Resource<Player[]>;
-  readonly games: Resource<Game[]>;
-  readonly invites: Resource<Invite[]>;
+  private readonly self: Resource<User>;
+  private readonly players: Resource<Player[]>;
+  private readonly games: Resource<Game[]>;
+  private readonly invites: Resource<Invite[]>;
 
   public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
     return new Socket(url, checkUrl);
@@ -54,11 +57,8 @@ export class Store {
           }
         } else if ('game' in message.push) {
           if ('registered' in message.push.game) {
-            console.debug('Game registering', this.games.data?.length);
             const [game, playerOne, playerTwo] = message.push.game.registered;
-            console.debug(JSON.stringify([game, playerOne, playerTwo]));
             this.games.set(games => upsert(games, game));
-            console.debug('Game registered', this.games.data?.length);
             this.players.set(players => {
               upsert(players, playerOne);
               upsert(players, playerTwo);
@@ -87,44 +87,97 @@ export class Store {
       });
     });
 
-    this.players = new Resource(() => {
-      const id = newRequestId();
-      return this.socket.request({ id, do: { player: 'list' } }, message => {
-        const validated = validateMessage(id, 'players', message);
+    this.players = new Resource(
+      () => {
+        const id = newRequestId();
+        return this.socket.request({ id, do: { player: 'list' } }, message => {
+          const validated = validateMessage(id, 'players', message);
 
-        if (validated === undefined) {
-          return;
-        }
+          if (validated === undefined) {
+            return;
+          }
 
-        return validated.players.map(playerFromTuple);
-      });
-    });
+          return validated.players.map(playerFromTuple);
+        });
+      },
+      players =>
+        players.sort((a, b) => {
+          let result = b.rating - a.rating;
+          if (result !== 0) {
+            return result;
+          }
 
-    this.games = new Resource(() => {
-      const id = newRequestId();
-      return this.socket.request({ id, do: { game: 'list' } }, message => {
-        const validated = validateMessage(id, 'games', message);
+          result = b.wins - a.wins;
+          if (result !== 0) {
+            return result;
+          }
 
-        if (validated === undefined) {
-          return;
-        }
+          result = a.losses - b.losses;
+          if (result !== 0) {
+            return result;
+          }
 
-        return validated.games.map(gameFromTuple);
-      });
-    });
+          result = b.pointsWon - a.pointsWon;
+          if (result !== 0) {
+            return result;
+          }
 
-    this.invites = new Resource(() => {
-      const id = newRequestId();
-      return this.socket.request({ id, do: { invite: 'list' } }, message => {
-        const validated = validateMessage(id, 'invites', message);
+          result = a.pointsLost - b.pointsLost;
+          if (result !== 0) {
+            return result;
+          }
 
-        if (validated === undefined) {
-          return;
-        }
+          return a.createdMs - b.createdMs;
+        }),
+    );
 
-        return validated.invites.map(inviteFromTuple);
-      });
-    });
+    this.games = new Resource(
+      () => {
+        const id = newRequestId();
+        return this.socket.request({ id, do: { game: 'list' } }, message => {
+          const validated = validateMessage(id, 'games', message);
+
+          if (validated === undefined) {
+            return;
+          }
+
+          return validated.games.map(gameFromTuple);
+        });
+      },
+      games => games.sort((a, b) => b.createdMs - a.createdMs),
+    );
+
+    this.invites = new Resource(
+      () => {
+        const id = newRequestId();
+        return this.socket.request({ id, do: { invite: 'list' } }, message => {
+          const validated = validateMessage(id, 'invites', message);
+
+          if (validated === undefined) {
+            return;
+          }
+
+          return validated.invites.map(inviteFromTuple);
+        });
+      },
+      invites => invites.sort((a, b) => b.createdMs - a.createdMs),
+    );
+  }
+
+  public getSelf() {
+    return this.self.get();
+  }
+
+  public getPlayers() {
+    return this.players.get();
+  }
+
+  public getGames() {
+    return this.games.get();
+  }
+
+  public getInvites() {
+    return this.invites.get();
   }
 
   public async renamePlayer(name: string) {
@@ -164,95 +217,64 @@ export class Store {
   }
 
   private refresh() {
-    if (this.self.isPresent()) {
-      void this.self.get(true);
-    }
-
-    if (this.players.isPresent()) {
-      void this.players.get(true);
-    }
-
-    if (this.games.isPresent()) {
-      void this.games.get(true);
-    }
-
-    if (this.invites.isPresent()) {
-      void this.invites.get(true);
-    }
+    this.self.reload();
+    this.players.reload();
+    this.games.reload();
+    this.invites.reload();
   }
 }
 
-type Listener<T> = (data: T) => void;
-
 class Resource<T> {
   private readonly fetcher: () => Promise<T>;
+  private readonly mapper?: (data: T) => T;
 
-  data?: T;
-  private debouncer?: Promise<T>;
-  private listeners: Listener<T>[];
+  private data?: SolidResource<T>;
+  private setter?: ResourceActions<T | undefined>;
 
-  constructor(fetcher: () => Promise<T>) {
+  constructor(fetcher: () => Promise<T>, mapper?: (data: T) => T) {
     this.fetcher = fetcher;
-
-    this.listeners = [];
+    this.mapper = mapper;
   }
 
-  public isPresent(): boolean {
-    return !!this.data;
-  }
+  public get(): SolidResource<T> {
+    if (this.data !== undefined) {
+      return this.data;
+    }
 
-  public getRaw(): T | undefined {
+    const mapper = this.mapper;
+    const [data, setter] = createResource(
+      mapper === undefined ? this.fetcher : () => this.fetcher().then(d => mapper(d)),
+      {
+        storage: d =>
+          createSignal(d, {
+            equals: compareLists,
+          }),
+      },
+    );
+    this.data = data;
+    this.setter = setter;
+
     return this.data;
   }
 
-  public get(forceUpdate: boolean = false): Promise<T> {
-    if (!forceUpdate && this.data !== undefined) {
-      return Promise.resolve(this.data);
-    }
-
-    if (this.debouncer === undefined) {
-      this.debouncer = this.fetcher()
-        .then(data => {
-          this.replace(data);
-          return data;
-        })
-        .finally(() => (this.debouncer = undefined));
-    }
-
-    return this.debouncer;
-  }
-
   public set(setter: (current: T) => T) {
-    if (this.data === undefined) {
-      return;
+    if (this.setter !== undefined) {
+      this.setter.mutate(previous => {
+        if (previous !== undefined) {
+          if (this.mapper === undefined) {
+            return setter(previous);
+          } else {
+            return this.mapper(setter(previous));
+          }
+        }
+        return previous;
+      });
     }
-
-    // TODO: Cancel debouncer from updating after setting
-    // if (this.debouncer !== undefined) {
-    // }
-
-    this.replace(setter(this.data));
   }
 
-  // TODO: Maybe do a deeper compare?
-  // TODO: If doing deep compare, set only fields that don't match?
-  private replace(data: T) {
-    this.data = data;
-    console.debug('Notifying listeners');
-    this.listeners.forEach(l => {
-      l(data);
-    });
-  }
-
-  public registerListener(listener: Listener<T>): Listener<T> {
-    this.listeners.push(listener);
-    return listener;
-  }
-
-  public unregisterListener(listener: Listener<T>) {
-    const index = this.listeners.indexOf(listener);
-    if (index >= 0) {
-      this.listeners.splice(index, 1);
+  public reload() {
+    if (this.setter !== undefined) {
+      this.setter.refetch();
     }
   }
 }

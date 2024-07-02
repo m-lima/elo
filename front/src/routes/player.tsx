@@ -1,29 +1,34 @@
-import { Match, Show, Suspense, Switch } from 'solid-js';
+import { createMemo, Match, Show, Suspense, Switch } from 'solid-js';
 import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
 import { error, Loading, Main } from '../pages';
 import { icon, Games, Action, Actions } from '../components';
 import { type Game, type Player as PlayerType } from '../types';
-import { useGames, usePlayers, useSelf, useStore } from '../store';
+import { Store, useStore } from '../store';
+import { compareLists } from '../util';
 
 import './player.css';
 
 export const Player = () => {
   const params = useParams<{ id?: string }>();
   const store = useStore();
-  const self = useSelf(store);
-  const players = usePlayers(store);
+  const self = store.getSelf();
+  const players = store.getPlayers();
   // Prefetch because we will use it later
-  void store.games.get();
+  void store.getGames();
 
-  return <Suspense fallback={<Loading />}>{wrapRender(params.id, self()?.id, players())}</Suspense>;
+  return (
+    <Suspense fallback={<Loading />}>
+      {wrapRender(store, params.id, self()?.id, players())}
+    </Suspense>
+  );
 };
 
-const wrapRender = (param?: string, self?: number, players?: PlayerType[]) => {
+const wrapRender = (store: Store, param?: string, self?: number, players?: PlayerType[]) => {
   if (self === undefined || players === undefined) {
     return <></>;
   }
-  const games = useGames();
+  const games = store.getGames();
 
   const navigate = useNavigate();
   const id = getId(navigate, self, param);
@@ -167,12 +172,15 @@ const getId = (navigate: Navigator, self: number, param?: string) => {
 };
 
 const wrapGames = (id: number, players: PlayerType[], games?: Game[]) => {
+  const filteredGames = createMemo(
+    () => (games === undefined ? [] : games.filter(g => g.playerOne === id || g.playerTwo === id)),
+    [],
+    { equals: compareLists },
+  );
+
   return (
     <Show when={games !== undefined}>
-      <Games
-        players={players}
-        games={games?.filter(g => g.playerOne === id || g.playerTwo === id)}
-      />
+      <Games players={() => players} games={filteredGames} />
     </Show>
   );
 };

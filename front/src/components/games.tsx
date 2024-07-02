@@ -1,19 +1,18 @@
-import { For } from 'solid-js';
+import { For, createMemo } from 'solid-js';
 import { A } from '@solidjs/router';
 
 import { type Game, type Player } from '../types';
-import { monthToString } from '../util';
+import { type Getter, monthToString } from '../util';
 
 import './games.css';
 
-export const Games = (props: { games?: Game[]; players?: Player[] }) => {
-  const players = props.players !== undefined ? props.players : [];
-  const games = parseGames(props.games !== undefined ? props.games : [], players);
+export const Games = (props: { games: Getter<Game[]>; players: Getter<Player[]> }) => {
+  const games = createMemo(() => parseGames(props.games(), props.players()));
 
   return (
     <table>
       <tbody>
-        <For each={games}>{gameRow}</For>
+        <For each={games()}>{gameRow}</For>
       </tbody>
     </table>
   );
@@ -69,7 +68,7 @@ type ParsedGame = {
   readonly created: Date;
 };
 
-const parseGames = (games: Game[], players: Player[]): ParsedGame[] => {
+const parseGames = (games: Game[] = [], players: Player[] = []): ParsedGame[] => {
   const playerRating: Map<number, number> = new Map();
 
   return games.map(g => {

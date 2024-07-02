@@ -1,10 +1,10 @@
-import { For, Suspense } from 'solid-js';
+import { For, Suspense, createMemo } from 'solid-js';
 import { A } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
 import { Action, Actions, icon } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
-import { usePlayers, useInvites } from '../store';
+import { useStore } from '../store';
 
 import './invites.css';
 import { monthToString } from '../util';
@@ -19,34 +19,47 @@ type User = {
 };
 
 export const Invites = () => {
-  const players = usePlayers();
-  const invites = useInvites();
+  const store = useStore();
+  const players = store.getPlayers();
+  const invites = store.getInvites();
+  const roots = createMemo(
+    () => {
+      const maybePlayers = players();
+      const maybeInvites = invites();
 
-  return <Suspense fallback={<Loading />}>{wrapRender(players(), invites())}</Suspense>;
-};
+      if (maybePlayers === undefined || maybeInvites === undefined) {
+        return [];
+      }
 
-const wrapRender = (players: PlayerType[] = [], invites: Invite[] = []) => {
-  const roots = players
-    .filter(p => p.inviter === undefined)
-    .map(p => buildHierarchy(p, players, invites));
+      return maybePlayers
+        .filter(p => p.inviter === undefined)
+        .map(p => buildHierarchy(p, maybePlayers, maybeInvites));
+    },
+    [],
+    {
+      equals: compareUsers,
+    },
+  );
 
   return (
-    <>
-      <Actions>
-        <Action
-          icon={<icon.Add />}
-          text='New invite'
-          action={() => {
-            console.debug('Clicked');
-          }}
-        />
-      </Actions>
-      <Main>
-        <div class='routes-invites' id='main'>
-          <For each={roots}>{u => <Player root user={u} />}</For>
-        </div>
-      </Main>
-    </>
+    <Suspense fallback={<Loading />}>
+      <>
+        <Actions>
+          <Action
+            icon={<icon.Add />}
+            text='New invite'
+            action={() => {
+              console.debug('Clicked');
+            }}
+          />
+        </Actions>
+        <Main>
+          <div class='routes-invites' id='main'>
+            <For each={roots()}>{u => <Player root user={u} />}</For>
+          </div>
+        </Main>
+      </>
+    </Suspense>
   );
 };
 
@@ -106,3 +119,21 @@ const Player = (props: { root?: boolean; user: User }) => (
 
 const printDate = (date: Date) =>
   `${date.getDate()}/${String(monthToString(date.getMonth())).padStart(2, '0')}/${date.getFullYear() % 1000}`;
+
+const compareUsers = (a: User[], b: User[]) => {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+
+    if (!compareUsers(a[i].children, b[i].children)) {
+      return false;
+    }
+  }
+
+  return true;
+};

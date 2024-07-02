@@ -4,12 +4,11 @@ import { state } from '../socket';
 import { TimeOut, GenericError, Unauthorized } from './error';
 import { Welcome } from './welcome';
 import { Loading } from './loading';
-import { useSelf } from '../store';
+import { useStore } from '../store';
 
 export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
-  const self = useSelf();
+  const self = useStore().getSelf();
 
-  // TODO: Replace raw messages with error pages
   return (
     <Switch>
       <Match when={props.state === state.Disconnected.Connecting}>
@@ -22,16 +21,7 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
         <GenericError />
       </Match>
       <Match when={true}>
-        <ErrorBoundary
-          fallback={error => {
-            console.debug('INNER CAUGHT', error);
-            if ('millis' in error) {
-              return <TimeOut />;
-            }
-
-            return <GenericError />;
-          }}
-        >
+        <ErrorBoundary fallback={error => ('millis' in error ? <TimeOut /> : <GenericError />)}>
           <Suspense fallback={<Loading />}>
             <Show when={self()?.pending !== true} fallback={<Welcome />}>
               {props.children}

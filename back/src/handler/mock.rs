@@ -89,7 +89,12 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
             access::Dynamic::Regular(user) => user,
             access::Dynamic::Pending(user) => {
                 let email = user.email().clone();
-                let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
+                let mut handler = handler::Handler::new(
+                    user,
+                    store.clone(),
+                    super::Broadcaster::new(),
+                    smtp::Smtp::empty(),
+                );
                 handler
                     .call(model::Request::Invite(model::request::Invite::Accept))
                     .await?;
@@ -97,7 +102,12 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
             }
         };
 
-        let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
+        let mut handler = handler::Handler::new(
+            user,
+            store.clone(),
+            super::Broadcaster::new(),
+            smtp::Smtp::empty(),
+        );
         for _ in 0..amount {
             let (invitee, amount) = players.next().ok_or(Error::WrongCount)?;
             let (invitee_name, invitee_email) = make_player(invitee);
@@ -128,7 +138,12 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
     let players = {
         let user = get_registered_user(auth, consts::mock::USER_EMAIL).await?;
 
-        let mut handler = handler::Handler::new(user, store.clone(), smtp::Smtp::empty());
+        let mut handler = handler::Handler::new(
+            user,
+            store.clone(),
+            super::Broadcaster::new(),
+            smtp::Smtp::empty(),
+        );
         let model::Response::Players(players) = handler
             .call(model::Request::Player(model::request::Player::List))
             .await?
@@ -171,6 +186,7 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
         let mut handler = handler::Handler::new(
             get_registered_user(auth, &user.2).await?,
             store.clone(),
+            super::Broadcaster::new(),
             smtp::Smtp::empty(),
         );
 

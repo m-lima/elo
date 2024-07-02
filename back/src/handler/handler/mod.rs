@@ -52,9 +52,12 @@ where
     A: Access,
 {
     #[must_use]
-    pub fn new(user: access::User<A>, store: store::Store, smtp: smtp::Smtp) -> Self {
-        let broadcaster = broadcaster::Broadcaster::new();
-
+    pub fn new(
+        user: access::User<A>,
+        store: store::Store,
+        broadcaster: broadcaster::Broadcaster,
+        smtp: smtp::Smtp,
+    ) -> Self {
         Self {
             user,
             store,

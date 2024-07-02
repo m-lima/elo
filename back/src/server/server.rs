@@ -7,8 +7,13 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(port: u16, store: store::Store, smtp: smtp::Smtp) -> Result<Self, Error> {
-        let router = route(store.clone(), smtp)
+    pub async fn new(
+        port: u16,
+        store: store::Store,
+        broadcaster: handler::Broadcaster,
+        smtp: smtp::Smtp,
+    ) -> Result<Self, Error> {
+        let router = route(store.clone(), broadcaster, smtp)
             .layer(layer::auth::Auth::new(handler::Auth::new(store.clone())))
             .layer(layer::logger());
 
@@ -28,9 +33,10 @@ impl Server {
     }
 }
 
-fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
+fn route(store: store::Store, broadcaster: handler::Broadcaster, smtp: smtp::Smtp) -> axum::Router {
     fn upgrade<M: ws::Mode>(
         store: store::Store,
+        broadcaster: handler::Broadcaster,
         smtp: smtp::Smtp,
     ) -> axum::routing::MethodRouter<()> {
         axum::routing::get(
@@ -39,7 +45,7 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
                 upgrade.on_upgrade(|socket| async {
                     macro_rules! serve {
                         ($user: expr) => {{
-                            let handler = handler::Handler::new($user, store, smtp);
+                            let handler = handler::Handler::new($user, store, broadcaster, smtp);
                             let socket = ws::Layer::<M, _>::new(socket, handler);
                             socket.serve().await;
                         }};
@@ -55,6 +61,9 @@ fn route(store: store::Store, smtp: smtp::Smtp) -> axum::Router {
     }
 
     axum::Router::new()
-        .route("/ws/text", upgrade::<String>(store.clone(), smtp.clone()))
-        .route("/ws/binary", upgrade::<Vec<u8>>(store, smtp))
+        .route(
+            "/ws/text",
+            upgrade::<String>(store.clone(), broadcaster.clone(), smtp.clone()),
+        )
+        .route("/ws/binary", upgrade::<Vec<u8>>(store, broadcaster, smtp))
 }

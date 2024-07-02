@@ -1,6 +1,6 @@
 use super::model;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Broadcaster {
     sender: tokio::sync::broadcast::Sender<model::Push>,
 }

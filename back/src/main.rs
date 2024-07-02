@@ -98,6 +98,8 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         }
     };
 
+    let broadcaster = handler::Broadcaster::new();
+
     let smtp = if let Some(smtp) = args.smtp {
         match smtp::Smtp::new(smtp.link, smtp.smtp, smtp.from).await {
             Ok(smtp) => smtp,
@@ -110,7 +112,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         smtp::Smtp::empty()
     };
 
-    let server = match server::Server::new(args.port, store, smtp).await {
+    let server = match server::Server::new(args.port, store, broadcaster, smtp).await {
         Ok(server) => server,
         Err(error) => {
             tracing::error!(?error, "Failed to create server");

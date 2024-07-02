@@ -20,23 +20,23 @@ export const Side = () => {
   return (
     <aside class='components-side' id='side'>
       <A href='/' end>
-        <Item icon={<icon.Trophy />} text='Leaderboard' visible={expanded()} />
+        <Item icon=<icon.Trophy /> text='Leaderboard' visible={expanded()} />
       </A>
       <A href='/player'>
-        <Item icon={<icon.User />} text='Player' visible={expanded()} />
+        <Item icon=<icon.User /> text='Player' visible={expanded()} />
       </A>
       <A href='/games'>
-        <Item icon={<icon.PingPong />} text='Games' visible={expanded()} />
+        <Item icon=<icon.PingPong /> text='Games' visible={expanded()} />
       </A>
       <A href='/invites'>
-        <Item icon={<icon.Hierarchy />} text='Invites' visible={expanded()} />
+        <Item icon=<icon.Hierarchy /> text='Invites' visible={expanded()} />
       </A>
       <span onClick={() => setExpanded(e => !e)}>
         <Show
           when={expanded()}
-          fallback={<Item icon={<icon.DoubleRight />} text='Collapse' visible={false} />}
+          fallback=<Item icon=<icon.DoubleRight /> text='Collapse' visible={false} />
         >
-          <Item icon={<icon.DoubleLeft />} text='Collapse' visible={true} />
+          <Item icon=<icon.DoubleLeft /> text='Collapse' visible={true} />
         </Show>
       </span>
     </aside>

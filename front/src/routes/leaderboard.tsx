@@ -15,11 +15,11 @@ export const Leaderboard = () => {
   const navigate = useNavigate();
 
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback=<Loading />>
       <>
         <Actions>
           <Action
-            icon={<icon.Add />}
+            icon=<icon.Add />
             text='New game'
             action={() => {
               console.debug('Clicked');

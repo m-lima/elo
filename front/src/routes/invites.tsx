@@ -42,11 +42,11 @@ export const Invites = () => {
   );
 
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback=<Loading />>
       <>
         <Actions>
           <Action
-            icon={<icon.Add />}
+            icon=<icon.Add />
             text='New invite'
             action={() => {
               console.debug('Clicked');

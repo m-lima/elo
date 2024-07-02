@@ -10,10 +10,10 @@ export const Games = () => {
   const players = store.getPlayers();
 
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback=<Loading />>
       <Actions>
         <Action
-          icon={<icon.Add />}
+          icon=<icon.Add />
           text='New game'
           action={() => {
             void store.registerGame(7, 17, 21);

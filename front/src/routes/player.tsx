@@ -18,9 +18,7 @@ export const Player = () => {
   void store.getGames();
 
   return (
-    <Suspense fallback={<Loading />}>
-      {wrapRender(store, params.id, self()?.id, players())}
-    </Suspense>
+    <Suspense fallback=<Loading />>{wrapRender(store, params.id, self()?.id, players())}</Suspense>
   );
 };
 
@@ -40,11 +38,11 @@ const wrapRender = (store: Store, param?: string, self?: number, players?: Playe
   const playerPosition = players.findIndex(p => p.id === id);
 
   return (
-    <Show when={playerPosition >= 0} fallback={<error.NotFound />}>
+    <Show when={playerPosition >= 0} fallback=<error.NotFound />>
       <>
         <Actions>
           <Action
-            icon={<icon.Add />}
+            icon=<icon.Add />
             text='New invite'
             action={() => {
               console.debug('Clicked');
@@ -53,7 +51,7 @@ const wrapRender = (store: Store, param?: string, self?: number, players?: Playe
           <Switch>
             <Match when={id === self}>
               <Action
-                icon={<icon.Edit />}
+                icon=<icon.Edit />
                 text='Edit'
                 action={() => {
                   console.debug('Clicked');
@@ -62,7 +60,7 @@ const wrapRender = (store: Store, param?: string, self?: number, players?: Playe
             </Match>
             <Match when={id !== self}>
               <Action
-                icon={<icon.Add />}
+                icon=<icon.Add />
                 text='New game'
                 action={() => {
                   console.debug('Clicked');

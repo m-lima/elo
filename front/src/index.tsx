@@ -11,7 +11,10 @@ import { Wrapper } from './pages';
 
 const root = document.getElementById('root');
 
-const socket = Store.makeSocket('ws://localhost:3333/ws/binary', 'http://localhost:3333/check');
+const socket = Store.makeSocket(
+  `ws://${location.hostname}:3333/ws/binary`,
+  `http://${location.hostname}:3333/check`,
+);
 const [socketState, setSocketState] = createSignal(socket.getState());
 socket.registerStateListener(state => setSocketState(state));
 

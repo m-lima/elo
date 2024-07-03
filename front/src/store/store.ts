@@ -180,37 +180,37 @@ export class Store {
     return this.invites.get();
   }
 
-  public async renamePlayer(name: string) {
+  public renamePlayer(name: string) {
     const id = newRequestId();
     return this.socket.request({ id, do: { player: { rename: name } } }, message =>
       validateDone(id, message),
     );
   }
 
-  public async invitePlayer(name: string, email: string) {
+  public invitePlayer(name: string, email: string) {
     const id = newRequestId();
     return this.socket.request({ id, do: { invite: { player: { name, email } } } }, message =>
       validateDone(id, message),
     );
   }
 
-  public async cancelInvitattion(cancel: number) {
+  public cancelInvitattion(cancel: number) {
     const id = newRequestId();
     return this.socket.request({ id, do: { invite: { cancel } } }, message =>
       validateDone(id, message),
     );
   }
 
-  public async invitationRsvp(rsvp: boolean) {
+  public invitationRsvp(rsvp: boolean) {
     const id = newRequestId();
-    await this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message =>
+    return this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message =>
       validateDone(id, message),
     );
   }
 
-  public async registerGame(opponent: number, score: number, opponentScore: number) {
+  public registerGame(opponent: number, score: number, opponentScore: number) {
     const id = newRequestId();
-    await this.socket.request(
+    return this.socket.request(
       { id, do: { game: { register: { opponent, score, opponentScore } } } },
       message => validateDone(id, message),
     );

@@ -57,7 +57,13 @@ impl Games<'_> {
     where
         F: Copy + Fn(f64, f64, bool) -> (f64, f64),
     {
-        if player_one == player_two || score_one == score_two {
+        if player_one == player_two
+            || score_one == score_two
+            || (score_one == 11 && score_two >= 11)
+            || (score_one == 12 && score_two != 10)
+            || (score_two == 11 && score_one >= 11)
+            || (score_two == 12 && score_one != 10)
+        {
             return Err(Error::Conflict);
         }
 

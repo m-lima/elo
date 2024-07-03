@@ -21,7 +21,12 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => {
         <GenericError />
       </Match>
       <Match when={true}>
-        <ErrorBoundary fallback={error => ('millis' in error ? <TimeOut /> : <GenericError />)}>
+        <ErrorBoundary
+          fallback={error => {
+            console.debug(error);
+            return 'millis' in error ? <TimeOut /> : <GenericError />;
+          }}
+        >
           <Suspense fallback=<Loading />>
             <Show when={self()?.pending !== true} fallback=<Welcome />>
               {props.children}

@@ -134,15 +134,15 @@ table {
 
   @media (orientation: landscape) {
     grid-template:
-      "side actions" auto
-      "side main" 1fr / auto 1fr;
+      'side actions' auto
+      'side main' 1fr / auto 1fr;
   }
 
   @media (orientation: portrait) {
     grid-template:
-      "side" auto
-      "actions" auto
-      "main" 1fr / 1fr;
+      'side' auto
+      'actions' auto
+      'main' 1fr / 1fr;
   }
 
   & > #side {

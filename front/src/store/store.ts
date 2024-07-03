@@ -247,13 +247,7 @@ class Resource<T> {
       {
         storage: d =>
           createSignal(d, {
-            equals: (a, b) => {
-              if (Array.isArray(a) && Array.isArray(b)) {
-                return compareLists(a, b);
-              } else {
-                return a === b;
-              }
-            },
+            equals: false,
           }),
       },
     );

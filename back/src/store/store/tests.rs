@@ -196,6 +196,71 @@ mod constraints {
     }
 
     #[sqlx::test]
+    async fn scores_must_be_valid(pool: sqlx::sqlite::SqlitePool) {
+        let player_one = insert("one", "one", &pool).await.unwrap();
+        let player_two = insert("two", "two", &pool).await.unwrap();
+
+        for one in 0..13 {
+            for two in 0..13 {
+                let result = sqlx::query_as!(
+                    types::Game,
+                    r#"
+                    INSERT INTO games (
+                        player_one,
+                        player_two,
+                        score_one,
+                        score_two,
+                        rating_one,
+                        rating_two
+                    ) VALUES (
+                        $1,
+                        $2,
+                        $3,
+                        $4,
+                        0,
+                        0
+                    ) RETURNING
+                        id,
+                        player_one,
+                        player_two,
+                        score_one,
+                        score_two,
+                        rating_one,
+                        rating_two,
+                        created_ms AS "created_ms: types::Millis"
+                    "#,
+                    player_one.id,
+                    player_two.id,
+                    one,
+                    two,
+                )
+                .fetch_one(&pool)
+                .await;
+
+                println!("Scores: [{one:02} x {two:02}]");
+                if (one == 12 && two == 10)
+                    || (one == 10 && two == 12)
+                    || (one == 11 && two < 11)
+                    || (one < 11 && two == 11)
+                {
+                    result.unwrap();
+                } else {
+                    match result.unwrap_err() {
+                        sqlx::Error::Database(db) => {
+                            assert_eq!(
+                                "CHECK constraint failed: (score_one = 11 AND score_two < 11)\n      OR (score_one = 12 AND score_two = 10)\n      OR (score_one < 11 AND score_two = 11)\n      OR (score_one = 10 AND score_two = 12)",
+                                db.message()
+                            );
+                            assert_eq!("275", db.code().unwrap());
+                        }
+                        err => panic!("Unexpected error: {err:?}"),
+                    }
+                }
+            }
+        }
+    }
+
+    #[sqlx::test]
     async fn cascade_deletes(pool: sqlx::sqlite::SqlitePool) {
         let player = insert("name", "email", &pool).await.unwrap();
 

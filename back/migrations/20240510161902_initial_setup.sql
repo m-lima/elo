@@ -39,7 +39,12 @@ CREATE TABLE games (
     CHECK(player_one <> player_two),
   score_one  INTEGER NOT NULL,
   score_two  INTEGER NOT NULL
-    CHECK(score_one <> score_two),
+    CHECK(
+      (score_one = 11 AND score_two < 11)
+      OR (score_one = 12 AND score_two = 10)
+      OR (score_one < 11 AND score_two = 11)
+      OR (score_one = 10 AND score_two = 12)
+    ),
   rating_one REAL    NOT NULL,
   rating_two REAL    NOT NULL,
   created_ms INTEGER NOT NULL

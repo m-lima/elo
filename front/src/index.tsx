@@ -5,9 +5,9 @@ import { ParentProps, createSignal } from 'solid-js';
 import { Routes } from './routes';
 import { Status, Side } from './components';
 import { Store, WithStore } from './store';
+import { Wrapper } from './pages';
 
 import './index.css';
-import { Wrapper } from './pages';
 
 const root = document.getElementById('root');
 

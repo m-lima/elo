@@ -1,5 +1,3 @@
-import { type Game, type User } from '../types';
-
 export const name = 'EloPong';
 
 export const monthToString = (month: number) => {
@@ -33,11 +31,7 @@ export const monthToString = (month: number) => {
 
 export type Getter<T> = () => T | undefined;
 
-export const compareLists = <T>(a?: T[], b?: T[]) => {
-  if (a === undefined || b === undefined) {
-    return a === b;
-  }
-
+export const compareLists = <T>(a: T[], b: T[]) => {
   if (a.length !== b.length) {
     return false;
   }

@@ -3,7 +3,7 @@ import { render } from 'solid-js/web';
 import { ParentProps, createSignal } from 'solid-js';
 
 import { Routes } from './routes';
-import { Status, Side } from './components';
+import { Notifications, Status, Side } from './components';
 import { Store, WithStore } from './store';
 import { Wrapper } from './pages';
 
@@ -32,6 +32,7 @@ render(
     return (
       <WithStore store={store}>
         <Status state={socketState()} />
+        <Notifications />
         <Routes root={App} />
       </WithStore>
     );

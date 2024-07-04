@@ -83,7 +83,6 @@ export const Games = () => {
           text='New game'
           action={() => {
             setPrompt(true);
-            // void store.registerGame(7, 17, 21);
           }}
         />
       </Actions>

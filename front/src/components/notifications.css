@@ -1,0 +1,28 @@
+.components-notifications {
+  position: fixed;
+  top: 0;
+  right: 0;
+  margin: 5px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+
+  .components-notifications-message {
+    background-color: #606010c0;
+    opacity: 100%;
+
+    padding: 5px;
+
+    border-radius: 5px;
+    border: solid 1px #808020;
+
+    will-change: opacity;
+    transition: opacity 500ms;
+
+    &.fading {
+      opacity: 0%;
+    }
+  }
+}

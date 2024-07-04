@@ -12,10 +12,11 @@ import {
 } from '../types';
 import { type Message, type Request, type Ided } from './message';
 import { newRequestId, validateDone, validateMessage } from './request';
-import { compareLists } from '../util';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
+
+  private readonly subscribers: Subscriber[];
 
   private readonly self: Resource<User>;
   private readonly players: Resource<Player[]>;
@@ -40,20 +41,29 @@ export class Store {
         if ('player' in message.push) {
           if ('renamed' in message.push.player) {
             const rename = message.push.player.renamed;
+            const oldName = this.players.getRaw()?.name;
 
             this.players.set(players =>
               players.map(p => (p.id === rename.player ? { ...p, name: rename.name } : p)),
             );
+
+            if (oldName !== undefined) {
+              const newName = rename.name;
+              this.broadcast(`Player ${oldName} changed their name to ${newName}`);
+            }
           } else if ('invited' in message.push.player) {
             const invite = message.push.player.invited;
             this.invites.set(invites => upsert(invites, invite));
+            this.broadcast(`Player ${invite.name} was invited`);
           } else if ('uninvited' in message.push.player) {
             const uninvite = message.push.player.uninvited;
             this.invites.set(invites => invites.filter(i => i.id !== uninvite));
+            this.broadcast(`Invitation for ${invite.name} was lifted`);
           } else if ('joined' in message.push.player) {
             const join = message.push.player.joined;
             this.invites.set(invites => invites.filter(i => i.email !== join.email));
             this.players.set(players => upsert(players, join));
+            this.broadcast(`Player ${join.name} joined the fun`);
           }
         } else if ('game' in message.push) {
           if ('registered' in message.push.game) {
@@ -64,11 +74,22 @@ export class Store {
               upsert(players, playerTwo);
               return players;
             });
+            if (game.scoreOne > game.scoreTwo) {
+              this.broadcast(
+                `${playerOne.name} beat ${playerTwo.name} ${game.scoreOne} to ${game.scoreTwo}`,
+              );
+            } else {
+              this.broadcast(
+                `${playerTwo.name} beat ${playerOne.name} ${game.scoreTwo} to ${game.scoreOne}`,
+              );
+            }
           }
         }
       }
       return true;
     });
+
+    this.subscribers = [];
 
     this.self = new Resource(() => {
       const id = newRequestId();
@@ -216,6 +237,25 @@ export class Store {
     );
   }
 
+  public subscribe(subscriber: Subscriber): Subscriber {
+    this.subscribers.push(subscriber);
+    return subscriber;
+  }
+
+  public unsubscribe(subscriber: Subscriber): Subscriber {
+    const idx = this.subscribers.indexOf(subscriber);
+    if (idx >= 0) {
+      this.subscribers.splice(idx, 1);
+    }
+    return subscriber;
+  }
+
+  private broadcast(message: string) {
+    for (const subscriber of this.subscribers) {
+      subscriber(message);
+    }
+  }
+
   private refresh() {
     this.self.reload();
     this.players.reload();
@@ -234,6 +274,10 @@ class Resource<T> {
   constructor(fetcher: () => Promise<T>, mapper?: (data: T) => T) {
     this.fetcher = fetcher;
     this.mapper = mapper;
+  }
+
+  public getRaw(): SolidResource<T> | undefined {
+    return this.data;
   }
 
   public get(): SolidResource<T> {
@@ -288,3 +332,5 @@ const upsert = <T extends Ided>(data: T[], datum: T) => {
   }
   return data;
 };
+
+type Subscriber = (message: string) => void;

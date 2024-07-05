@@ -45,7 +45,14 @@ where
         }
 
         #[cfg(feature = "local")]
-        let user = crate::consts::mock::USER_EMAIL;
+        let user = {
+            let header = crate::X_USER;
+            request
+                .headers()
+                .get(&header)
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or(crate::consts::mock::USER_EMAIL)
+        };
 
         #[cfg(not(feature = "local"))]
         let user = {

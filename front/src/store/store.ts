@@ -41,24 +41,18 @@ export class Store {
         if ('player' in message.push) {
           if ('renamed' in message.push.player) {
             const rename = message.push.player.renamed;
-            const oldName = this.players.getRaw()?.name;
-
             this.players.set(players =>
-              players.map(p => (p.id === rename.player ? { ...p, name: rename.name } : p)),
+              players.map(p => (p.id === rename.player ? { ...p, name: rename.new } : p)),
             );
-
-            if (oldName !== undefined) {
-              const newName = rename.name;
-              this.broadcast(`Player ${oldName} changed their name to ${newName}`);
-            }
+            this.broadcast(`Player ${rename.old} changed their name to ${rename.new}`);
           } else if ('invited' in message.push.player) {
             const invite = message.push.player.invited;
             this.invites.set(invites => upsert(invites, invite));
             this.broadcast(`Player ${invite.name} was invited`);
           } else if ('uninvited' in message.push.player) {
             const uninvite = message.push.player.uninvited;
-            this.invites.set(invites => invites.filter(i => i.id !== uninvite));
-            this.broadcast(`Invitation for ${invite.name} was lifted`);
+            this.invites.set(invites => invites.filter(i => i.id !== uninvite.id));
+            this.broadcast(`Invitation for ${uninvite.name} was lifted`);
           } else if ('joined' in message.push.player) {
             const join = message.push.player.joined;
             this.invites.set(invites => invites.filter(i => i.email !== join.email));
@@ -274,10 +268,6 @@ class Resource<T> {
   constructor(fetcher: () => Promise<T>, mapper?: (data: T) => T) {
     this.fetcher = fetcher;
     this.mapper = mapper;
-  }
-
-  public getRaw(): SolidResource<T> | undefined {
-    return this.data;
   }
 
   public get(): SolidResource<T> {

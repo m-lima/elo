@@ -49,14 +49,14 @@ impl<'a> Invite<'a, access::Regular> {
                 Ok(model::Response::Done)
             }
             model::request::Invite::Cancel(id) => {
-                let id = invites
+                let invite = invites
                     .cancel(self.handler.user.id(), id)
                     .await
                     .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Player(model::push::Player::Uninvited(id)));
+                    .send(model::Push::Player(model::push::Player::Uninvited(invite)));
 
                 Ok(model::Response::Done)
             }
@@ -101,14 +101,14 @@ impl<'a> Invite<'a, access::Pending> {
                 Ok(model::Response::Done)
             }
             model::request::Invite::Reject => {
-                let (id, initiator) = invites
+                let (invite, initiator) = invites
                     .reject(self.handler.user.id(), self.handler.user.email())
                     .await
                     .map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
-                    .send(model::Push::Player(model::push::Player::Uninvited(id)));
+                    .send(model::Push::Player(model::push::Player::Uninvited(invite)));
 
                 self.handler
                     .smtp

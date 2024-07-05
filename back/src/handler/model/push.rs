@@ -26,9 +26,13 @@ impl std::fmt::Display for Push {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Player {
-    Renamed { player: types::Id, name: String },
+    Renamed {
+        player: types::Id,
+        old: String,
+        new: String,
+    },
     Invited(types::Invite),
-    Uninvited(types::Id),
+    Uninvited(types::Invite),
     Joined(types::Player),
 }
 

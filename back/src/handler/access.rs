@@ -19,8 +19,16 @@ where
         self.id
     }
 
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
     pub fn email(&self) -> &String {
         &self.email
+    }
+
+    pub fn update_name(&mut self, name: String) {
+        self.name = name;
     }
 
     pub fn make_proto(&self) -> mailbox::Proto {

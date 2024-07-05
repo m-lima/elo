@@ -32,7 +32,7 @@ impl<'a> Player<'a, access::Regular> {
                 .map_err(model::Error::Store)
                 .map(|r| model::Response::Players(r.into_iter().map(Into::into).collect())),
             model::request::Player::Rename(name) => {
-                players
+                let player = players
                     .rename(self.handler.user.id(), &name)
                     .await
                     .map_err(model::Error::Store)?;
@@ -40,9 +40,12 @@ impl<'a> Player<'a, access::Regular> {
                 self.handler
                     .broadcaster
                     .send(model::Push::Player(model::push::Player::Renamed {
-                        player: self.handler.user.id(),
-                        name,
+                        player: player.id,
+                        old: self.handler.user.name().clone(),
+                        new: player.name.clone(),
                     }));
+
+                self.handler.user.update_name(player.name);
 
                 Ok(model::Response::Done)
             }

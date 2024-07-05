@@ -73,7 +73,7 @@ impl Players<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn rename(&self, id: types::Id, name: &str) -> Result<types::Id> {
+    pub async fn rename(&self, id: types::Id, name: &str) -> Result<types::Player> {
         let name = name.trim();
         if name.is_empty() {
             return Err(Error::BlankValue("name"));
@@ -108,8 +108,8 @@ impl Players<'_> {
             return Err(Error::AlreadyExists);
         }
 
-        let id = sqlx::query_as!(
-            super::Id,
+        let player = sqlx::query_as!(
+            types::Player,
             r#"
             UPDATE
                 players
@@ -118,18 +118,26 @@ impl Players<'_> {
             WHERE
                 id = $1
             RETURNING
-                id AS "id!: _"
+                id AS "id!: _",
+                name AS "name!: _",
+                email AS "email!: _",
+                inviter AS "inviter!: _",
+                rating AS "rating!: _",
+                wins AS "wins!: _",
+                losses AS "losses!: _",
+                points_won AS "points_won!: _",
+                points_lost AS "points_lost!: _",
+                created_ms AS "created_ms!: types::Millis"
             "#,
             id,
             name
         )
         .fetch_one(tx.as_mut())
         .await
-        .map_err(Error::from)
-        .map(|r| r.id)?;
+        .map_err(Error::from)?;
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok(id)
+        Ok(player)
     }
 }

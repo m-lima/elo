@@ -132,9 +132,9 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn cancel(&self, inviter: types::Id, id: types::Id) -> Result<types::Id> {
+    pub async fn cancel(&self, inviter: types::Id, id: types::Id) -> Result<types::Invite> {
         sqlx::query_as!(
-            super::Id,
+            types::Invite,
             r#"
             DELETE FROM
                 invites
@@ -142,7 +142,11 @@ impl Invites<'_> {
                 id = $1 AND
                 inviter = $2
             RETURNING
-                id
+                id,
+                inviter,
+                name,
+                email,
+                created_ms AS "created_ms: types::Millis"
             "#,
             id,
             inviter
@@ -150,7 +154,6 @@ impl Invites<'_> {
         .fetch_one(self.pool)
         .await
         .map_err(Error::Query)
-        .map(|r| r.id)
     }
 
     #[tracing::instrument(skip(self))]
@@ -242,7 +245,7 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn reject(&self, id: types::Id, email: &str) -> Result<(types::Id, types::User)> {
+    pub async fn reject(&self, id: types::Id, email: &str) -> Result<(types::Invite, types::User)> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let invite = sqlx::query_as!(
@@ -287,6 +290,6 @@ impl Invites<'_> {
 
         tx.commit().await.map_err(Error::Query)?;
 
-        Ok((invite.id, inviter))
+        Ok((invite, inviter))
     }
 }

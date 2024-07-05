@@ -15,22 +15,22 @@ export type Request = Ided & { do: RequestPlayer | RequestGame | RequestInvite }
 export type RequestPlayer = { player: 'id' | 'list' | { rename: string } };
 export type RequestGame = {
   game:
-    | 'list'
-    | {
-        register: {
-          opponent: number;
-          score: number;
-          opponentScore: number;
-        };
-      };
+  | 'list'
+  | {
+    register: {
+      opponent: number;
+      score: number;
+      opponentScore: number;
+    };
+  };
 };
 export type RequestInvite = {
   invite:
-    | 'list'
-    | { player: { name: string; email: string } }
-    | { cancel: number }
-    | 'accept'
-    | 'reject';
+  | 'list'
+  | { player: { name: string; email: string } }
+  | { cancel: number }
+  | 'accept'
+  | 'reject';
 };
 
 export type Message = MessagePush | MessageOk | MessageError;
@@ -55,9 +55,9 @@ export type Error = {
 
 export type Push = { player: PushPlayer } | { game: PushGame };
 export type PushPlayer =
-  | { renamed: { player: number; name: string } }
+  | { renamed: { player: number; old: string; new: string } }
   | { invited: Invite }
-  | { uninvited: number }
+  | { uninvited: Invite }
   | { joined: Player };
 export type PushGame = {
   registered: [Game, Player, Player];

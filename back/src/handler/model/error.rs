@@ -23,19 +23,20 @@ impl From<Error> for ws::Error {
     fn from(value: Error) -> Self {
         match value {
             Error::Store(error) => match error {
-                store::Error::Query(_) => Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR),
-                e @ (store::Error::BlankValue(_) | store::Error::InvalidValue(_)) => {
-                    Self::new(hyper::StatusCode::BAD_REQUEST, e.to_string())
+                store::Error::Query(_) => Self::new(
+                    hyper::StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal server error",
+                ),
+                error @ (store::Error::BlankValue(_) | store::Error::InvalidValue(_)) => {
+                    Self::new(hyper::StatusCode::BAD_REQUEST, &error)
                 }
-                e @ store::Error::AlreadyExists => {
-                    Self::new(hyper::StatusCode::CONFLICT, e.to_string())
+                error @ store::Error::AlreadyExists => {
+                    Self::new(hyper::StatusCode::CONFLICT, &error)
                 }
-                store::Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
+                store::Error::NotFound => Self::new(hyper::StatusCode::NOT_FOUND, "Not found"),
             },
-            Error::InvalidEmail(error) => {
-                Self::new(hyper::StatusCode::BAD_REQUEST, error.to_string())
-            }
-            Error::Forbidden => Self::from(hyper::StatusCode::FORBIDDEN),
+            Error::InvalidEmail(error) => Self::new(hyper::StatusCode::BAD_REQUEST, &error),
+            Error::Forbidden => Self::new(hyper::StatusCode::FORBIDDEN, "Forbidden"),
         }
     }
 }

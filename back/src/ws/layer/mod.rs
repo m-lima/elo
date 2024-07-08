@@ -139,7 +139,7 @@ where
                 tracing::warn!(%error, "Failed to deserialize request");
                 let message = message::Error {
                     id: try_extract_id::<M>(&bytes),
-                    error: service::Error::new(hyper::StatusCode::BAD_REQUEST, error.to_string()),
+                    error: service::Error::new(hyper::StatusCode::BAD_REQUEST, &error),
                 };
                 self.send(message).await
             }
@@ -276,15 +276,15 @@ mod tests {
     }
 
     mod error {
-        use super::super::{message::Error, mode::sealed::Mode};
+        use super::super::{message::Error, mode::sealed::Mode, service};
 
-        const STR: &str = r#"{"code":400,"message":"Bad Request"}"#;
+        const STR: &str = r#"{"code":400,"message":"Bad request"}"#;
 
         #[test]
         fn with_id() {
             let payload = Error {
                 id: Some(27),
-                error: hyper::StatusCode::BAD_REQUEST.into(),
+                error: service::Error::new(hyper::StatusCode::BAD_REQUEST, "Bad request"),
             };
 
             let output = String::serialize(payload).unwrap().0;
@@ -299,7 +299,7 @@ mod tests {
         fn without_id() {
             let payload = Error {
                 id: None,
-                error: hyper::StatusCode::BAD_REQUEST.into(),
+                error: service::Error::new(hyper::StatusCode::BAD_REQUEST, "Bad request"),
             };
 
             let output = String::serialize(payload).unwrap().0;

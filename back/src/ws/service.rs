@@ -15,24 +15,14 @@ pub trait Service {
 pub struct Error {
     #[serde(serialize_with = "to_u16")]
     pub code: hyper::StatusCode,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub message: String,
 }
 
 impl Error {
-    pub fn new<M: Into<String>>(code: hyper::StatusCode, message: M) -> Self {
+    pub fn new<M: ToString + ?Sized>(code: hyper::StatusCode, message: &M) -> Self {
         Self {
             code,
-            message: Some(message.into()),
-        }
-    }
-}
-
-impl From<hyper::StatusCode> for Error {
-    fn from(code: hyper::StatusCode) -> Self {
-        Self {
-            code,
-            message: code.canonical_reason().map(String::from),
+            message: message.to_string(),
         }
     }
 }

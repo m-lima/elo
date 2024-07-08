@@ -10,27 +10,21 @@ export const Invite = (props: Props & { store: Store }) => {
   const [name, setName] = createSignal('');
   const [email, setEmail] = createSignal('');
 
-  const invalidName = createMemo(() => {
-    if (name().trim() === '') {
-      return true;
-    }
-
-    return false;
-  });
+  const invalidName = createMemo(() => name().trim() === '');
 
   const invalidEmail = createMemo(() => {
     const parts = email().split('@');
-    if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
-      return true;
-    }
-
-    return false;
+    return parts.length !== 2 || parts[0] === '' || parts[1] === '';
   });
 
   return (
     <Prompt
       ok={() => {
-        props.store.invitePlayer(name(), email()).then(props.hide);
+        props.store.invitePlayer(name(), email()).then(r => {
+          if (r) {
+            props.hide();
+          }
+        });
       }}
       cancel={props.hide}
       disabled={() => invalidName() || invalidEmail()}

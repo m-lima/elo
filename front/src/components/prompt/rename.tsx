@@ -9,18 +9,16 @@ import './rename.css';
 export const Rename = (props: Props & { store: Store; name: string }) => {
   const [name, setName] = createSignal(props.name);
 
-  const invalid = createMemo(() => {
-    if (name().trim() === '') {
-      return true;
-    }
-
-    return false;
-  });
+  const invalid = createMemo(() => name().trim() === '');
 
   return (
     <Prompt
       ok={() => {
-        props.store.renamePlayer(name()).then(props.hide);
+        props.store.renamePlayer(name()).then(r => {
+          if (r) {
+            props.hide();
+          }
+        });
       }}
       cancel={props.hide}
       disabled={invalid}

@@ -91,9 +91,7 @@ export class Store {
     this.self = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = this.wrapValidation(() =>
-          validateMessage(id, ['user', 'pending'], message),
-        );
+        const validated = validateMessage(id, ['user', 'pending'], message);
 
         if (validated === undefined) {
           return;
@@ -111,7 +109,7 @@ export class Store {
       () => {
         const id = newRequestId();
         return this.socket.request({ id, do: { player: 'list' } }, message => {
-          const validated = this.wrapValidation(() => validateMessage(id, 'players', message));
+          const validated = validateMessage(id, 'players', message);
 
           if (validated === undefined) {
             return;
@@ -127,7 +125,7 @@ export class Store {
       () => {
         const id = newRequestId();
         return this.socket.request({ id, do: { game: 'list' } }, message => {
-          const validated = this.wrapValidation(() => validateMessage(id, 'games', message));
+          const validated = validateMessage(id, 'games', message);
 
           if (validated === undefined) {
             return;
@@ -143,7 +141,7 @@ export class Store {
       () => {
         const id = newRequestId();
         return this.socket.request({ id, do: { invite: 'list' } }, message => {
-          const validated = this.wrapValidation(() => validateMessage(id, 'invites', message));
+          const validated = validateMessage(id, 'invites', message);
 
           if (validated === undefined) {
             return;
@@ -173,39 +171,23 @@ export class Store {
   }
 
   public renamePlayer(name: string) {
-    const id = newRequestId();
-    return this.socket.request({ id, do: { player: { rename: name } } }, message =>
-      this.wrapValidation(() => validateDone(id, message)),
-    );
+    return this.request({ player: { rename: name } });
   }
 
   public invitePlayer(name: string, email: string) {
-    const id = newRequestId();
-    return this.socket.request({ id, do: { invite: { player: { name, email } } } }, message =>
-      this.wrapValidation(() => validateDone(id, message)),
-    );
+    return this.request({ invite: { player: { name, email } } });
   }
 
   public cancelInvitattion(cancel: number) {
-    const id = newRequestId();
-    return this.socket.request({ id, do: { invite: { cancel } } }, message =>
-      this.wrapValidation(() => validateDone(id, message)),
-    );
+    return this.request({ invite: { cancel } });
   }
 
   public invitationRsvp(rsvp: boolean) {
-    const id = newRequestId();
-    return this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message =>
-      this.wrapValidation(() => validateDone(id, message)),
-    );
+    return this.request({ invite: rsvp ? 'accept' : 'reject' });
   }
 
   public registerGame(opponent: number, score: number, opponentScore: number, challenge: boolean) {
-    const id = newRequestId();
-    return this.socket.request(
-      { id, do: { game: { register: { opponent, score, opponentScore, challenge } } } },
-      message => this.wrapValidation(() => validateDone(id, message)),
-    );
+    return this.request({ game: { register: { opponent, score, opponentScore, challenge } } });
   }
 
   public subscribe(subscriber: Subscriber): Subscriber {
@@ -227,24 +209,25 @@ export class Store {
     }
   }
 
+  private async request<T extends Request['do']>(request: T) {
+    const id = newRequestId();
+    return this.socket
+      .request({ id, do: request }, message => validateDone(id, message))
+      .catch(error => {
+        if (error instanceof ResponseError) {
+          this.broadcast(error.message, true);
+          return false;
+        } else {
+          throw error;
+        }
+      });
+  }
+
   private refresh() {
     this.self.reload();
     this.players.reload();
     this.games.reload();
     this.invites.reload();
-  }
-
-  private wrapValidation<T>(validation: () => T) {
-    try {
-      return validation();
-    } catch (e) {
-      console.debug('Validation', e);
-      if (e instanceof ResponseError) {
-        console.debug('Validation expected');
-        this.broadcast(e.message, true);
-      }
-      throw e;
-    }
   }
 }
 

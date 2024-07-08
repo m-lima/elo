@@ -51,8 +51,10 @@ export const Game = (
           return;
         }
 
-        props.store.registerGame(opponentId, score(), opponentScore(), challenge()).then(() => {
-          props.hide();
+        props.store.registerGame(opponentId, score(), opponentScore(), challenge()).then(r => {
+          if (r) {
+            props.hide();
+          }
         });
       }}
       cancel={() => {

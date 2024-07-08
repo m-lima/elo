@@ -22,10 +22,6 @@ async fn insert(
             email,
             inviter,
             rating,
-            wins,
-            losses,
-            points_won,
-            points_lost,
             created_ms AS "created_ms: types::Millis"
         "#,
         name,
@@ -82,10 +78,6 @@ mod constraints {
                 email,
                 inviter,
                 rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
                 created_ms AS "created_ms: types::Millis"
             "#
         )
@@ -362,10 +354,6 @@ mod constraints {
                 email,
                 inviter,
                 rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
                 created_ms AS "created_ms: types::Millis"
             "#,
             player.id,
@@ -382,10 +370,6 @@ mod constraints {
                 email: String::from("emailer"),
                 inviter: Some(player.id),
                 rating: 0.0,
-                wins: 0,
-                losses: 0,
-                points_won: 0,
-                points_lost: 0,
                 created_ms: new_player.created_ms,
             }
         );
@@ -418,10 +402,6 @@ mod constraints {
                 email,
                 inviter,
                 rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 players
@@ -439,10 +419,6 @@ mod constraints {
                 email: String::from("emailer"),
                 inviter: None,
                 rating: 0.0,
-                wins: 0,
-                losses: 0,
-                points_won: 0,
-                points_lost: 0,
                 created_ms: new_player.created_ms,
             }
         );

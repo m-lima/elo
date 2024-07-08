@@ -5,14 +5,7 @@ CREATE TABLE players (
   email       TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128),
   inviter     INTEGER,
-
-  -- Cached stats
   rating      REAL NOT NULL,
-  wins        INTEGER NOT NULL DEFAULT 0,
-  losses      INTEGER NOT NULL DEFAULT 0,
-  points_won  INTEGER NOT NULL DEFAULT 0,
-  points_lost INTEGER NOT NULL DEFAULT 0,
-
   created_ms  INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 

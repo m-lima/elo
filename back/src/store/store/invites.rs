@@ -206,10 +206,6 @@ impl Invites<'_> {
                 email,
                 inviter,
                 rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
                 created_ms AS "created_ms: types::Millis"
             "#,
             invite.name,

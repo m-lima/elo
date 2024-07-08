@@ -51,19 +51,11 @@ impl Players<'_> {
                 email,
                 inviter,
                 rating,
-                wins,
-                losses,
-                points_won,
-                points_lost,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 players
             ORDER BY
                 rating DESC,
-                wins DESC,
-                losses ASC,
-                points_won DESC,
-                points_lost ASC,
                 created_ms ASC
             "#
         )
@@ -123,10 +115,6 @@ impl Players<'_> {
                 email AS "email!: _",
                 inviter AS "inviter!: _",
                 rating AS "rating!: _",
-                wins AS "wins!: _",
-                losses AS "losses!: _",
-                points_won AS "points_won!: _",
-                points_lost AS "points_lost!: _",
                 created_ms AS "created_ms!: types::Millis"
             "#,
             id,

@@ -30,6 +30,11 @@ impl<'a> Game<'a, access::Regular> {
                 .await
                 .map_err(model::Error::Store)
                 .map(|r| model::Response::Games(r.into_iter().map(Into::into).collect())),
+            model::request::Game::By(player) => games
+                .by(player)
+                .await
+                .map_err(model::Error::Store)
+                .map(|r| model::Response::Games(r.into_iter().map(Into::into).collect())),
             model::request::Game::Register {
                 opponent,
                 score,

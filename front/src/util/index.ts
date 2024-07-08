@@ -1,3 +1,5 @@
+import { type Player, type Game } from '../types';
+
 export const name = 'EloPong';
 
 export const monthToString = (month: number) => {
@@ -43,4 +45,67 @@ export const compareLists = <T>(a: T[], b: T[]) => {
   }
 
   return true;
+};
+
+export const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T, b: T) => {
+  const result = b.rating - a.rating;
+  if (result !== 0) {
+    return result;
+  }
+
+  return a.createdMs - b.createdMs;
+};
+
+export const enrichPlayers = (players: Player[] = [], games: Game[] = []) => {
+  const enrichedPlayers = new Map<number, EnrichedPlayer>(
+    players.map(p => [
+      p.id,
+      {
+        games: 0,
+        wins: 0,
+        losses: 0,
+        challengesWon: 0,
+        challengesLost: 0,
+        pointsWon: 0,
+        pointsLost: 0,
+        ...p,
+      },
+    ]),
+  );
+
+  for (const game of games) {
+    const player_one = enrichedPlayers.get(game.playerOne);
+    if (player_one !== undefined) {
+      player_one.games += 1;
+      player_one.wins += 1;
+      player_one.pointsWon += game.scoreOne;
+      player_one.pointsLost += game.scoreTwo;
+      if (game.challenge) {
+        player_one.challengesWon += 1;
+      }
+    }
+
+    const player_two = enrichedPlayers.get(game.playerTwo);
+    if (player_two !== undefined) {
+      player_two.games += 1;
+      player_two.losses += 1;
+      player_two.pointsLost += game.scoreOne;
+      player_two.pointsWon += game.scoreTwo;
+      if (game.challenge) {
+        player_two.challengesLost += 1;
+      }
+    }
+  }
+
+  return Array.from(enrichedPlayers.values()).sort(sortPlayers);
+};
+
+export type EnrichedPlayer = Player & {
+  games: number;
+  wins: number;
+  losses: number;
+  challengesWon: number;
+  challengesLost: number;
+  pointsWon: number;
+  pointsLost: number;
 };

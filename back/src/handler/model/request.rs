@@ -25,6 +25,7 @@ impl std::fmt::Display for Request {
             },
             Self::Game(resource) => match resource {
                 Game::List => f.write_str("Game::List"),
+                Game::By(_) => f.write_str("Game::By"),
                 Game::Register { .. } => f.write_str("Game::Register"),
             },
         }
@@ -53,6 +54,7 @@ pub enum Invite {
 #[serde(rename_all = "camelCase")]
 pub enum Game {
     List,
+    By(types::Id),
     #[serde(rename_all = "camelCase")]
     Register {
         opponent: types::Id,

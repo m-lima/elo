@@ -156,7 +156,7 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
     let distribution =
         rand::distributions::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
 
-    for _ in 0..players.len() * 15 {
+    for _ in 0..players.len() * 150 {
         let (user, opponent) = {
             let one = rand.sample(&distribution);
             let two = {

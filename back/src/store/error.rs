@@ -2,12 +2,12 @@
 pub enum Error {
     #[error("Failed to perform query: {0:?}")]
     Query(sqlx::Error),
-    #[error("Attempted to store blank value for `{0}`")]
+    #[error("Field `{0}` cannot be blank")]
     BlankValue(&'static str),
     #[error("Entry already exists")]
     AlreadyExists,
-    #[error("Conflicting values")]
-    Conflict,
+    #[error("{0}")]
+    InvalidValue(&'static str),
     #[error("Not found")]
     NotFound,
 }

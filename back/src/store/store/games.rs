@@ -60,14 +60,20 @@ impl Games<'_> {
     where
         F: Copy + Fn(f64, f64, bool, bool) -> (f64, f64),
     {
-        if player_one == player_two
-            || score_one == score_two
-            || (score_one == 11 && score_two >= 11)
-            || (score_one == 12 && score_two != 10)
-            || (score_two == 11 && score_one >= 11)
-            || (score_two == 12 && score_one != 10)
-        {
-            return Err(Error::Conflict);
+        if player_one == player_two {
+            return Err(Error::InvalidValue("Players cannot be equal"));
+        }
+
+        if score_one == score_two {
+            return Err(Error::InvalidValue("Scores cannot be equal"));
+        }
+
+        if (score_one == 12 && score_two != 10) || (score_two == 12 && score_one != 10) {
+            return Err(Error::InvalidValue("Tie breaks require a 12x10 score"));
+        }
+
+        if (score_one == 11 && score_two >= 11) || (score_two == 11 && score_one >= 11) {
+            return Err(Error::InvalidValue("There can only be one winner"));
         }
 
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;

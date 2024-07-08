@@ -24,11 +24,11 @@ impl From<Error> for ws::Error {
         match value {
             Error::Store(error) => match error {
                 store::Error::Query(_) => Self::from(hyper::StatusCode::INTERNAL_SERVER_ERROR),
-                store::Error::BlankValue(error) => {
-                    Self::new(hyper::StatusCode::BAD_REQUEST, error.to_string())
+                e @ (store::Error::BlankValue(_) | store::Error::InvalidValue(_)) => {
+                    Self::new(hyper::StatusCode::BAD_REQUEST, e.to_string())
                 }
-                store::Error::AlreadyExists | store::Error::Conflict => {
-                    Self::from(hyper::StatusCode::CONFLICT)
+                e @ store::Error::AlreadyExists => {
+                    Self::new(hyper::StatusCode::CONFLICT, e.to_string())
                 }
                 store::Error::NotFound => Self::from(hyper::StatusCode::NOT_FOUND),
             },
@@ -42,16 +42,6 @@ impl From<Error> for ws::Error {
 
 impl Error {
     pub fn is_warn(&self) -> bool {
-        match self {
-            Self::Store(store::Error::Query(_)) => false,
-            Self::Store(
-                store::Error::BlankValue(_)
-                | store::Error::AlreadyExists
-                | store::Error::Conflict
-                | store::Error::NotFound,
-            )
-            | Self::InvalidEmail(_)
-            | Self::Forbidden => true,
-        }
+        !matches!(self, Self::Store(store::Error::Query(_)))
     }
 }

@@ -1,94 +1,104 @@
 import { createMemo, Match, Show, Suspense, Switch } from 'solid-js';
-import { Navigator, useNavigate, useParams } from '@solidjs/router';
+import { useNavigate, useParams } from '@solidjs/router';
 
 import { error, Loading, Main } from '../pages';
 import { icon, Games, Action, Actions } from '../components';
-import { type Game, type Player as PlayerType } from '../types';
+import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
-import { compareLists } from '../util';
+import { compareLists, type Getter } from '../util';
 
 import './player.css';
 
 export const Player = () => {
   const params = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const store = useStore();
+  const rawPlayers = store.getPlayers();
   const self = store.getSelf();
-  const players = store.getPlayers();
-  // Prefetch because we will use it later
+
+  // Preload games
   void store.getGames();
 
-  return (
-    <Suspense fallback=<Loading />>{wrapRender(store, params.id, self()?.id, players())}</Suspense>
-  );
-};
+  const id = createMemo(() => {
+    if (params.id === undefined) {
+      return self()?.id;
+    }
 
-const wrapRender = (store: Store, param?: string, self?: number, players?: PlayerType[]) => {
-  if (self === undefined || players === undefined) {
-    return <></>;
-  }
-  const games = store.getGames();
+    if (params.id.trim() !== '') {
+      const parsed = Number(params.id);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
 
-  const navigate = useNavigate();
-  const id = getId(navigate, self, param);
-
-  if (isNaN(id)) {
     navigate('/player', { replace: true });
-  }
+    return;
+  });
 
-  const playerPosition = players.findIndex(p => p.id === id);
+  const players = createMemo(() => {
+    const players = rawPlayers();
+    return players === undefined ? [] : players;
+  });
+
+  const playerPosition = createMemo(() => {
+    return players().findIndex(p => p.id === id());
+  });
 
   return (
-    <Show when={playerPosition >= 0} fallback=<error.NotFound />>
-      <>
-        <Actions>
-          <Action
-            icon=<icon.Add />
-            text='New invite'
-            action={() => {
-              console.debug('Clicked');
-            }}
-          />
-          <Switch>
-            <Match when={id === self}>
-              <Action
-                icon=<icon.Edit />
-                text='Edit'
-                action={() => {
-                  console.debug('Clicked');
-                }}
-              />
-            </Match>
-            <Match when={id !== self}>
-              <Action
-                icon=<icon.Add />
-                text='New game'
-                action={() => {
-                  console.debug('Clicked');
-                }}
-              />
-            </Match>
-          </Switch>
-        </Actions>
-        <Main>
-          <div class='routes-player' id='main'>
-            <PlayerHeader
-              self={id === self}
-              player={players[playerPosition]}
-              position={playerPosition + 1}
-              players={players.length}
+    <Suspense fallback=<Loading />>
+      <Show when={playerPosition() >= 0} fallback=<error.NotFound />>
+        <>
+          <Actions>
+            <Action
+              icon=<icon.Add />
+              text='Invite'
+              action={() => {
+                store.invitePlayer('new player', 'player@email.com');
+                console.debug('Clicked');
+              }}
             />
-            <PlayerHeader
-              self={id === self}
-              player={players[playerPosition]}
-              position={0}
-              players={players.length}
-            />
-            <PlayerStats player={players[playerPosition]} />
-            <Suspense>{wrapGames(id, players, games())}</Suspense>
-          </div>
-        </Main>
-      </>
-    </Show>
+            <Switch>
+              <Match when={id() === self()?.id}>
+                <Action
+                  icon=<icon.Edit />
+                  text='Name'
+                  action={() => {
+                    console.debug('Clicked');
+                  }}
+                />
+              </Match>
+              <Match when={id() !== self()?.id}>
+                <Action
+                  icon=<icon.Add />
+                  text='Game'
+                  action={() => {
+                    console.debug('Clicked');
+                  }}
+                />
+              </Match>
+            </Switch>
+          </Actions>
+          <Main>
+            <div class='routes-player' id='main'>
+              <PlayerHeader
+                self={id() === self()?.id}
+                player={players()[playerPosition()]}
+                position={playerPosition() + 1}
+                players={players.length}
+              />
+              <PlayerStats player={players()[playerPosition()]} />
+              <Suspense
+                fallback=<div>
+                  <icon.Spinner /> Loading games
+                </div>
+              >
+                <GameList store={store} players={players} id={id} />
+              </Suspense>
+            </div>
+          </Main>
+        </>
+      </Show>
+    </Suspense>
   );
 };
 
@@ -156,29 +166,19 @@ const PlayerStats = (props: { player: PlayerType }) => (
   </div>
 );
 
-const getId = (navigate: Navigator, self: number, param?: string) => {
-  if (param === undefined) {
-    return self;
-  }
-
-  const id = Number(param);
-  if (isNaN(id)) {
-    navigate('/player', { replace: true });
-  }
-
-  return id;
-};
-
-const wrapGames = (id: number, players: PlayerType[], games?: Game[]) => {
-  const filteredGames = createMemo(
-    () => (games === undefined ? [] : games.filter(g => g.playerOne === id || g.playerTwo === id)),
+const GameList = (props: { store: Store; players: Getter<PlayerType[]>; id: Getter<number> }) => {
+  const rawGames = props.store.getGames();
+  const games = createMemo(
+    () => {
+      const games = rawGames();
+      const ided = props.id();
+      return games === undefined || ided === undefined
+        ? []
+        : games.filter(g => g.playerOne === ided || g.playerTwo === ided);
+    },
     [],
     { equals: compareLists },
   );
 
-  return (
-    <Show when={games !== undefined}>
-      <Games players={() => players} games={filteredGames} />
-    </Show>
-  );
+  return <Games players={props.players} games={games} />;
 };

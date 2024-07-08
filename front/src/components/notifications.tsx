@@ -9,17 +9,15 @@ export const Notifications = () => {
   const [fades, setFades] = createSignal<Fade[]>([], { equals: false });
 
   createEffect(() => {
-    const handler = (message: string) => {
+    const handler = (message: string, error: boolean) => {
       const id = Math.random();
-      const notification = { id, message };
+      const notification = { id, message, error };
       const fade = { id, fade: false };
       setNotifications(list => {
         setTimeout(() => {
-          console.debug('Message timeout');
           setFades(list => {
             const idx = list.findIndex(i => i.id === id);
             if (idx >= 0) {
-              console.debug('Fading');
               list[idx].fade = true;
             }
             return list;
@@ -28,7 +26,6 @@ export const Notifications = () => {
             setNotifications(list => {
               const idx = list.findIndex(i => i.id === id);
               if (idx >= 0) {
-                console.debug('Removing');
                 list.splice(idx, 1);
               }
               return list;
@@ -40,10 +37,8 @@ export const Notifications = () => {
       setFades(list => [fade, ...list]);
     };
 
-    console.debug('Subscribing');
     store.subscribe(handler);
     onCleanup(() => {
-      console.debug('Unsubscribing');
       store.unsubscribe(handler);
     });
   });
@@ -53,7 +48,11 @@ export const Notifications = () => {
       <For each={notifications()}>
         {(n, i) => (
           <div
-            classList={{ 'components-notifications-message': true, 'fading': fades()[i()]?.fade }}
+            classList={{
+              'components-notifications-message': true,
+              'error': n.error,
+              'fading': fades()[i()]?.fade,
+            }}
           >
             {n.message}
           </div>
@@ -66,6 +65,7 @@ export const Notifications = () => {
 type Notification = {
   id: number;
   message: string;
+  error: boolean;
 };
 
 type Fade = {

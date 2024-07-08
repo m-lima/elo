@@ -10,12 +10,7 @@ export const Rename = (props: Props & { store: Store; name: string }) => {
   const [name, setName] = createSignal(props.name);
 
   const invalid = createMemo(() => {
-    const maybeName = name();
-    if (maybeName === undefined) {
-      return true;
-    }
-
-    if (maybeName.trim() === '') {
+    if (name().trim() === '') {
       return true;
     }
 

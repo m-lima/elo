@@ -11,12 +11,7 @@ export const Invite = (props: Props & { store: Store }) => {
   const [email, setEmail] = createSignal('');
 
   const invalidName = createMemo(() => {
-    const maybeName = name();
-    if (maybeName === undefined) {
-      return true;
-    }
-
-    if (maybeName.trim() === '') {
+    if (name().trim() === '') {
       return true;
     }
 
@@ -24,12 +19,8 @@ export const Invite = (props: Props & { store: Store }) => {
   });
 
   const invalidEmail = createMemo(() => {
-    const maybeEmail = email();
-    if (maybeEmail === undefined) {
-      return true;
-    }
-
-    if (maybeEmail.trim() === '') {
+    const parts = email().split('@');
+    if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
       return true;
     }
 
@@ -39,7 +30,7 @@ export const Invite = (props: Props & { store: Store }) => {
   return (
     <Prompt
       ok={() => {
-        props.store.renamePlayer(name()).then(props.hide);
+        props.store.invitePlayer(name(), email()).then(props.hide);
       }}
       cancel={props.hide}
       disabled={() => invalidName() || invalidEmail()}

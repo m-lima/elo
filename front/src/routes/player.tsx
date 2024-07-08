@@ -114,7 +114,7 @@ export const Player = () => {
           </Show>
           <Actions>
             <Action
-              icon=<icon.Swords />
+              icon=<icon.Add />
               text='Invite'
               action={() => setVisiblePrompt(Prompt.Invite)}
             />

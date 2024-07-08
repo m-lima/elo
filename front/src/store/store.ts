@@ -11,7 +11,7 @@ import {
   inviteFromTuple,
 } from '../types';
 import { type Message, type Request, type Ided } from './message';
-import { newRequestId, validateDone, validateMessage } from './request';
+import { newRequestId, ResponseError, validateDone, validateMessage } from './request';
 import { sortPlayers } from '../util';
 
 export class Store {
@@ -91,7 +91,9 @@ export class Store {
     this.self = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = validateMessage(id, ['user', 'pending'], message);
+        const validated = this.wrapValidation(() =>
+          validateMessage(id, ['user', 'pending'], message),
+        );
 
         if (validated === undefined) {
           return;
@@ -107,23 +109,15 @@ export class Store {
 
     this.players = new Resource(
       () => {
-        return new Promise(ok => {
-          console.debug('Getting players');
-          setTimeout(() => {
-            const id = newRequestId();
-            this.socket.request({ id, do: { player: 'list' } }, message => {
-              const validated = validateMessage(id, 'players', message);
+        const id = newRequestId();
+        return this.socket.request({ id, do: { player: 'list' } }, message => {
+          const validated = this.wrapValidation(() => validateMessage(id, 'players', message));
 
-              if (validated === undefined) {
-                return;
-              }
+          if (validated === undefined) {
+            return;
+          }
 
-              console.debug('Got players');
-              const result = validated.players.map(playerFromTuple);
-              ok(result);
-              return true;
-            });
-          }, 1000);
+          return validated.players.map(playerFromTuple);
         });
       },
       players => players.sort(sortPlayers),
@@ -131,23 +125,15 @@ export class Store {
 
     this.games = new Resource(
       () => {
-        return new Promise(ok => {
-          console.debug('Getting games');
-          setTimeout(() => {
-            const id = newRequestId();
-            this.socket.request({ id, do: { game: 'list' } }, message => {
-              const validated = validateMessage(id, 'games', message);
+        const id = newRequestId();
+        return this.socket.request({ id, do: { game: 'list' } }, message => {
+          const validated = this.wrapValidation(() => validateMessage(id, 'games', message));
 
-              if (validated === undefined) {
-                return;
-              }
+          if (validated === undefined) {
+            return;
+          }
 
-              console.debug('Got games');
-              const result = validated.games.map(gameFromTuple);
-              ok(result);
-              return true;
-            });
-          }, 3000);
+          return validated.games.map(gameFromTuple);
         });
       },
       games => games.sort((a, b) => b.createdMs - a.createdMs),
@@ -157,7 +143,7 @@ export class Store {
       () => {
         const id = newRequestId();
         return this.socket.request({ id, do: { invite: 'list' } }, message => {
-          const validated = validateMessage(id, 'invites', message);
+          const validated = this.wrapValidation(() => validateMessage(id, 'invites', message));
 
           if (validated === undefined) {
             return;
@@ -189,28 +175,28 @@ export class Store {
   public renamePlayer(name: string) {
     const id = newRequestId();
     return this.socket.request({ id, do: { player: { rename: name } } }, message =>
-      validateDone(id, message),
+      this.wrapValidation(() => validateDone(id, message)),
     );
   }
 
   public invitePlayer(name: string, email: string) {
     const id = newRequestId();
     return this.socket.request({ id, do: { invite: { player: { name, email } } } }, message =>
-      validateDone(id, message),
+      this.wrapValidation(() => validateDone(id, message)),
     );
   }
 
   public cancelInvitattion(cancel: number) {
     const id = newRequestId();
     return this.socket.request({ id, do: { invite: { cancel } } }, message =>
-      validateDone(id, message),
+      this.wrapValidation(() => validateDone(id, message)),
     );
   }
 
   public invitationRsvp(rsvp: boolean) {
     const id = newRequestId();
     return this.socket.request({ id, do: { invite: rsvp ? 'accept' : 'reject' } }, message =>
-      validateDone(id, message),
+      this.wrapValidation(() => validateDone(id, message)),
     );
   }
 
@@ -218,7 +204,7 @@ export class Store {
     const id = newRequestId();
     return this.socket.request(
       { id, do: { game: { register: { opponent, score, opponentScore, challenge } } } },
-      message => validateDone(id, message),
+      message => this.wrapValidation(() => validateDone(id, message)),
     );
   }
 
@@ -246,6 +232,19 @@ export class Store {
     this.players.reload();
     this.games.reload();
     this.invites.reload();
+  }
+
+  private wrapValidation<T>(validation: () => T) {
+    try {
+      return validation();
+    } catch (e) {
+      console.debug('Validation', e);
+      if (e instanceof ResponseError) {
+        console.debug('Validation expected');
+        this.broadcast(e.message, true);
+      }
+      throw e;
+    }
   }
 }
 

@@ -10,6 +10,8 @@
 
   background-color: #00000080;
 
+  z-index: 1;
+
   &:before {
     content: '';
   }

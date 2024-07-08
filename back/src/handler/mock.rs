@@ -195,6 +195,7 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
                 opponent: opponent.0,
                 score: user_score,
                 opponent_score,
+                challenge: false,
             }))
             .await?
         else {

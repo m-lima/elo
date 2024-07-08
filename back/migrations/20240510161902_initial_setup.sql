@@ -47,6 +47,7 @@ CREATE TABLE games (
     ),
   rating_one REAL    NOT NULL,
   rating_two REAL    NOT NULL,
+  challenge  BOOLEAN NOT NULL DEFAULT FALSE,
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
@@ -63,7 +64,7 @@ CREATE TABLE challenges (
   player_two INTEGER NOT NULL
     CHECK(player_one <> player_two),
   game       INTEGER,
-  refused    BOOLEAN NOT NULL DEFAULT false,
+  refused    BOOLEAN NOT NULL DEFAULT FALSE,
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 

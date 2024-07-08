@@ -32,6 +32,7 @@ impl Games<'_> {
                 score_two,
                 rating_one,
                 rating_two,
+                challenge,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 games
@@ -44,6 +45,7 @@ impl Games<'_> {
         .map_err(Error::Query)
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,
@@ -51,11 +53,12 @@ impl Games<'_> {
         player_two: types::Id,
         score_one: u8,
         score_two: u8,
+        challenge: bool,
         default_rating: f64,
         rating_updater: F,
     ) -> Result<(types::Game, types::Player, types::Player)>
     where
-        F: Copy + Fn(f64, f64, bool) -> (f64, f64),
+        F: Copy + Fn(f64, f64, bool, bool) -> (f64, f64),
     {
         if player_one == player_two
             || score_one == score_two
@@ -109,14 +112,16 @@ impl Games<'_> {
                 score_one,
                 score_two,
                 rating_one,
-                rating_two
+                rating_two,
+                challenge
             ) VALUES (
                 $1,
                 $2,
                 $3,
                 $4,
                 $5,
-                $6
+                $6,
+                $7
             )
             RETURNING
                 id,
@@ -126,6 +131,7 @@ impl Games<'_> {
                 score_two,
                 rating_one,
                 rating_two,
+                challenge,
                 created_ms AS "created_ms: types::Millis"
             "#,
             player_one,
@@ -134,13 +140,14 @@ impl Games<'_> {
             score_two,
             rating_one,
             rating_two,
+            challenge,
         )
         .fetch_one(tx.as_mut())
         .await
         .map_err(Error::Query)?;
 
         let (rating_one, rating_two) =
-            rating_updater(rating_one, rating_two, score_one > score_two);
+            rating_updater(rating_one, rating_two, score_one > score_two, challenge);
 
         let (winner, loser, winner_score, loser_score, winner_rating, loser_rating) =
             if score_one > score_two {

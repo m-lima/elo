@@ -89,6 +89,7 @@ pub(crate) struct Game {
     pub score_two: i64,
     pub rating_one: f64,
     pub rating_two: f64,
+    pub challenge: bool,
     pub created_ms: Millis,
 }
 
@@ -101,6 +102,7 @@ pub(crate) struct GameTuple(
     pub i64,
     pub f64,
     pub f64,
+    pub bool,
     pub Millis,
 );
 
@@ -114,6 +116,7 @@ impl From<Game> for GameTuple {
             value.score_two,
             value.rating_one,
             value.rating_two,
+            value.challenge,
             value.created_ms,
         )
     }

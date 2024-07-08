@@ -58,5 +58,6 @@ pub enum Game {
         opponent: types::Id,
         score: u8,
         opponent_score: u8,
+        challenge: bool,
     },
 }

@@ -34,6 +34,7 @@ impl<'a> Game<'a, access::Regular> {
                 opponent,
                 score,
                 opponent_score,
+                challenge,
             } => {
                 let (game, player_one, player_two) = games
                     .register(
@@ -41,19 +42,24 @@ impl<'a> Game<'a, access::Regular> {
                         opponent,
                         score,
                         opponent_score,
+                        challenge,
                         skillratings::elo::EloRating::new().rating,
-                        |one, two, won| {
-                            let ratings = skillratings::elo::elo(
-                                &skillratings::elo::EloRating { rating: one },
-                                &skillratings::elo::EloRating { rating: two },
-                                if won {
-                                    &skillratings::Outcomes::WIN
-                                } else {
-                                    &skillratings::Outcomes::LOSS
-                                },
-                                &skillratings::elo::EloConfig::new(),
-                            );
-                            (ratings.0.rating, ratings.1.rating)
+                        |mut one, mut two, won, challenge| {
+                            for _ in 0..(if challenge { 3 } else { 1 }) {
+                                let ratings = skillratings::elo::elo(
+                                    &skillratings::elo::EloRating { rating: one },
+                                    &skillratings::elo::EloRating { rating: two },
+                                    if won {
+                                        &skillratings::Outcomes::WIN
+                                    } else {
+                                        &skillratings::Outcomes::LOSS
+                                    },
+                                    &skillratings::elo::EloConfig::new(),
+                                );
+                                one = ratings.0.rating;
+                                two = ratings.1.rating;
+                            }
+                            (one, two)
                         },
                     )
                     .await

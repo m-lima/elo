@@ -176,6 +176,7 @@ mod constraints {
                 score_two,
                 rating_one,
                 rating_two,
+                challenge,
                 created_ms AS "created_ms: types::Millis"
             "#,
             player.id
@@ -227,6 +228,7 @@ mod constraints {
                         score_two,
                         rating_one,
                         rating_two,
+                        challenge,
                         created_ms AS "created_ms: types::Millis"
                     "#,
                     player_one.id,

@@ -2,6 +2,14 @@
   text-align: right;
 }
 
+.components-games-align-challenge {
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+  color: white;
+  filter: drop-shadow(0 0 4px);
+}
+
 .components-games-align-center {
   text-align: center;
 }

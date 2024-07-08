@@ -69,10 +69,10 @@ export const Games = () => {
     <Suspense fallback=<Loading />>
       <Show when={promptVisible()}>
         <prompt.Game
+          hide={() => setPromptVisible(false)}
           store={store}
           self={() => players()?.find(p => p.id === self()?.id)}
           opponents={opponents}
-          hide={() => setPromptVisible(false)}
         />
       </Show>
       <Actions>

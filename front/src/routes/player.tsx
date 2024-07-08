@@ -1,11 +1,11 @@
-import { createMemo, Match, Show, Suspense, Switch } from 'solid-js';
+import { createMemo, createSignal, Match, Show, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
 
 import { error, Loading, Main } from '../pages';
-import { icon, Games, Action, Actions } from '../components';
+import { icon, prompt, Games, Action, Actions } from '../components';
 import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
-import { compareLists, type Getter } from '../util';
+import { compareLists, type EnrichedPlayer, enrichPlayers, type Getter } from '../util';
 
 import './player.css';
 
@@ -13,11 +13,11 @@ export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const store = useStore();
-  const rawPlayers = store.getPlayers();
+  const games = store.getGames();
+  const players = store.getPlayers();
   const self = store.getSelf();
 
-  // Preload games
-  void store.getGames();
+  const [renameVisible, setRenameVisible] = createSignal(false);
 
   const id = createMemo(() => {
     if (params.id === undefined) {
@@ -35,22 +35,29 @@ export const Player = () => {
     return;
   });
 
-  const players = createMemo(() => {
-    const players = rawPlayers();
-    return players === undefined ? [] : players;
-  });
+  const player = createMemo(() => {
+    const enrichedPlayers = enrichPlayers(players(), games());
 
-  const playerPosition = createMemo(() => {
-    return players().findIndex(p => p.id === id());
+    const position = enrichedPlayers.findIndex(p => p.id === id());
+    const player = enrichedPlayers[position];
+
+    return { position: position + 1, player };
   });
 
   return (
     <Suspense fallback=<Loading />>
-      <Show when={playerPosition() >= 0} fallback=<error.NotFound />>
+      <Show when={player().position > 0} fallback=<error.NotFound />>
         <>
+          <Show when={renameVisible()}>
+            <prompt.Rename
+              hide={() => setRenameVisible(false)}
+              store={store}
+              name={player().player.name}
+            />
+          </Show>
           <Actions>
             <Action
-              icon=<icon.Add />
+              icon=<icon.Swords />
               text='Invite'
               action={() => {
                 store.invitePlayer('new player', 'player@email.com');
@@ -63,7 +70,7 @@ export const Player = () => {
                   icon=<icon.Edit />
                   text='Name'
                   action={() => {
-                    console.debug('Clicked');
+                    setRenameVisible(true);
                   }}
                 />
               </Match>
@@ -82,11 +89,11 @@ export const Player = () => {
             <div class='routes-player' id='main'>
               <PlayerHeader
                 self={id() === self()?.id}
-                player={players()[playerPosition()]}
-                position={playerPosition() + 1}
+                player={player().player}
+                position={player().position}
                 players={players.length}
               />
-              <PlayerStats player={players()[playerPosition()]} />
+              <PlayerStats player={player().player} />
               <Suspense
                 fallback=<div>
                   <icon.Spinner /> Loading games
@@ -151,12 +158,18 @@ const PlayerHeader = (props: {
   </div>
 );
 
-const PlayerStats = (props: { player: PlayerType }) => (
+const PlayerStats = (props: { player: EnrichedPlayer }) => (
   <div class='routes-player-stats'>
+    <b>Games</b>
+    {props.player.games}
     <b>Wins</b>
     {props.player.wins}
     <b>Losses</b>
     {props.player.losses}
+    <b>Challenges won</b>
+    {props.player.challengesWon}
+    <b>Challenges lost</b>
+    {props.player.challengesLost}
     <b>Points won</b>
     {props.player.pointsWon}
     <b>Points lost</b>

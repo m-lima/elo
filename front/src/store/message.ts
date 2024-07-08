@@ -21,6 +21,7 @@ export type RequestGame = {
       opponent: number;
       score: number;
       opponentScore: number;
+      challenge: boolean;
     };
   };
 };
@@ -50,7 +51,7 @@ export type OkResponse = {
 
 export type Error = {
   code: number;
-  message?: string;
+  message: string;
 };
 
 export type Push = { player: PushPlayer } | { game: PushGame };

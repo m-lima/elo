@@ -1,6 +1,7 @@
 import { For, createMemo } from 'solid-js';
 import { A } from '@solidjs/router';
 
+import { icon } from '.';
 import { type Game, type Player } from '../types';
 import { type Getter, monthToString } from '../util';
 
@@ -21,6 +22,9 @@ export const Games = (props: { games: Getter<Game[]>; players: Getter<Player[]> 
 const gameRow = (game: ParsedGame) => {
   return (
     <tr>
+      <td class='components-games-align-challenge'>
+        {game.challenge ? <icon.Swords /> : undefined}
+      </td>
       <td class='components-games-align-right'>{playerRating(game.ratingOne)}</td>
       <td class='components-games-align-right'>{playerName(game.playerOne)}</td>
       <td class='components-games-align-right'>{game.scoreOne}</td>
@@ -65,6 +69,7 @@ type ParsedGame = {
   readonly scoreTwo: number;
   readonly ratingOne?: number;
   readonly ratingTwo?: number;
+  readonly challenge: boolean;
   readonly created: Date;
 };
 
@@ -101,6 +106,7 @@ const parseGames = (games: Game[] = [], players: Player[] = []): ParsedGame[] =>
       scoreTwo: g.scoreTwo,
       ratingOne,
       ratingTwo,
+      challenge: g.challenge,
       created: new Date(g.createdMs),
     };
   });

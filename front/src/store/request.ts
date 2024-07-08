@@ -2,6 +2,12 @@ import type { Message, Ok, OkResponse } from './message';
 
 export const newRequestId = () => Math.floor(Math.random() * 1024 * 1024);
 
+export class ResponseError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export class FetchError extends Error {
   constructor(id: number, code: number, message?: string) {
     super(
@@ -21,7 +27,7 @@ export const preValidateMessage = (id: number, message: Message): Ok | undefined
     if (message.id !== id) {
       return;
     }
-    throw new FetchError(id, message.error.code, message.error.message);
+    throw new ResponseError(message.error.message);
   }
 
   return message.ok;

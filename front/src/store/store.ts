@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { type Message, type Request, type Ided } from './message';
 import { newRequestId, validateDone, validateMessage } from './request';
+import { sortPlayers } from '../util';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
@@ -44,20 +45,20 @@ export class Store {
             this.players.set(players =>
               players.map(p => (p.id === rename.player ? { ...p, name: rename.new } : p)),
             );
-            this.broadcast(`Player ${rename.old} changed their name to ${rename.new}`);
+            this.broadcast(`Player ${rename.old} changed their name to ${rename.new}`, false);
           } else if ('invited' in message.push.player) {
             const invite = message.push.player.invited;
             this.invites.set(invites => upsert(invites, invite));
-            this.broadcast(`Player ${invite.name} was invited`);
+            this.broadcast(`Player ${invite.name} was invited`, false);
           } else if ('uninvited' in message.push.player) {
             const uninvite = message.push.player.uninvited;
             this.invites.set(invites => invites.filter(i => i.id !== uninvite.id));
-            this.broadcast(`Invitation for ${uninvite.name} was lifted`);
+            this.broadcast(`Invitation for ${uninvite.name} was lifted`, false);
           } else if ('joined' in message.push.player) {
             const join = message.push.player.joined;
             this.invites.set(invites => invites.filter(i => i.email !== join.email));
             this.players.set(players => upsert(players, join));
-            this.broadcast(`Player ${join.name} joined the fun`);
+            this.broadcast(`Player ${join.name} joined the fun`, false);
           }
         } else if ('game' in message.push) {
           if ('registered' in message.push.game) {
@@ -71,10 +72,12 @@ export class Store {
             if (game.scoreOne > game.scoreTwo) {
               this.broadcast(
                 `${playerOne.name} beat ${playerTwo.name} ${game.scoreOne} to ${game.scoreTwo}`,
+                false,
               );
             } else {
               this.broadcast(
                 `${playerTwo.name} beat ${playerOne.name} ${game.scoreTwo} to ${game.scoreOne}`,
+                false,
               );
             }
           }
@@ -123,35 +126,7 @@ export class Store {
           }, 1000);
         });
       },
-      players =>
-        players.sort((a, b) => {
-          let result = b.rating - a.rating;
-          if (result !== 0) {
-            return result;
-          }
-
-          result = b.wins - a.wins;
-          if (result !== 0) {
-            return result;
-          }
-
-          result = a.losses - b.losses;
-          if (result !== 0) {
-            return result;
-          }
-
-          result = b.pointsWon - a.pointsWon;
-          if (result !== 0) {
-            return result;
-          }
-
-          result = a.pointsLost - b.pointsLost;
-          if (result !== 0) {
-            return result;
-          }
-
-          return a.createdMs - b.createdMs;
-        }),
+      players => players.sort(sortPlayers),
     );
 
     this.games = new Resource(
@@ -239,10 +214,10 @@ export class Store {
     );
   }
 
-  public registerGame(opponent: number, score: number, opponentScore: number) {
+  public registerGame(opponent: number, score: number, opponentScore: number, challenge: boolean) {
     const id = newRequestId();
     return this.socket.request(
-      { id, do: { game: { register: { opponent, score, opponentScore } } } },
+      { id, do: { game: { register: { opponent, score, opponentScore, challenge } } } },
       message => validateDone(id, message),
     );
   }
@@ -260,9 +235,9 @@ export class Store {
     return subscriber;
   }
 
-  private broadcast(message: string) {
+  private broadcast(message: string, error: boolean) {
     for (const subscriber of this.subscribers) {
-      subscriber(message);
+      subscriber(message, error);
     }
   }
 
@@ -339,4 +314,4 @@ const upsert = <T extends Ided>(data: T[], datum: T) => {
   return data;
 };
 
-type Subscriber = (message: string) => void;
+type Subscriber = (message: string, error: boolean) => void;

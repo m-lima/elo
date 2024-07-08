@@ -43,7 +43,6 @@ impl<'a> Game<'a, access::Regular> {
                         score,
                         opponent_score,
                         challenge,
-                        skillratings::elo::EloRating::new().rating,
                         |mut one, mut two, won, challenge| {
                             for _ in 0..(if challenge { 3 } else { 1 }) {
                                 let ratings = skillratings::elo::elo(

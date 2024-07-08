@@ -45,7 +45,6 @@ impl Games<'_> {
         .map_err(Error::Query)
     }
 
-    #[allow(clippy::too_many_arguments)]
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,
@@ -54,7 +53,6 @@ impl Games<'_> {
         score_one: u8,
         score_two: u8,
         challenge: bool,
-        default_rating: f64,
         rating_updater: F,
     ) -> Result<(types::Game, types::Player, types::Player)>
     where
@@ -87,19 +85,19 @@ impl Games<'_> {
                 (
                     SELECT
                         rating
-                    from
+                    FROM
                         players
-                    where
+                    WHERE
                         id = $1
-                ) as one,
+                ) AS one,
                 (
-                    select
+                    SELECT
                         rating
-                    from
+                    FROM
                         players
-                    where
+                    WHERE
                         id = $2
-                ) as two;
+                ) AS two;
             "#,
             player_one,
             player_two,

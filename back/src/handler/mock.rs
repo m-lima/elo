@@ -183,6 +183,8 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
             (loser_score, winner_score)
         };
 
+        let challenge = rand.gen_bool(0.1);
+
         let mut handler = handler::Handler::new(
             get_registered_user(auth, &user.2).await?,
             store.clone(),
@@ -195,7 +197,7 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
                 opponent: opponent.0,
                 score: user_score,
                 opponent_score,
-                challenge: false,
+                challenge,
             }))
             .await?
         else {

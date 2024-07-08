@@ -1,5 +1,7 @@
 import { ParentProps } from 'solid-js';
-import { icon } from '../components';
+import { icon } from '..';
+
+export { Game } from './game';
 
 import './prompt.css';
 

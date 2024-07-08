@@ -104,15 +104,23 @@ export class Store {
 
     this.players = new Resource(
       () => {
-        const id = newRequestId();
-        return this.socket.request({ id, do: { player: 'list' } }, message => {
-          const validated = validateMessage(id, 'players', message);
+        return new Promise(ok => {
+          console.debug('Getting players');
+          setTimeout(() => {
+            const id = newRequestId();
+            this.socket.request({ id, do: { player: 'list' } }, message => {
+              const validated = validateMessage(id, 'players', message);
 
-          if (validated === undefined) {
-            return;
-          }
+              if (validated === undefined) {
+                return;
+              }
 
-          return validated.players.map(playerFromTuple);
+              console.debug('Got players');
+              const result = validated.players.map(playerFromTuple);
+              ok(result);
+              return true;
+            });
+          }, 1000);
         });
       },
       players =>
@@ -148,15 +156,23 @@ export class Store {
 
     this.games = new Resource(
       () => {
-        const id = newRequestId();
-        return this.socket.request({ id, do: { game: 'list' } }, message => {
-          const validated = validateMessage(id, 'games', message);
+        return new Promise(ok => {
+          console.debug('Getting games');
+          setTimeout(() => {
+            const id = newRequestId();
+            this.socket.request({ id, do: { game: 'list' } }, message => {
+              const validated = validateMessage(id, 'games', message);
 
-          if (validated === undefined) {
-            return;
-          }
+              if (validated === undefined) {
+                return;
+              }
 
-          return validated.games.map(gameFromTuple);
+              console.debug('Got games');
+              const result = validated.games.map(gameFromTuple);
+              ok(result);
+              return true;
+            });
+          }, 3000);
         });
       },
       games => games.sort((a, b) => b.createdMs - a.createdMs),

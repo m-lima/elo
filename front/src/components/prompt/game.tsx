@@ -1,19 +1,24 @@
 import { createMemo, createSignal, For } from 'solid-js';
 
-import { Prompt } from './prompt';
 import { Store } from '../../store';
 import { type Player } from '../../types';
 import { type Getter } from '../../util';
 
-export const Game = (props: {
-  store: Store;
-  self: Getter<Player>;
-  opponents: Getter<Opponent[]>;
-  hide: () => void;
-}) => {
+import { Prompt, type Props } from './prompt';
+
+// TODO: Reorganize this prompt
+export const Game = (
+  props: Props & {
+    store: Store;
+    self: Getter<Player>;
+    opponents: Getter<Opponent[]>;
+  },
+) => {
   const [score, setScore] = createSignal(11);
   const [opponent, setOpponent] = createSignal(0);
   const [opponentScore, setOpponentScore] = createSignal(0);
+  const [challenge, setChallenge] = createSignal(false);
+
   const invalidScores = createMemo(() => {
     if (score() === opponentScore()) {
       return true;
@@ -46,7 +51,7 @@ export const Game = (props: {
           return;
         }
 
-        props.store.registerGame(opponentId, score(), opponentScore()).then(() => {
+        props.store.registerGame(opponentId, score(), opponentScore(), challenge()).then(() => {
           props.hide();
         });
       }}
@@ -56,10 +61,13 @@ export const Game = (props: {
       }}
       disabled={invalidScores}
     >
-      <>{console.debug(props.opponents())}</>
-      <p>
+      <div>
         <b>{props.self()?.name}</b>
-        <select onInput={e => setScore(e.target.selectedIndex)} value={score()}>
+        <select
+          class={invalidScores() ? 'invalid' : undefined}
+          onInput={e => setScore(e.target.selectedIndex)}
+          value={score()}
+        >
           <option value={0}>0</option>
           <option value={1}>1</option>
           <option value={2}>2</option>
@@ -74,8 +82,8 @@ export const Game = (props: {
           <option value={11}>11</option>
           <option value={12}>12</option>
         </select>
-      </p>
-      <p>
+      </div>
+      <div>
         <b>Opponent</b>
         <select
           onInput={e => {
@@ -86,7 +94,11 @@ export const Game = (props: {
         >
           <For each={props.opponents()}>{o => <option value={o.id}>{o.name}</option>}</For>
         </select>
-        <select onInput={e => setOpponentScore(e.target.selectedIndex)} value={opponentScore()}>
+        <select
+          class={invalidScores() ? 'invalid' : undefined}
+          onInput={e => setOpponentScore(e.target.selectedIndex)}
+          value={opponentScore()}
+        >
           <option value={0}>0</option>
           <option value={1}>1</option>
           <option value={2}>2</option>
@@ -101,7 +113,12 @@ export const Game = (props: {
           <option value={11}>11</option>
           <option value={12}>12</option>
         </select>
-      </p>
+      </div>
+      <input
+        type='checkbox'
+        checked={challenge()}
+        onChange={e => setChallenge(e.currentTarget.checked)}
+      />
     </Prompt>
   );
 };

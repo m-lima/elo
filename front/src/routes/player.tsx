@@ -5,9 +5,21 @@ import { error, Loading, Main } from '../pages';
 import { icon, prompt, Games, Action, Actions } from '../components';
 import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
-import { compareLists, type EnrichedPlayer, enrichPlayers, type Getter } from '../util';
+import {
+  type EnrichedPlayer,
+  type Getter,
+  buildOpponentList,
+  compareLists,
+  enrichPlayers,
+} from '../util';
 
 import './player.css';
+
+enum Prompt {
+  Invite,
+  Rename,
+  Game,
+}
 
 export const Player = () => {
   const params = useParams<{ id?: string }>();
@@ -17,7 +29,7 @@ export const Player = () => {
   const players = store.getPlayers();
   const self = store.getSelf();
 
-  const [renameVisible, setRenameVisible] = createSignal(false);
+  const [visiblePrompt, setVisiblePrompt] = createSignal<Prompt | undefined>();
 
   const id = createMemo(() => {
     if (params.id === undefined) {
@@ -44,43 +56,81 @@ export const Player = () => {
     return { position: position + 1, player };
   });
 
+  const opponentsBuilt = createMemo(prev => {
+    if (prev === true) {
+      return true;
+    } else {
+      // return gameVisible();
+      return true;
+    }
+  });
+
+  const opponents = createMemo(() => {
+    if (!opponentsBuilt()) {
+      return [];
+    }
+
+    const innerSelf = self()?.id;
+    const innerGames = games();
+    const innerPlayers = players();
+
+    if (innerSelf === undefined || innerGames === undefined || innerPlayers === undefined) {
+      return [];
+    }
+
+    return buildOpponentList(innerGames, innerPlayers, innerSelf);
+  });
+
   return (
     <Suspense fallback=<Loading />>
       <Show when={player().position > 0} fallback=<error.NotFound />>
         <>
-          <Show when={renameVisible()}>
+          <Show when={visiblePrompt() === Prompt.Invite}>
+            <prompt.Invite
+              hide={() => {
+                setVisiblePrompt();
+              }}
+              store={store}
+            />
+          </Show>
+          <Show when={visiblePrompt() === Prompt.Rename}>
             <prompt.Rename
-              hide={() => setRenameVisible(false)}
+              hide={() => {
+                setVisiblePrompt();
+              }}
               store={store}
               name={player().player.name}
+            />
+          </Show>
+          <Show when={visiblePrompt() === Prompt.Game}>
+            <prompt.Game
+              hide={() => {
+                setVisiblePrompt();
+              }}
+              store={store}
+              self={() => player().player}
+              opponents={opponents}
             />
           </Show>
           <Actions>
             <Action
               icon=<icon.Swords />
               text='Invite'
-              action={() => {
-                store.invitePlayer('new player', 'player@email.com');
-                console.debug('Clicked');
-              }}
+              action={() => setVisiblePrompt(Prompt.Invite)}
             />
             <Switch>
               <Match when={id() === self()?.id}>
                 <Action
                   icon=<icon.Edit />
                   text='Name'
-                  action={() => {
-                    setRenameVisible(true);
-                  }}
+                  action={() => setVisiblePrompt(Prompt.Rename)}
                 />
               </Match>
               <Match when={id() !== self()?.id}>
                 <Action
                   icon=<icon.Add />
                   text='Game'
-                  action={() => {
-                    console.debug('Clicked');
-                  }}
+                  action={() => setVisiblePrompt(Prompt.Game)}
                 />
               </Match>
             </Switch>

@@ -1,8 +1,6 @@
 import { ParentProps } from 'solid-js';
 import { icon } from '..';
 
-export { Game } from './game';
-
 import './prompt.css';
 
 export const Prompt = (
@@ -33,3 +31,7 @@ export const Prompt = (
     </div>
   </div>
 );
+
+export type Props = {
+  hide: () => void;
+};

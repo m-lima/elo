@@ -18,13 +18,39 @@
     content: '';
   }
 
+  /* TODO: Center content vertically */
   & > .pages-prompt-content {
     background-color: var(--color-background);
 
     font-size: 1.5em;
 
-    & select {
-      border: none;
+    & > .pages-prompt-form {
+      padding: 24px;
+
+      & input,
+      & select {
+        appearance: none;
+
+        color: var(--color-background);
+        background: white;
+
+        font-size: 1rem;
+        width: 100%;
+        font-weight: bold;
+
+        box-sizing: border-box;
+        padding: 12px 20px;
+
+        border-width: 1px;
+        border-style: solid;
+        border-color: #cccccc;
+        border-radius: 4px;
+
+        &.invalid {
+          color: red;
+          background: pink;
+        }
+      }
     }
 
     & > .pages-prompt-buttons {

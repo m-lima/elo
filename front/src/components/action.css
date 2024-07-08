@@ -5,6 +5,7 @@
   grid-auto-columns: 1fr;
   gap: 1px;
 
+  /* TODO: Center content horizontally */
   & > .components-action-content {
     display: flex;
 

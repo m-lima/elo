@@ -100,6 +100,38 @@ export const enrichPlayers = (players: Player[] = [], games: Game[] = []) => {
   return Array.from(enrichedPlayers.values()).sort(sortPlayers);
 };
 
+export const buildOpponentList = (games: Game[], players: Player[], self: number) => {
+  return Array.from(
+    games
+      .map(g => {
+        if (g.playerOne === self) {
+          return g.playerTwo;
+        } else if (g.playerTwo === self) {
+          return g.playerOne;
+        } else {
+          return;
+        }
+      })
+      .reduce(
+        (acc, curr) => {
+          if (curr !== undefined) {
+            const entry = acc.get(curr);
+            if (entry !== undefined) {
+              acc.set(curr, { name: entry.name, count: entry.count + 1 });
+            }
+          }
+          return acc;
+        },
+        new Map(players.filter(p => p.id !== self).map(p => [p.id, { name: p.name, count: 0 }])),
+      )
+      .entries(),
+  )
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(o => {
+      return { id: o[0], name: o[1].name };
+    });
+};
+
 export type EnrichedPlayer = Player & {
   games: number;
   wins: number;

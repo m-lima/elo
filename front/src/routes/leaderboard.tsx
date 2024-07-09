@@ -80,7 +80,7 @@ export const Leaderboard = () => {
       </action.Actions>
       <Main>
         <table class='clickable'>
-          <thead>
+          <thead class='routes-leaderboard-table-header'>
             <tr>
               <th />
               {header('#', 'position', sortPivot, sortDescending)}
@@ -117,7 +117,8 @@ const header = (
       sortPivot() === field ? setSortDescending(d => !d) : setSortPivot(() => field);
     }}
   >
-    {name} {sortIcon(sortPivot(), field, sortDescending())}
+    {name}
+    <span class='routes-leaderboard-sort'>{sortIcon(sortPivot(), field, sortDescending())}</span>
   </th>
 );
 

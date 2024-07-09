@@ -28,3 +28,12 @@
     }
   }
 }
+
+.routes-leaderboard-table-header {
+  cursor: pointer;
+
+  & .routes-leaderboard-sort {
+    margin-left: 5px;
+    color: var(--color-accent);
+  }
+}

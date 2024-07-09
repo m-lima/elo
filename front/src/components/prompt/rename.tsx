@@ -1,20 +1,32 @@
 import { createMemo, createSignal } from 'solid-js';
 
 import { Store } from '../../store';
+import { type Invite, type Player } from '../../types';
+import { type Getter } from '../../util';
 
-import { Prompt, type Props } from './prompt';
+import { Prompt, checkAlreadyExists, type Props } from './prompt';
 
 import './rename.css';
 
-export const Rename = (props: Props & { store: Store; name: string }) => {
+export const Rename = (
+  props: Props & {
+    store: Store;
+    name: string;
+    players: Getter<Player[]>;
+    invites: Getter<Invite[]>;
+  },
+) => {
   const [name, setName] = createSignal(props.name);
 
-  const invalid = createMemo(() => name().trim() === '');
+  const invalid = createMemo(() =>
+    checkAlreadyExists(name(), 'name', props.players, props.invites),
+  );
 
   return (
     <Prompt
+      visible={props.visible}
       ok={() => {
-        props.store.renamePlayer(name()).then(r => {
+        props.store.renamePlayer(name().trim()).then(r => {
           if (r) {
             props.hide();
           }

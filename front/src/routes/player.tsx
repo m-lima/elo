@@ -5,13 +5,7 @@ import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
 import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
-import {
-  type EnrichedPlayer,
-  type Getter,
-  buildOpponentList,
-  compareLists,
-  enrichPlayers,
-} from '../util';
+import { type EnrichedPlayer, type Getter, compareLists, enrichPlayers } from '../util';
 
 import './player.css';
 
@@ -27,6 +21,7 @@ export const Player = () => {
   const store = useStore();
   const games = store.getGames();
   const players = store.getPlayers();
+  const invites = store.getInvites();
   const self = store.getSelf();
 
   const [visiblePrompt, setVisiblePrompt] = createSignal<Prompt | undefined>();
@@ -49,99 +44,71 @@ export const Player = () => {
 
   const player = createMemo(() => {
     const enrichedPlayers = enrichPlayers(players(), games());
+    const inviteCount =
+      (players()?.filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
+      (invites()?.filter(p => p.inviter === id()).length ?? 0);
 
     const position = enrichedPlayers.findIndex(p => p.id === id());
-    const player = enrichedPlayers[position];
+    const player = { invites: inviteCount, ...enrichedPlayers[position] };
 
     return { position: position + 1, player };
-  });
-
-  const opponentsBuilt = createMemo(prev => {
-    if (prev === true) {
-      return true;
-    } else {
-      // return gameVisible();
-      return true;
-    }
-  });
-
-  const opponents = createMemo(() => {
-    if (!opponentsBuilt()) {
-      return [];
-    }
-
-    const innerSelf = self()?.id;
-    const innerGames = games();
-    const innerPlayers = players();
-
-    if (innerSelf === undefined || innerGames === undefined || innerPlayers === undefined) {
-      return [];
-    }
-
-    return buildOpponentList(innerGames, innerPlayers, innerSelf);
   });
 
   return (
     <Suspense fallback=<Loading />>
       <Show when={player().position > 0} fallback=<error.NotFound />>
-        <>
-          <Show when={visiblePrompt() === Prompt.Invite}>
-            <prompt.Invite
-              hide={() => {
-                setVisiblePrompt();
-              }}
-              store={store}
+        <prompt.Invite
+          visible={() => visiblePrompt() === Prompt.Invite}
+          hide={setVisiblePrompt}
+          store={store}
+          players={players}
+          invites={invites}
+        />
+        <prompt.Rename
+          visible={() => visiblePrompt() === Prompt.Rename}
+          hide={setVisiblePrompt}
+          store={store}
+          name={player().player.name}
+          players={players}
+          invites={invites}
+        />
+        <prompt.Game
+          visible={() => visiblePrompt() === Prompt.Game}
+          hide={setVisiblePrompt}
+          store={store}
+          self={() => player().player}
+          players={players}
+          games={games}
+        />
+        <action.Actions>
+          <Switch>
+            <Match when={id() === self()?.id}>
+              <action.Rename action={() => setVisiblePrompt(Prompt.Rename)} />
+            </Match>
+            <Match when={id() !== self()?.id}>
+              <action.Game action={() => setVisiblePrompt(Prompt.Game)} />
+            </Match>
+          </Switch>
+          <action.Invite action={() => setVisiblePrompt(Prompt.Invite)} />
+        </action.Actions>
+        <Main>
+          <div class='routes-player' id='main'>
+            <PlayerHeader
+              self={id() === self()?.id}
+              player={player().player}
+              position={player().position}
+              players={players.length}
             />
-          </Show>
-          <Show when={visiblePrompt() === Prompt.Rename}>
-            <prompt.Rename
-              hide={() => {
-                setVisiblePrompt();
-              }}
-              store={store}
-              name={player().player.name}
-            />
-          </Show>
-          <Show when={visiblePrompt() === Prompt.Game}>
-            <prompt.Game
-              hide={() => {
-                setVisiblePrompt();
-              }}
-              store={store}
-              self={() => player().player}
-              opponents={opponents}
-            />
-          </Show>
-          <action.Actions>
-            <Switch>
-              <Match when={id() === self()?.id}>
-                <action.Rename action={() => setVisiblePrompt(Prompt.Rename)} />
-              </Match>
-              <Match when={id() !== self()?.id}>
-                <action.Game action={() => setVisiblePrompt(Prompt.Game)} />
-              </Match>
-            </Switch>
-            <action.Invite action={() => setVisiblePrompt(Prompt.Invite)} />
-          </action.Actions>
-          <Main>
-            <div class='routes-player' id='main'>
-              <PlayerHeader
-                self={id() === self()?.id}
-                player={player().player}
-                position={player().position}
-                players={players.length}
-              />
-              <PlayerStats player={player().player} />
-              <Suspense
-                fallback=<div>
-                  <icon.Spinner /> Loading games
-                </div>
-              >
-                <GameList store={store} players={players} id={id} />
-              </Suspense>
-            </div>
-          </Main>
-        </>
+            <PlayerStats player={player().player} />
+            <Suspense
+              fallback=<div>
+                <icon.Spinner /> Loading games
+              </div>
+            >
+              <GameList store={store} players={players} id={id} />
+            </Suspense>
+          </div>
+        </Main>
       </Show>
     </Suspense>
   );
@@ -196,7 +163,7 @@ const PlayerHeader = (props: {
   </div>
 );
 
-const PlayerStats = (props: { player: EnrichedPlayer }) => (
+const PlayerStats = (props: { player: EnrichedPlayer & { invites: number } }) => (
   <div class='routes-player-stats'>
     <b>Games</b>
     {props.player.games}
@@ -214,6 +181,8 @@ const PlayerStats = (props: { player: EnrichedPlayer }) => (
     {props.player.pointsLost}
     <b>Joined</b>
     {props.player.createdMs}
+    <b>Invites</b>
+    {props.player.invites}
   </div>
 );
 

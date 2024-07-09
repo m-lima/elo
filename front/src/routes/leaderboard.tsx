@@ -1,8 +1,8 @@
-import { For, JSX, Suspense, createMemo } from 'solid-js';
+import { For, JSX, Suspense, createMemo, createSignal } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
-import { action, Actions, icon } from '../components';
+import { action, prompt, icon } from '../components';
 import { type User } from '../types';
 import { useStore } from '../store';
 import { type EnrichedPlayer, enrichPlayers } from '../util';
@@ -14,45 +14,48 @@ export const Leaderboard = () => {
   const players = store.getPlayers();
   const games = store.getGames();
   const self = store.getSelf();
+  const [promptVisible, setPromptVisible] = createSignal(false);
   const navigate = useNavigate();
 
   const enrichedPlayers = createMemo(() => enrichPlayers(players(), games()));
 
   return (
     <Suspense fallback=<Loading />>
-      <>
-        <action.Actions>
-          <action.Game
-            action={() => {
-              console.debug('Clicked');
-            }}
-          />
-        </action.Actions>
-        <Main>
-          <table class='clickable'>
-            <thead>
-              <tr>
-                <th />
-                <th>#</th>
-                <th>Player</th>
-                <th>Rating</th>
-                <th>Games</th>
-                <th>Wins</th>
-                <th>Losses</th>
-                <th>Challenges won</th>
-                <th>Challenges lost</th>
-                <th>Points won</th>
-                <th>Points lost</th>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={enrichedPlayers()}>
-                {(p, i) => playerRow(p, i, navigate, getIcon(i(), players()?.length), self())}
-              </For>
-            </tbody>
-          </table>
-        </Main>
-      </>
+      <prompt.Game
+        visible={promptVisible}
+        hide={() => setPromptVisible(false)}
+        store={store}
+        self={() => players()?.find(p => p.id === self()?.id)}
+        players={players}
+        games={games}
+      />
+      <action.Actions>
+        <action.Game action={() => setPromptVisible(true)} />
+      </action.Actions>
+      <Main>
+        <table class='clickable'>
+          <thead>
+            <tr>
+              <th />
+              <th>#</th>
+              <th>Player</th>
+              <th>Rating</th>
+              <th>Games</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Challenges won</th>
+              <th>Challenges lost</th>
+              <th>Points won</th>
+              <th>Points lost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <For each={enrichedPlayers()}>
+              {(p, i) => playerRow(p, i, navigate, getIcon(i(), players()?.length), self())}
+            </For>
+          </tbody>
+        </table>
+      </Main>
     </Suspense>
   );
 };

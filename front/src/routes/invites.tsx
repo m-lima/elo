@@ -1,8 +1,8 @@
-import { For, Suspense, createMemo } from 'solid-js';
+import { For, Suspense, createMemo, createSignal } from 'solid-js';
 import { A } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
-import { action, icon } from '../components';
+import { action, icon, prompt } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
 import { useStore } from '../store';
 
@@ -22,6 +22,8 @@ export const Invites = () => {
   const store = useStore();
   const players = store.getPlayers();
   const invites = store.getInvites();
+  const [promptVisible, setPromptVisible] = createSignal(false);
+
   const roots = createMemo(
     () => {
       const maybePlayers = players();
@@ -43,20 +45,23 @@ export const Invites = () => {
 
   return (
     <Suspense fallback=<Loading />>
-      <>
+      <prompt.Invite
+        visible={promptVisible}
+        hide={() => setPromptVisible(false)}
+        store={store}
+        players={players}
+        invites={invites}
+      />
+      <action.Actions>
         <action.Actions>
-          <action.Invite
-            action={() => {
-              console.debug('Clicked');
-            }}
-          />
+          <action.Invite action={() => setPromptVisible(true)} />
         </action.Actions>
-        <Main>
-          <div class='routes-invites' id='main'>
-            <For each={roots()}>{u => <Player root user={u} />}</For>
-          </div>
-        </Main>
-      </>
+      </action.Actions>
+      <Main>
+        <div class='routes-invites' id='main'>
+          <For each={roots()}>{u => <Player root user={u} />}</For>
+        </div>
+      </Main>
     </Suspense>
   );
 };

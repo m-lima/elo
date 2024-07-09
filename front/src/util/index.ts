@@ -58,9 +58,10 @@ export const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T
 
 export const enrichPlayers = (players: Player[] = [], games: Game[] = []) => {
   const enrichedPlayers = new Map<number, EnrichedPlayer>(
-    players.map(p => [
+    players.map((p, i) => [
       p.id,
       {
+        position: i + 1,
         games: 0,
         wins: 0,
         losses: 0,
@@ -101,6 +102,7 @@ export const enrichPlayers = (players: Player[] = [], games: Game[] = []) => {
 };
 
 export type EnrichedPlayer = Player & {
+  position: number;
   games: number;
   wins: number;
   losses: number;

@@ -22,13 +22,18 @@ export const Games = (props: { games: Getter<Game[]>; players: Getter<Player[]> 
 const gameRow = (game: ParsedGame) => {
   return (
     <tr>
-      <td class='components-games-align-challenge'>
-        {game.challenge ? <icon.Swords /> : undefined}
-      </td>
       <td class='components-games-align-right'>{playerRating(game.ratingOne)}</td>
       <td class='components-games-align-right'>{playerName(game.playerOne)}</td>
       <td class='components-games-align-right'>{game.scoreOne}</td>
-      <td class='components-games-align-center'>x</td>
+      {game.challenge ? (
+        <td class='components-games-align-challenge'>
+          <icon.Swords />
+        </td>
+      ) : (
+        <td class='components-games-align-versus'>
+          <icon.Cancel />
+        </td>
+      )}
       <td>{game.scoreTwo}</td>
       <td>{playerName(game.playerTwo)}</td>
       <td>{playerRating(game.ratingTwo)}</td>

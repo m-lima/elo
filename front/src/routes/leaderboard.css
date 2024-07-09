@@ -3,7 +3,8 @@
 }
 
 .routes-leaderboard-badge {
-  width: 1em;
+  padding-left: 10px;
+  padding-right: 10px;
   text-align: center;
 
   & .routes-leaderboard-first {

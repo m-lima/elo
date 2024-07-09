@@ -1,4 +1,5 @@
 .pages-prompt {
+  z-index: 1;
   position: fixed;
   top: 0;
   right: 0;
@@ -9,8 +10,6 @@
   grid-template-rows: 1fr auto 1fr;
 
   background-color: #00000080;
-
-  z-index: 1;
 
   &:before {
     content: '';
@@ -43,10 +42,17 @@
         box-sizing: border-box;
         padding: 12px 20px;
 
-        border-width: 1px;
-        border-style: solid;
-        border-color: #cccccc;
+        border-width: 2px solid var(--color-foreground);
         border-radius: 4px;
+        outline: none;
+
+        &::selection {
+          background: var(--color-accent-brighter);
+        }
+
+        &:focus {
+          border: 2px solid var(--color-accent);
+        }
 
         &.invalid {
           color: red;
@@ -97,16 +103,16 @@
         }
 
         &.disabled {
-          background-color: #606060;
-          pointer: unset;
+          background-color: #506050;
+          cursor: unset;
 
           &:hover {
-            background-color: #606060;
+            background-color: #506050;
           }
 
           &:active {
             transition: unset;
-            background-color: #606060;
+            background-color: #506050;
           }
         }
       }

@@ -48,6 +48,10 @@ a {
   }
 }
 
+::selection {
+  background: var(--color-accent-darker);
+}
+
 h1 {
   color: var(--color-accent);
   font-size: 3.2em;

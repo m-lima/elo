@@ -5,7 +5,13 @@ import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
 import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
-import { type EnrichedPlayer, type Getter, compareLists, enrichPlayers } from '../util';
+import {
+  type EnrichedPlayer,
+  type Getter,
+  compareLists,
+  enrichPlayers,
+  monthToString,
+} from '../util';
 
 import './player.css';
 
@@ -167,6 +173,8 @@ const PlayerStats = (props: { player: EnrichedPlayer & { invites: number } }) =>
   <div class='routes-player-stats'>
     <b>Games</b>
     {props.player.games}
+    <b>Joined</b>
+    {dateToString(new Date(props.player.createdMs))}
     <b>Wins</b>
     {props.player.wins}
     <b>Losses</b>
@@ -179,10 +187,6 @@ const PlayerStats = (props: { player: EnrichedPlayer & { invites: number } }) =>
     {props.player.pointsWon}
     <b>Points lost</b>
     {props.player.pointsLost}
-    <b>Joined</b>
-    {props.player.createdMs}
-    <b>Invites</b>
-    {props.player.invites}
   </div>
 );
 
@@ -202,3 +206,6 @@ const GameList = (props: { store: Store; players: Getter<PlayerType[]>; id: Gett
 
   return <Games players={props.players} games={games} />;
 };
+
+const dateToString = (date: Date) =>
+  `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;

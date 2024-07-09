@@ -113,7 +113,6 @@ export const Player = () => {
             />
           </Show>
           <action.Actions>
-            <action.Invite action={() => setVisiblePrompt(Prompt.Invite)} />
             <Switch>
               <Match when={id() === self()?.id}>
                 <action.Rename action={() => setVisiblePrompt(Prompt.Rename)} />
@@ -122,6 +121,7 @@ export const Player = () => {
                 <action.Game action={() => setVisiblePrompt(Prompt.Game)} />
               </Match>
             </Switch>
+            <action.Invite action={() => setVisiblePrompt(Prompt.Invite)} />
           </action.Actions>
           <Main>
             <div class='routes-player' id='main'>

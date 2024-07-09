@@ -10,14 +10,14 @@ export const Actions = (props: ParentProps) => (
 
 export const Game = (props: { action: () => void }) => (
   <div class='components-action-content' onClick={props.action}>
-    <icon.Add />
-    <span class='components-action-text'>Game</span>
+    <icon.Swords />
+    <span class='components-action-text'>New game</span>
   </div>
 );
 
 export const Invite = (props: { action: () => void }) => (
   <div class='components-action-content' onClick={props.action}>
-    <icon.Add />
+    <icon.User />
     <span class='components-action-text'>Invite</span>
   </div>
 );

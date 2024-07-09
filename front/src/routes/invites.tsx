@@ -2,7 +2,7 @@ import { For, Suspense, createMemo } from 'solid-js';
 import { A } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
-import { Action, Actions, icon } from '../components';
+import { action, icon } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
 import { useStore } from '../store';
 
@@ -44,15 +44,13 @@ export const Invites = () => {
   return (
     <Suspense fallback=<Loading />>
       <>
-        <Actions>
-          <Action
-            icon=<icon.Add />
-            text='New invite'
+        <action.Actions>
+          <action.Invite
             action={() => {
               console.debug('Clicked');
             }}
           />
-        </Actions>
+        </action.Actions>
         <Main>
           <div class='routes-invites' id='main'>
             <For each={roots()}>{u => <Player root user={u} />}</For>

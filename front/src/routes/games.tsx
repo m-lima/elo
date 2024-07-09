@@ -1,7 +1,7 @@
 import { Show, Suspense, createMemo, createSignal } from 'solid-js';
 
 import { useStore } from '../store';
-import { icon, prompt, Action, Games as GameTable, Actions } from '../components';
+import { prompt, Games as GameTable, action } from '../components';
 import { Loading, Main } from '../pages';
 import { buildOpponentList } from '../util';
 
@@ -44,15 +44,9 @@ export const Games = () => {
           opponents={opponents}
         />
       </Show>
-      <Actions>
-        <Action
-          icon=<icon.Add />
-          text='New game'
-          action={() => {
-            setPromptVisible(true);
-          }}
-        />
-      </Actions>
+      <action.Actions>
+        <action.Game action={() => setPromptVisible(true)} />
+      </action.Actions>
       <Main>
         <GameTable players={players} games={games} />
       </Main>

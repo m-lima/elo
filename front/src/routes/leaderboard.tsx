@@ -2,7 +2,7 @@ import { For, JSX, Suspense, createMemo } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
-import { Action, Actions, icon } from '../components';
+import { action, Actions, icon } from '../components';
 import { type User } from '../types';
 import { useStore } from '../store';
 import { type EnrichedPlayer, enrichPlayers } from '../util';
@@ -21,15 +21,13 @@ export const Leaderboard = () => {
   return (
     <Suspense fallback=<Loading />>
       <>
-        <Actions>
-          <Action
-            icon=<icon.Add />
-            text='New game'
+        <action.Actions>
+          <action.Game
             action={() => {
               console.debug('Clicked');
             }}
           />
-        </Actions>
+        </action.Actions>
         <Main>
           <table class='clickable'>
             <thead>

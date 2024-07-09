@@ -2,7 +2,7 @@ import { createMemo, createSignal, Match, Show, Suspense, Switch } from 'solid-j
 import { useNavigate, useParams } from '@solidjs/router';
 
 import { error, Loading, Main } from '../pages';
-import { icon, prompt, Games, Action, Actions } from '../components';
+import { action, icon, prompt, Games } from '../components';
 import { type Player as PlayerType } from '../types';
 import { Store, useStore } from '../store';
 import {
@@ -112,29 +112,17 @@ export const Player = () => {
               opponents={opponents}
             />
           </Show>
-          <Actions>
-            <Action
-              icon=<icon.Add />
-              text='Invite'
-              action={() => setVisiblePrompt(Prompt.Invite)}
-            />
+          <action.Actions>
+            <action.Invite action={() => setVisiblePrompt(Prompt.Invite)} />
             <Switch>
               <Match when={id() === self()?.id}>
-                <Action
-                  icon=<icon.Edit />
-                  text='Name'
-                  action={() => setVisiblePrompt(Prompt.Rename)}
-                />
+                <action.Rename action={() => setVisiblePrompt(Prompt.Rename)} />
               </Match>
               <Match when={id() !== self()?.id}>
-                <Action
-                  icon=<icon.Add />
-                  text='Game'
-                  action={() => setVisiblePrompt(Prompt.Game)}
-                />
+                <action.Game action={() => setVisiblePrompt(Prompt.Game)} />
               </Match>
             </Switch>
-          </Actions>
+          </action.Actions>
           <Main>
             <div class='routes-player' id='main'>
               <PlayerHeader

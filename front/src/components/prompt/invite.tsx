@@ -4,7 +4,7 @@ import { Store } from '../../store';
 import { type Invite as InviteType, type Player } from '../../types';
 import { type Getter } from '../../util';
 
-import { Prompt, checkAlreadyExists, type Props } from './prompt';
+import { CheckResult, Prompt, checkString, type Props } from './prompt';
 
 import './invite.css';
 
@@ -14,18 +14,16 @@ export const Invite = (
   const [name, setName] = createSignal('');
   const [email, setEmail] = createSignal('');
 
-  const invalidName = createMemo(() =>
-    checkAlreadyExists(name(), 'name', props.players, props.invites),
-  );
+  const invalidName = createMemo(() => checkString(name(), 'name', props.players, props.invites));
 
   const invalidEmail = createMemo(() => {
     const clean = cleanEmail(email());
     const parts = clean.split('@');
     if (parts.length !== 2 || parts[0] === '' || parts[1] === '') {
-      return true;
+      return CheckResult.Empty;
     }
 
-    return checkAlreadyExists(clean, 'email', props.players, props.invites);
+    return checkString(clean, 'email', props.players, props.invites);
   });
 
   return (
@@ -39,12 +37,12 @@ export const Invite = (
         });
       }}
       cancel={props.hide}
-      disabled={() => invalidName() || invalidEmail()}
+      disabled={() => invalidName() !== CheckResult.Ok || invalidEmail() !== CheckResult.Ok}
     >
       <div class='components-prompt-invite'>
         <b>Name</b>
         <input
-          class={invalidName() ? 'invalid' : undefined}
+          class={invalidName() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
           placeholder='Name'
           value={name()}
@@ -53,7 +51,7 @@ export const Invite = (
         />
         <b>Email</b>
         <input
-          class={invalidEmail() ? 'invalid' : undefined}
+          class={invalidEmail() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
           placeholder='Email'
           value={email()}

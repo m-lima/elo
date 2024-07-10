@@ -4,7 +4,7 @@ import { Store } from '../../store';
 import { type Invite, type Player } from '../../types';
 import { type Getter } from '../../util';
 
-import { Prompt, checkAlreadyExists, type Props } from './prompt';
+import { CheckResult, Prompt, type Props, checkString } from './prompt';
 
 import './rename.css';
 
@@ -16,11 +16,9 @@ export const Rename = (
     invites: Getter<Invite[]>;
   },
 ) => {
-  const [name, setName] = createSignal(props.name);
+  const [name, setName] = createSignal('');
 
-  const invalid = createMemo(() =>
-    checkAlreadyExists(name(), 'name', props.players, props.invites),
-  );
+  const invalid = createMemo(() => checkString(name(), 'name', props.players, props.invites));
 
   return (
     <Prompt
@@ -33,12 +31,12 @@ export const Rename = (
         });
       }}
       cancel={props.hide}
-      disabled={invalid}
+      disabled={() => invalid() !== CheckResult.Ok}
     >
       <div class='components-prompt-rename'>
         <b>Name</b>
         <input
-          class={invalid() ? 'invalid' : undefined}
+          class={invalid() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
           placeholder={props.name}
           value={name()}

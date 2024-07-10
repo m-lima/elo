@@ -46,7 +46,7 @@ export type Props = {
   hide: () => void;
 };
 
-export const checkAlreadyExists = <T extends 'name' | 'email'>(
+export const checkString = <T extends 'name' | 'email'>(
   value: string,
   field: T,
   players: Getter<Player[]>,
@@ -54,18 +54,24 @@ export const checkAlreadyExists = <T extends 'name' | 'email'>(
 ) => {
   const trimmed = value.trim();
   if (trimmed === '') {
-    return true;
+    return CheckResult.Empty;
   }
 
   let index = players()?.findIndex(p => p[field] === trimmed);
   if (index !== undefined && index >= 0) {
-    return true;
+    return CheckResult.Conflict;
   }
 
   index = invites()?.findIndex(p => p[field] === trimmed);
   if (index !== undefined && index >= 0) {
-    return true;
+    return CheckResult.Conflict;
   }
 
-  return false;
+  return CheckResult.Ok;
 };
+
+export enum CheckResult {
+  Ok,
+  Conflict,
+  Empty,
+}

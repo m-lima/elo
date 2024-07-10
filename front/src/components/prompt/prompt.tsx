@@ -14,13 +14,13 @@ export const Prompt = (
   },
 ) => (
   <Show when={props.visible()}>
-    <div class='pages-prompt'>
-      <div class='pages-prompt-content'>
-        <div class='pages-prompt-form'>{props.children}</div>
-        <div class='pages-prompt-buttons'>
+    <div class='components-prompt'>
+      <div class='components-prompt-content'>
+        <div class='components-prompt-form'>{props.children}</div>
+        <div class='components-prompt-buttons'>
           <div
             classList={{
-              'pages-prompt-button': true,
+              'components-prompt-button': true,
               'ok': true,
               'disabled': props.disabled?.() === true,
             }}
@@ -32,7 +32,7 @@ export const Prompt = (
           >
             <icon.Ok />
           </div>
-          <div class='pages-prompt-button cancel' onClick={props.cancel}>
+          <div class='components-prompt-button cancel' onClick={props.cancel}>
             <icon.Cancel />
           </div>
         </div>

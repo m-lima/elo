@@ -1,4 +1,4 @@
-.pages-prompt {
+.components-prompt {
   z-index: 1;
   position: fixed;
   top: 0;
@@ -20,13 +20,19 @@
   }
 
   /* TODO: Center content vertically */
-  & > .pages-prompt-content {
+  & > .components-prompt-content {
     background-color: var(--color-background);
 
     font-size: 1.5em;
 
-    & > .pages-prompt-form {
+    & > .components-prompt-form {
       padding: 24px;
+
+      & .checkbox-label {
+        text-align: right;
+        font-weight: 700;
+        cursor: pointer;
+      }
 
       & input,
       & select {
@@ -42,7 +48,7 @@
         box-sizing: border-box;
         padding: 12px 20px;
 
-        border-width: 2px solid var(--color-foreground);
+        border: 2px solid var(--color-foreground);
         border-radius: 4px;
         outline: none;
 
@@ -59,16 +65,46 @@
           background: pink;
         }
       }
+
+      & input[type='checkbox'] {
+        position: relative;
+
+        margin: 0;
+        padding: 0;
+
+        height: 24px;
+        width: 24px;
+
+        cursor: pointer;
+
+        &:checked {
+          &:after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            bottom: 35%;
+            left: 18%;
+            right: 18%;
+            border-left: 4px solid var(--color-accent);
+            border-bottom: 4px solid var(--color-accent);
+            transform: rotate(-45deg);
+          }
+        }
+
+        &:active {
+          background: var(--color-accent-brighter);
+        }
+      }
     }
 
-    & > .pages-prompt-buttons {
+    & > .components-prompt-buttons {
       display: grid;
 
       grid-template-columns: 1fr 1fr;
       justify-items: stretch;
       align-items: stretch;
 
-      & > .pages-prompt-button {
+      & > .components-prompt-button {
         color: var(--color-foreground-dark);
         font-size: 3em;
         text-align: center;

@@ -45,36 +45,6 @@ impl Games<'_> {
         .map_err(Error::Query)
     }
 
-    #[tracing::instrument(skip(self))]
-    pub async fn by(&self, player: types::Id) -> Result<Vec<types::Game>> {
-        sqlx::query_as!(
-            types::Game,
-            r#"
-            SELECT
-                id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                rating_one,
-                rating_two,
-                challenge,
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                games
-            WHERE
-                player_one = $1
-                OR player_two = $1
-            ORDER BY
-                created_ms DESC
-            "#,
-            player,
-        )
-        .fetch_all(self.pool)
-        .await
-        .map_err(Error::Query)
-    }
-
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,

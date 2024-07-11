@@ -78,22 +78,36 @@ export const enrichPlayers = (players: Player[] = [], games: Game[] = []) => {
     const player_one = enrichedPlayers.get(game.playerOne);
     if (player_one !== undefined) {
       player_one.games += 1;
-      player_one.wins += 1;
       player_one.pointsWon += game.scoreOne;
       player_one.pointsLost += game.scoreTwo;
-      if (game.challenge) {
-        player_one.challengesWon += 1;
+      if (game.scoreOne > game.scoreTwo) {
+        player_one.wins += 1;
+        if (game.challenge) {
+          player_one.challengesWon += 1;
+        }
+      } else {
+        player_one.losses += 1;
+        if (game.challenge) {
+          player_one.challengesLost += 1;
+        }
       }
     }
 
     const player_two = enrichedPlayers.get(game.playerTwo);
     if (player_two !== undefined) {
       player_two.games += 1;
-      player_two.losses += 1;
       player_two.pointsLost += game.scoreOne;
       player_two.pointsWon += game.scoreTwo;
-      if (game.challenge) {
-        player_two.challengesLost += 1;
+      if (game.scoreTwo > game.scoreOne) {
+        player_two.wins += 1;
+        if (game.challenge) {
+          player_two.challengesWon += 1;
+        }
+      } else {
+        player_two.losses += 1;
+        if (game.challenge) {
+          player_two.challengesLost += 1;
+        }
       }
     }
   }

@@ -25,7 +25,10 @@ impl<'a> Player<'a, access::Regular> {
         let players = self.handler.store.players();
 
         match request {
-            model::request::Player::Id => Ok(model::Response::User(self.handler.user.id())),
+            model::request::Player::Id => Ok(model::Response::User {
+                id: self.handler.user.id(),
+                pending: false,
+            }),
             model::request::Player::List => players
                 .list()
                 .await
@@ -61,7 +64,10 @@ impl<'a> Player<'a, access::Pending> {
         request: model::request::Player,
     ) -> Result<model::Response, model::Error> {
         match request {
-            model::request::Player::Id => Ok(model::Response::Pending(self.handler.user.id())),
+            model::request::Player::Id => Ok(model::Response::User {
+                id: self.handler.user.id(),
+                pending: true,
+            }),
             _ => Err(model::Error::Forbidden),
         }
     }

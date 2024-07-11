@@ -3,8 +3,7 @@ use crate::types;
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Response {
-    User(types::Id),
-    Pending(types::Id),
+    User { id: types::Id, pending: bool },
     Players(Vec<types::PlayerTuple>),
     Games(Vec<types::GameTuple>),
     Invites(Vec<types::InviteTuple>),

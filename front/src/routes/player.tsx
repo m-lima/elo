@@ -1,17 +1,23 @@
-import { createMemo, createSignal, Match, Show, Suspense, Switch } from 'solid-js';
+import {
+  createMemo,
+  createSignal,
+  Match,
+  type Accessor,
+  onMount,
+  Show,
+  Suspense,
+  Switch,
+  onCleanup,
+} from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
+import { Line } from 'solid-chartjs';
+import { Chart, Filler, ScriptableLineSegmentContext, Title, Tooltip } from 'chart.js';
 
 import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
-import { type Player as PlayerType } from '../types';
-import { Store, useStore } from '../store';
-import {
-  type EnrichedPlayer,
-  type Getter,
-  compareLists,
-  enrichPlayers,
-  monthToString,
-} from '../util';
+import { type Game } from '../types';
+import { useStore } from '../store';
+import { type EnrichedPlayer, type Getter, enrichPlayers, monthToString, colors } from '../util';
 
 import './player.css';
 
@@ -50,19 +56,32 @@ export const Player = () => {
 
   const player = createMemo(() => {
     const enrichedPlayers = enrichPlayers(players(), games());
-    const inviteCount =
-      (players()?.filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
-      (invites()?.filter(p => p.inviter === id()).length ?? 0);
 
-    const position = enrichedPlayers.findIndex(p => p.id === id());
-    const player = { invites: inviteCount, ...enrichedPlayers[position] };
+    const player = enrichedPlayers.find(p => p.id === id());
+    if (player !== undefined) {
+      const inviteCount =
+        (players()?.filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
+        (invites()?.filter(p => p.inviter === id()).length ?? 0);
 
-    return { position: position + 1, player };
+      return { invites: inviteCount, ...player };
+    }
   });
+
+  const filteredGames = createMemo(
+    () => {
+      const innerGames = games();
+      const innerId = id();
+      return innerGames === undefined || innerId === undefined
+        ? []
+        : innerGames.filter(g => g.playerOne === innerId || g.playerTwo === innerId);
+    },
+    [],
+    { equals: false },
+  );
 
   return (
     <Suspense fallback=<Loading />>
-      <Show when={player().position > 0} fallback=<error.NotFound />>
+      <Show when={player() !== undefined} fallback=<error.NotFound />>
         <prompt.Invite
           visible={() => visiblePrompt() === Prompt.Invite}
           hide={setVisiblePrompt}
@@ -74,7 +93,7 @@ export const Player = () => {
           visible={() => visiblePrompt() === Prompt.Rename}
           hide={setVisiblePrompt}
           store={store}
-          name={player().player.name}
+          name={player()?.name ?? ''}
           players={players}
           invites={invites}
         />
@@ -82,7 +101,7 @@ export const Player = () => {
           visible={() => visiblePrompt() === Prompt.Game}
           hide={setVisiblePrompt}
           store={store}
-          self={() => player().player}
+          self={player}
           players={players}
           games={games}
         />
@@ -101,18 +120,14 @@ export const Player = () => {
           <div class='routes-player' id='main'>
             <PlayerHeader
               self={id() === self()?.id}
-              player={player().player}
-              position={player().position}
-              players={players.length}
+              player={player}
+              playerCount={players()?.length ?? 0}
             />
-            <PlayerStats player={player().player} />
-            <Suspense
-              fallback=<div>
-                <icon.Spinner /> Loading games
-              </div>
-            >
-              <GameList store={store} players={players} id={id} />
-            </Suspense>
+            <PlayerStats player={player} />
+            <Show when={filteredGames().length > 0}>
+              <Charts id={id} games={filteredGames} player={player} />
+            </Show>
+            <Games players={players} games={games} player={id} />
           </div>
         </Main>
       </Show>
@@ -122,89 +137,222 @@ export const Player = () => {
 
 const PlayerHeader = (props: {
   self: boolean;
-  player: PlayerType;
-  position: number;
-  players: number;
+  player: Getter<EnrichedPlayer>;
+  playerCount: number;
 }) => (
   <div class='routes-player-header'>
     <Switch>
-      <Match when={props.position === 1}>
+      <Match when={props.player()?.position === 1}>
         <span class='routes-player-header-badge first'>
           <icon.Crown />
         </span>
       </Match>
-      <Match when={props.position === 2}>
+      <Match when={props.player()?.position === 2}>
         <span class='routes-player-header-badge second'>
           <icon.Medal />
         </span>
       </Match>
-      <Match when={props.position === 3}>
+      <Match when={props.player()?.position === 3}>
         <span class='routes-player-header-badge third'>
           <icon.Certificate />
         </span>
       </Match>
-      <Match when={props.position === props.players - 3}>
+      <Match when={props.player()?.position === props.playerCount - 3}>
         <span class='routes-player-header-badge'>
           <icon.Mosquito />
         </span>
       </Match>
-      <Match when={props.position === props.players - 2}>
+      <Match when={props.player()?.position === props.playerCount - 2}>
         <span class='routes-player-header-badge'>
           <icon.Poop />
         </span>
       </Match>
-      <Match when={props.position === props.players - 1}>
+      <Match when={props.player()?.position === props.playerCount - 1}>
         <span class='routes-player-header-badge'>
           <icon.Worm />
         </span>
       </Match>
-      <Match when={props.position === props.players - 0}>
+      <Match when={props.player()?.position === props.playerCount - 0}>
         <span class='routes-player-header-badge'>
           <icon.Skull />
         </span>
       </Match>
     </Switch>
-    <span class='routes-player-header-name'>{props.player.name}</span>
-    <span class='routes-player-header-score'># {props.position}</span>
+    <span class='routes-player-header-name'>{props.player()?.name}</span>
+    <span class='routes-player-header-score'># {props.player()?.position}</span>
   </div>
 );
 
-const PlayerStats = (props: { player: EnrichedPlayer & { invites: number } }) => (
+const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number }> }) => (
   <div class='routes-player-stats'>
     <b>Games</b>
-    {props.player.games}
-    <b>Joined</b>
-    {dateToString(new Date(props.player.createdMs))}
+    {props.player()?.games}
+    <b>Rating</b>
+    {props.player()?.rating.toFixed(2)}
     <b>Wins</b>
-    {props.player.wins}
+    {props.player()?.wins}
     <b>Losses</b>
-    {props.player.losses}
+    {props.player()?.losses}
     <b>Challenges won</b>
-    {props.player.challengesWon}
+    {props.player()?.challengesWon}
     <b>Challenges lost</b>
-    {props.player.challengesLost}
+    {props.player()?.challengesLost}
     <b>Points won</b>
-    {props.player.pointsWon}
+    {props.player()?.pointsWon}
     <b>Points lost</b>
-    {props.player.pointsLost}
+    {props.player()?.pointsLost}
   </div>
 );
 
-const GameList = (props: { store: Store; players: Getter<PlayerType[]>; id: Getter<number> }) => {
-  const rawGames = props.store.getGames();
+const Charts = (props: {
+  id: Getter<number>;
+  games: Accessor<Game[]>;
+  player: Getter<EnrichedPlayer>;
+}) => {
+  onMount(() => {
+    Chart.register(Title, Tooltip, Filler);
+  });
+
+  onCleanup(() => {
+    Chart.unregister(Title, Tooltip, Filler);
+  });
+
   const games = createMemo(
     () => {
-      const games = rawGames();
-      const ided = props.id();
-      return games === undefined || ided === undefined
-        ? []
-        : games.filter(g => g.playerOne === ided || g.playerTwo === ided);
+      const id = props.id();
+      if (id === undefined) {
+        return [];
+      }
+
+      const innerGames = props.games();
+      const games = Array<{ rating: number; balance: number; createdMs: number }>(
+        innerGames.length,
+      );
+
+      let balance = 0;
+
+      for (let i = 0; i < innerGames.length - 1; i++) {
+        const game = innerGames[i];
+        const next = innerGames[i + 1];
+        const rating = next.playerOne === id ? next.ratingOne : next.ratingTwo;
+        if (game.playerOne === id) {
+          balance += game.scoreOne - game.scoreTwo;
+          games[i] = {
+            rating,
+            balance,
+            createdMs: game.createdMs,
+          };
+        } else {
+          balance += game.scoreTwo - game.scoreOne;
+          games[i] = {
+            rating,
+            balance,
+            createdMs: game.createdMs,
+          };
+        }
+      }
+
+      const last = innerGames.pop();
+      if (last !== undefined) {
+        if (last.playerOne === id) {
+          games[innerGames.length] = {
+            rating: props.player()?.rating ?? 0,
+            balance: balance + last.scoreOne - last.scoreTwo,
+            createdMs: last.createdMs,
+          };
+        } else {
+          games[innerGames.length] = {
+            rating: props.player()?.rating ?? 0,
+            balance: balance + last.scoreTwo - last.scoreOne,
+            createdMs: last.createdMs,
+          };
+        }
+      }
+
+      return games;
     },
     [],
-    { equals: compareLists },
+    { equals: false },
   );
 
-  return <Games players={props.players} games={games} />;
+  return (
+    <>
+      <div>
+        <Line
+          data={{
+            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            datasets: [
+              {
+                label: 'Rating',
+                data: games().map(g => g.rating),
+                cubicInterpolationMode: 'monotone',
+                backgroundColor: colors.accent + '80',
+                borderColor: colors.accent,
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            scales: {
+              y: {
+                title: {
+                  display: true,
+                  text: 'Rating',
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <div>
+        <Line
+          data={{
+            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            datasets: [
+              {
+                label: 'Balance',
+                data: games().map(g => g.balance),
+                cubicInterpolationMode: 'monotone',
+                backgroundColor: colors.accent + '80',
+                borderColor: colors.accent,
+                pointStyle: false,
+                segment: {
+                  borderColor: (ctx: ScriptableLineSegmentContext) =>
+                    ctx.p0.parsed.y > ctx.p1.parsed.y ? '#a03030' : '#30a030',
+                },
+                // fill: {
+                //   above: '#30a03080',
+                //   below: '#a0303080',
+                //   target: 'origin',
+                // },
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            scales: {
+              y: {
+                title: {
+                  display: true,
+                  text: 'Point balance',
+                },
+              },
+            },
+          }}
+        />
+      </div>
+    </>
+  );
 };
 
 const dateToString = (date: Date) =>

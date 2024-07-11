@@ -2,6 +2,10 @@ import { type Player, type Game } from '../types';
 
 export const name = 'EloPong';
 
+export const colors = {
+  accent: '#ffa500',
+};
+
 export const monthToString = (month: number) => {
   switch (month) {
     case 0:

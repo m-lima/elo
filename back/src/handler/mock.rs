@@ -19,13 +19,25 @@ pub enum Error {
     Distribution(#[from] rand::distributions::WeightedError),
     #[error("Could not receive push: {0:?}")]
     Push(#[from] tokio::sync::broadcast::error::RecvError),
+    #[error("Could not fetch data to adjust dates: {0:?}")]
+    FetchAdjustDates(sqlx::Error),
+    #[error("Could not update data to adjust dates: {0:?}")]
+    UpdateAdjustDates(sqlx::Error),
+}
+
+#[derive(sqlx::FromRow)]
+struct Created {
+    created_ms: i64,
 }
 
 pub async fn initialize(store: &store::Store) -> Result<(), Error> {
     let auth = access::Auth::new(store.clone());
 
+    let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
+
     populate_users(store, &auth).await?;
-    populate_games(store, &auth).await?;
+    populate_games(store, &auth, &mut rand).await?;
+    adjust_dates(store, &mut rand).await?;
 
     Ok(())
 }
@@ -129,11 +141,13 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
     Ok(())
 }
 
-async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(), Error> {
+async fn populate_games(
+    store: &store::Store,
+    auth: &access::Auth,
+    rand: &mut rand::rngs::StdRng,
+) -> Result<(), Error> {
     use rand::Rng;
     use ws::Service;
-
-    let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
 
     let players = {
         let user = get_registered_user(auth, consts::mock::USER_EMAIL).await?;
@@ -203,6 +217,163 @@ async fn populate_games(store: &store::Store, auth: &access::Auth) -> Result<(),
         else {
             unreachable!("Unexpected response")
         };
+    }
+
+    Ok(())
+}
+
+async fn adjust_dates(store: &store::Store, rand: &mut rand::rngs::StdRng) -> Result<(), Error> {
+    let pool = store.raw_pool();
+
+    let initial_date = 1_696_118_400_000;
+    let initial_date = adjust_player_dates(pool, initial_date, rand).await?;
+    adjust_game_dates(pool, initial_date, rand).await
+}
+
+async fn adjust_player_dates(
+    pool: &sqlx::SqlitePool,
+    mut initial_date: i64,
+    rand: &mut rand::rngs::StdRng,
+) -> Result<i64, Error> {
+    use crate::types;
+    use rand::Rng;
+
+    #[derive(sqlx::FromRow)]
+    struct Player {
+        id: types::Id,
+        pending: bool,
+    }
+
+    let players = sqlx::query_as!(
+        Player,
+        r#"
+        SELECT
+            id,
+            pending AS "pending: _"
+        FROM
+            (
+                SELECT
+                    id,
+                    created_ms,
+                    FALSE AS pending
+                FROM
+                    players
+                UNION
+                SELECT
+                    id,
+                    created_ms,
+                    TRUE AS pending
+                FROM
+                    invites
+            )
+        ORDER BY
+            created_ms ASC
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(Error::FetchAdjustDates)?;
+
+    for player in players {
+        let created_ms = initial_date + rand.gen_range((2 * 60 * 1000)..(5 * 24 * 60 * 60 * 1000));
+
+        let created = if player.pending {
+            sqlx::query_as!(
+                Created,
+                r#"
+                UPDATE
+                    invites
+                SET
+                    created_ms = $2
+                WHERE
+                    id = $1
+                RETURNING
+                    created_ms AS "created_ms!: _"
+                "#,
+                player.id,
+                created_ms
+            )
+            .fetch_one(pool)
+            .await
+            .map_err(Error::UpdateAdjustDates)?
+        } else {
+            sqlx::query_as!(
+                Created,
+                r#"
+                UPDATE
+                    players
+                SET
+                    created_ms = $2
+                WHERE
+                    id = $1
+                RETURNING
+                    created_ms AS "created_ms!: _"
+                "#,
+                player.id,
+                created_ms
+            )
+            .fetch_one(pool)
+            .await
+            .map_err(Error::UpdateAdjustDates)?
+        };
+
+        initial_date = created.created_ms;
+    }
+
+    Ok(initial_date)
+}
+
+async fn adjust_game_dates(
+    pool: &sqlx::SqlitePool,
+    mut initial_date: i64,
+    rand: &mut rand::rngs::StdRng,
+) -> Result<(), Error> {
+    use crate::types;
+    use rand::Rng;
+
+    #[derive(sqlx::FromRow)]
+    struct Game {
+        id: types::Id,
+    }
+
+    let games = sqlx::query_as!(
+        Game,
+        r#"
+        SELECT
+            id
+        FROM
+            games
+        ORDER BY
+            created_ms ASC
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(Error::FetchAdjustDates)?;
+
+    for game in games {
+        let created_ms = initial_date + rand.gen_range((2 * 60 * 1000)..(60 * 60 * 1000));
+
+        let created = sqlx::query_as!(
+            Created,
+            r#"
+            UPDATE
+                games
+            SET
+                created_ms = $2
+            WHERE
+                id = $1
+            RETURNING
+                created_ms AS "created_ms!: _"
+            "#,
+            game.id,
+            created_ms
+        )
+        .fetch_one(pool)
+        .await
+        .map_err(Error::UpdateAdjustDates)?;
+
+        initial_date = created.created_ms;
     }
 
     Ok(())

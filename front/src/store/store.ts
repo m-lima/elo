@@ -90,15 +90,10 @@ export class Store {
 
     this.self = new Resource(() => {
       const id = newRequestId();
-      return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = validateMessage(id, 'user', message);
-
-        if (validated === undefined) {
-          return;
-        }
-
-        return validated.user;
-      });
+      return this.socket.request(
+        { id, do: { player: 'id' } },
+        message => validateMessage(id, 'user', message)?.user,
+      );
     });
 
     this.players = new Resource(
@@ -209,7 +204,7 @@ export class Store {
     const id = newRequestId();
     return this.socket
       .request({ id, do: request }, message => validateDone(id, message))
-      .catch(error => {
+      .catch((error: unknown) => {
         if (error instanceof ResponseError) {
           this.broadcast(error.message, true);
           return false;
@@ -277,7 +272,7 @@ class Resource<T> {
 
   public reload() {
     if (this.setter !== undefined) {
-      this.setter.refetch();
+      void this.setter.refetch();
     }
   }
 }

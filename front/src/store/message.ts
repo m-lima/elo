@@ -4,6 +4,7 @@ import {
   type PlayerTuple,
   type Player,
   type Game,
+  type User,
   type Invite,
 } from '../types';
 
@@ -42,7 +43,7 @@ export type MessagePush = { push: Push };
 export type Ok = 'done' | OkResponse;
 
 export type OkResponse = {
-  user: { id: number; pending: boolean };
+  user: User;
   players: PlayerTuple[];
   games: GameTuple[];
   invites: InviteTuple[];

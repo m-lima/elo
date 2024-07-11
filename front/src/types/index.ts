@@ -1,6 +1,6 @@
 export type User = {
   id: number;
-  pending: boolean;
+  pending?: boolean;
 };
 
 export type Player = {

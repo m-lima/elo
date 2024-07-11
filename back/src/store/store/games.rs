@@ -37,7 +37,7 @@ impl Games<'_> {
             FROM
                 games
             ORDER BY
-                created_ms DESC
+                created_ms ASC
             "#
         )
         .fetch_all(self.pool)

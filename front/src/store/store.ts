@@ -125,7 +125,8 @@ export class Store {
           return validated.games.map(gameFromTuple);
         });
       },
-      games => games.sort((a, b) => b.createdMs - a.createdMs),
+      // TODO: Keep it descending. Change in the backend
+      games => games.sort((a, b) => a.createdMs - b.createdMs),
     );
 
     this.invites = new Resource(

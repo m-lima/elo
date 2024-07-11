@@ -27,7 +27,7 @@ impl<'a> Player<'a, access::Regular> {
         match request {
             model::request::Player::Id => Ok(model::Response::User {
                 id: self.handler.user.id(),
-                pending: false,
+                pending: None,
             }),
             model::request::Player::List => players
                 .list()
@@ -66,7 +66,7 @@ impl<'a> Player<'a, access::Pending> {
         match request {
             model::request::Player::Id => Ok(model::Response::User {
                 id: self.handler.user.id(),
-                pending: true,
+                pending: Some(true),
             }),
             _ => Err(model::Error::Forbidden),
         }

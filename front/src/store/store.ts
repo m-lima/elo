@@ -91,17 +91,13 @@ export class Store {
     this.self = new Resource(() => {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'id' } }, message => {
-        const validated = validateMessage(id, ['user', 'pending'], message);
+        const validated = validateMessage(id, 'user', message);
 
         if (validated === undefined) {
           return;
         }
 
-        if (validated.user !== undefined) {
-          return { id: validated.user, pending: false };
-        } else if (validated.pending !== undefined) {
-          return { id: validated.pending, pending: true };
-        }
+        return validated.user;
       });
     });
 

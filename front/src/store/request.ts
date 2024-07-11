@@ -35,7 +35,7 @@ export const preValidateMessage = (id: number, message: Message): Ok | undefined
 
 export const validateMessage = <F extends keyof OkResponse>(
   id: number,
-  f: F | F[],
+  field: F,
   message: Message,
 ): Pick<OkResponse, F> | undefined => {
   const validated = preValidateMessage(id, message);
@@ -44,18 +44,14 @@ export const validateMessage = <F extends keyof OkResponse>(
     return;
   }
 
-  const fields = Array.isArray(f) ? f : [f];
-
   if ('done' === validated) {
-    throw new FetchError(id, -400, `Did not receive any of '${JSON.stringify(fields)}' fields`);
+    throw new FetchError(id, -400, `Did not receive a '${field}' response`);
   }
 
-  for (const field of fields) {
-    if (field in validated) {
-      return validated;
-    }
+  if (field in validated) {
+    return validated;
   }
-  throw new FetchError(id, -400, `Did not receive any of '${JSON.stringify(f)}' fields`);
+  throw new FetchError(id, -400, `Did not receive a '${field}' response`);
 };
 
 export const validateDone = (id: number, message: Message): true | undefined => {

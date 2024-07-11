@@ -42,8 +42,7 @@ export type MessagePush = { push: Push };
 export type Ok = 'done' | OkResponse;
 
 export type OkResponse = {
-  user: number;
-  pending: number;
+  user: { id: number; pending: boolean };
   players: PlayerTuple[];
   games: GameTuple[];
   invites: InviteTuple[];

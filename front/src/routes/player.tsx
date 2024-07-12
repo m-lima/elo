@@ -27,6 +27,10 @@ enum Prompt {
   Game,
 }
 
+// TODO: Loading keeps showing for this page
+// TODO: The graph is unhappy with a reload of this page
+// TODO: Show points gained/lost in the graph
+// TODO: Make the chart shorter
 export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();

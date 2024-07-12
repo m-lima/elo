@@ -15,7 +15,7 @@ import { Chart, Filler, ScriptableLineSegmentContext, Title, Tooltip } from 'cha
 
 import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
-import { type Getter, type EnrichedPlayer, type Game } from '../types';
+import { type Getter, type EnrichedPlayer } from '../types';
 import { useStore } from '../store';
 import { monthToString } from '../util';
 import * as consts from '../consts';
@@ -69,13 +69,35 @@ export const Player = () => {
     }
   });
 
-  const filteredGames = createMemo(
+  const playerGames = createMemo(
     () => {
       const innerGames = games();
       const innerId = id();
       return innerGames === undefined || innerId === undefined
         ? []
-        : innerGames.filter(g => g.playerOne === innerId || g.playerTwo === innerId);
+        : innerGames
+            .filter(g => g.playerOne === innerId || g.playerTwo === innerId)
+            .map(g => {
+              if (g.playerOne === innerId) {
+                return {
+                  opponent: g.playerTwo,
+                  rating: g.ratingOne,
+                  pointsWon: g.scoreOne,
+                  pointsLost: g.scoreTwo,
+                  challenge: g.challenge,
+                  createdMs: g.createdMs,
+                };
+              } else {
+                return {
+                  opponent: g.playerOne,
+                  rating: g.ratingTwo,
+                  pointsWon: g.scoreTwo,
+                  pointsLost: g.scoreOne,
+                  challenge: g.challenge,
+                  createdMs: g.createdMs,
+                };
+              }
+            });
     },
     [],
     { equals: false },
@@ -126,8 +148,8 @@ export const Player = () => {
               playerCount={players().length ?? 0}
             />
             <PlayerStats player={player} />
-            <Show when={filteredGames().length > 0}>
-              <Charts games={filteredGames} player={player} />
+            <Show when={playerGames().length > 0}>
+              <Charts games={playerGames} player={player} />
             </Show>
             <Games players={players} games={games} player={id} />
           </div>
@@ -206,7 +228,7 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
   </div>
 );
 
-const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer> }) => {
+const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedPlayer> }) => {
   onMount(() => {
     Chart.register(Title, Tooltip, Filler);
   });
@@ -226,35 +248,16 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
       return [];
     }
 
-    const getLastRating = (game: Game) => {
-      if (game.playerOne === player.id) {
-        return game.ratingOne;
-      } else {
-        return game.ratingTwo;
-      }
-    };
-
     let lastRating = player.rating;
     let balance = 0;
 
     return innerGames
       .map(g => {
-        const game =
-          g.playerOne === player.id
-            ? {
-                rating: lastRating,
-                pointsWon: g.scoreOne,
-                pointsLost: g.scoreTwo,
-                createdMs: g.createdMs,
-              }
-            : {
-                rating: lastRating,
-                pointsWon: g.scoreTwo,
-                pointsLost: g.scoreOne,
-                createdMs: g.createdMs,
-              };
-
-        lastRating = getLastRating(g);
+        const game = {
+          ...g,
+          rating: lastRating,
+        };
+        lastRating = g.rating;
         return game;
       })
       .reverse()
@@ -370,3 +373,12 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
 
 const dateToString = (date: Date) =>
   `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;
+
+type PlayerGame = {
+  readonly opponent: number;
+  readonly rating: number;
+  readonly pointsWon: number;
+  readonly pointsLost: number;
+  readonly challenge: boolean;
+  readonly createdMs: number;
+};

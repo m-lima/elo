@@ -1,6 +1,7 @@
 import { A } from '@solidjs/router';
 import { JSXElement, Show, createSignal } from 'solid-js';
 
+import { getCookie, setCookie } from '../util';
 import { icon } from '.';
 
 import './side.css';
@@ -14,9 +15,8 @@ const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
   </>
 );
 
-// TODO: Cookie for expanded setting
 export const Side = () => {
-  const [expanded, setExpanded] = createSignal(true);
+  const [expanded, setExpanded] = createSignal(getCookie('sidebar-collapsed') !== 'false');
 
   return (
     <aside class='components-side' id='side'>
@@ -32,7 +32,13 @@ export const Side = () => {
       <A href='/invites'>
         <Item icon=<icon.Hierarchy /> text='Invites' visible={expanded()} />
       </A>
-      <span onClick={() => setExpanded(e => !e)}>
+      <span
+        onClick={() => {
+          const newExpanded = !expanded();
+          setCookie('sidebar-collapsed', String(newExpanded));
+          setExpanded(newExpanded);
+        }}
+      >
         <Show
           when={expanded()}
           fallback=<Item icon=<icon.DoubleRight /> text='Collapse' visible={false} />

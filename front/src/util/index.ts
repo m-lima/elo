@@ -26,3 +26,21 @@ export const monthToString = (month: number) => {
       return 'Dec';
   }
 };
+
+export const setCookie = (name: string, value: string, expirationDays: number = 365) => {
+  const expiry = new Date(new Date().getTime() + expirationDays * 24 * 60 * 60 * 100).toUTCString();
+  document.cookie = `${name}=${value};expires=${expiry};path=/;SameSite=Lax;Secure`;
+};
+
+export const unsetCookie = (name: string) => {
+  document.cookie = `${name}=;expires=${new Date().toUTCString()};path=/;SameSite=Lax;Secure`;
+};
+
+export const getCookie = (name: string) => {
+  const prefix = `${name}=`;
+  return document.cookie
+    .split(';')
+    .find(p => p.trim().startsWith(prefix))
+    ?.substring(prefix.length)
+    .trim();
+};

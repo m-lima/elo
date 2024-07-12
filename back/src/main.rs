@@ -90,6 +90,17 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         return initialize(args.db, count).await;
     }
 
+    if args.init && !args.db.exists() {
+        if let Err(error) = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&args.db)
+        {
+            tracing::error!(?error, db = ?args.db, "Failed to create new database file");
+            return std::process::ExitCode::FAILURE;
+        }
+    }
+
     let store = match store::Store::new(&args.db).await {
         Ok(store) => store,
         Err(error) => {
@@ -97,6 +108,11 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
+
+    if let Err(error) = store.migrate().await {
+        tracing::error!(?error, db = ?args.db, "Failed to migrate database");
+        return std::process::ExitCode::FAILURE;
+    }
 
     let broadcaster = handler::Broadcaster::new();
 

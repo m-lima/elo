@@ -124,6 +124,7 @@ function build {
     --volume "${service_name}-data":/data \
     --name "${service_name}" \
     elo \
+    --init \
     --link "${ELO_LINK}" \
     --from "${ELO_FROM}" \
     --smtp "${ELO_SMTP}" \

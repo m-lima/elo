@@ -31,6 +31,10 @@ impl Store {
         Ok(Self { pool })
     }
 
+    pub async fn migrate(&self) -> Result<(), sqlx::migrate::MigrateError> {
+        sqlx::migrate!().run(&self.pool).await
+    }
+
     #[must_use]
     pub fn invites(&self) -> invites::Invites<'_> {
         invites::Invites::from(self)

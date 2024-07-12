@@ -1,13 +1,5 @@
 use crate::mailbox;
 
-#[derive(Debug, thiserror::Error)]
-enum Error {
-    #[error("Path does not exist")]
-    PathDoesNotExist,
-    #[error("Path is not a file")]
-    PathNotFile,
-}
-
 pub fn parse() -> Args {
     <Inner as clap::Parser>::parse().into()
 }
@@ -17,6 +9,8 @@ pub struct Args {
     pub verbosity: Verbosity,
     pub port: u16,
     pub db: std::path::PathBuf,
+    #[cfg(not(feature = "local"))]
+    pub init: bool,
     #[cfg(feature = "local")]
     pub init: Option<u16>,
     pub smtp: Option<Smtp>,
@@ -39,8 +33,13 @@ struct Inner {
     port: u16,
 
     /// Path to databases directory
-    #[arg(short, long, value_parser = parse_db)]
-    db: std::path::PathBuf,
+    #[arg(short, long)]
+    db: String,
+
+    /// Initialize an empty database
+    #[cfg(not(feature = "local"))]
+    #[arg(short, long)]
+    init: bool,
 
     /// Initialize an empty database
     #[cfg(feature = "local")]
@@ -93,8 +92,10 @@ impl From<Inner> for Args {
         Self {
             verbosity: value.verbosity.into(),
             port: value.port,
-            db: value.db,
-            #[cfg(feature = "local")]
+            db: value.db.strip_prefix("sqlite://").map_or_else(
+                || std::path::PathBuf::from(&value.db),
+                std::path::PathBuf::from,
+            ),
             init: value.init,
             smtp,
         }
@@ -129,18 +130,5 @@ impl From<u8> for Verbosity {
                 internal: true,
             },
         }
-    }
-}
-
-fn parse_db(input: &str) -> Result<std::path::PathBuf, Error> {
-    let input = input.strip_prefix("sqlite://").unwrap_or(input);
-    let path = std::path::PathBuf::from(input);
-
-    if !path.exists() {
-        Err(Error::PathDoesNotExist)
-    } else if !path.is_file() {
-        Err(Error::PathNotFile)
-    } else {
-        Ok(path)
     }
 }

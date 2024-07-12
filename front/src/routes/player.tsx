@@ -15,9 +15,9 @@ import { Chart, Filler, ScriptableLineSegmentContext, Title, Tooltip } from 'cha
 
 import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
-import { type Game } from '../types';
+import { type Getter, type EnrichedPlayer, type Game } from '../types';
 import { useStore } from '../store';
-import { type EnrichedPlayer, type Getter, enrichPlayers, monthToString, colors } from '../util';
+import { monthToString, colors } from '../util';
 
 import './player.css';
 
@@ -35,10 +35,10 @@ export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const store = useStore();
-  const games = store.getGames();
-  const players = store.getPlayers();
-  const invites = store.getInvites();
-  const self = store.getSelf();
+  const games = store.useGames();
+  const players = store.useEnrichedPlayers();
+  const invites = store.useInvites();
+  const self = store.useSelf();
 
   const [visiblePrompt, setVisiblePrompt] = createSignal<Prompt | undefined>();
 
@@ -59,12 +59,12 @@ export const Player = () => {
   });
 
   const player = createMemo(() => {
-    const enrichedPlayers = enrichPlayers(players(), games());
+    const enrichedPlayers = players();
 
     const player = enrichedPlayers.find(p => p.id === id());
     if (player !== undefined) {
       const inviteCount =
-        (players()?.filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
+        (players().filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
         (invites()?.filter(p => p.inviter === id()).length ?? 0);
 
       return { invites: inviteCount, ...player };
@@ -125,11 +125,11 @@ export const Player = () => {
             <PlayerHeader
               self={id() === self()?.id}
               player={player}
-              playerCount={players()?.length ?? 0}
+              playerCount={players().length ?? 0}
             />
             <PlayerStats player={player} />
             <Show when={filteredGames().length > 0}>
-              <Charts id={id} games={filteredGames} player={player} />
+              <Charts games={filteredGames} player={player} />
             </Show>
             <Games players={players} games={games} player={id} />
           </div>
@@ -208,11 +208,7 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
   </div>
 );
 
-const Charts = (props: {
-  id: Getter<number>;
-  games: Accessor<Game[]>;
-  player: Getter<EnrichedPlayer>;
-}) => {
+const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer> }) => {
   onMount(() => {
     Chart.register(Title, Tooltip, Filler);
   });
@@ -221,63 +217,57 @@ const Charts = (props: {
     Chart.unregister(Title, Tooltip, Filler);
   });
 
-  const games = createMemo(
-    () => {
-      const id = props.id();
-      if (id === undefined) {
-        return [];
+  const games = createMemo(() => {
+    const player = props.player();
+    if (player === undefined) {
+      return [];
+    }
+
+    const innerGames = props.games();
+    if (innerGames.length < 1) {
+      return [];
+    }
+
+    const getLastRating = (game: Game) => {
+      if (game.playerOne === player.id) {
+        return game.ratingOne;
+      } else {
+        return game.ratingTwo;
       }
+    };
 
-      const innerGames = props.games();
-      const games = Array<{ rating: number; balance: number; createdMs: number }>(
-        innerGames.length,
-      );
+    let lastRating = player.rating;
+    let balance = 0;
 
-      let balance = 0;
+    return innerGames
+      .map(g => {
+        const game =
+          g.playerOne === player.id
+            ? {
+              rating: lastRating,
+              pointsWon: g.scoreOne,
+              pointsLost: g.scoreTwo,
+              createdMs: g.createdMs,
+            }
+            : {
+              rating: lastRating,
+              pointsWon: g.scoreTwo,
+              pointsLost: g.scoreOne,
+              createdMs: g.createdMs,
+            };
 
-      for (let i = 0; i < innerGames.length - 1; i++) {
-        const game = innerGames[i];
-        const next = innerGames[i + 1];
-        const rating = next.playerOne === id ? next.ratingOne : next.ratingTwo;
-        if (game.playerOne === id) {
-          balance += game.scoreOne - game.scoreTwo;
-          games[i] = {
-            rating,
-            balance,
-            createdMs: game.createdMs,
-          };
-        } else {
-          balance += game.scoreTwo - game.scoreOne;
-          games[i] = {
-            rating,
-            balance,
-            createdMs: game.createdMs,
-          };
-        }
-      }
-
-      const last = innerGames.pop();
-      if (last !== undefined) {
-        if (last.playerOne === id) {
-          games[innerGames.length] = {
-            rating: props.player()?.rating ?? 0,
-            balance: balance + last.scoreOne - last.scoreTwo,
-            createdMs: last.createdMs,
-          };
-        } else {
-          games[innerGames.length] = {
-            rating: props.player()?.rating ?? 0,
-            balance: balance + last.scoreTwo - last.scoreOne,
-            createdMs: last.createdMs,
-          };
-        }
-      }
-
-      return games;
-    },
-    [],
-    { equals: false },
-  );
+        lastRating = getLastRating(g);
+        return game;
+      })
+      .reverse()
+      .map(g => {
+        balance += g.pointsWon - g.pointsLost;
+        return {
+          balance,
+          ...g,
+        };
+      });
+  });
 
   return (
     <>

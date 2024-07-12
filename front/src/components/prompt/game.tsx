@@ -1,8 +1,7 @@
 import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
 
 import { Store } from '../../store';
-import { type Player, type Game as GameType } from '../../types';
-import { type Getter } from '../../util';
+import { type Getter, type Player, type Game as GameType } from '../../types';
 
 import { Prompt, type Props } from './prompt';
 
@@ -23,21 +22,17 @@ export const Game = (
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
 
-  const players = createMemo(
-    () => {
-      const playersInner = props.players();
-      if (playersInner === undefined) {
-        return [];
-      }
-      return playersInner
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(p => {
-          return { id: p.id, name: p.name };
-        });
-    },
-    [],
-    { equals: false },
-  );
+  const players = createMemo(() => {
+    const playersInner = props.players();
+    if (playersInner === undefined) {
+      return [];
+    }
+    return playersInner
+      .map(p => {
+        return { id: p.id, name: p.name };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   const player = createMemo(() => maybePlayer() ?? props.self()?.id);
 
@@ -182,6 +177,6 @@ const Score = (props: {
 );
 
 type SimplePlayer = {
-  id: number;
-  name: string;
+  readonly id: number;
+  readonly name: string;
 };

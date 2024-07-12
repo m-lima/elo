@@ -1,7 +1,6 @@
 import { ParentProps, Show } from 'solid-js';
 import { icon } from '..';
-import { type Getter } from '../../util';
-import { type Invite, type Player } from '../../types';
+import { type Getter, type Invite, type Player } from '../../types';
 
 import './prompt.css';
 

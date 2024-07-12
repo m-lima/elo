@@ -6,9 +6,9 @@ import { Loading, Main } from '../pages';
 
 export const Games = () => {
   const store = useStore();
-  const self = store.getSelf();
-  const games = store.getGames();
-  const players = store.getPlayers();
+  const self = store.useSelf();
+  const games = store.useGames();
+  const players = store.usePlayers();
   const [promptVisible, setPromptVisible] = createSignal(false);
 
   return (

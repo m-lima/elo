@@ -33,7 +33,7 @@ export const Wrapper = (props: ParentProps<{ state: state.State }>) => (
 );
 
 const InviteWrapper = (props: ParentProps) => {
-  const self = useStore().getSelf();
+  const self = useStore().useSelf();
 
   return (
     <Show when={self()?.pending !== true} fallback=<Welcome />>

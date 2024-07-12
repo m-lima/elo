@@ -1,11 +1,10 @@
-import { For, JSX, Signal, Suspense, createMemo, createSignal } from 'solid-js';
+import { Accessor, For, JSX, Setter, Suspense, createMemo, createSignal } from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
 
 import { Loading, Main } from '../pages';
 import { action, prompt, icon } from '../components';
-import { type User } from '../types';
+import { type EnrichedPlayer, type User } from '../types';
 import { useStore } from '../store';
-import { type EnrichedPlayer, enrichPlayers } from '../util';
 
 import './leaderboard.css';
 
@@ -23,28 +22,29 @@ type Pivot = keyof Pick<
   | 'pointsLost'
 >;
 
+// TODO: Make this more responsive
 export const Leaderboard = () => {
   const store = useStore();
-  const players = store.getPlayers();
-  const games = store.getGames();
-  const self = store.getSelf();
+  const players = store.useEnrichedPlayers();
+  const games = store.useGames();
+  const self = store.useSelf();
   const [promptVisible, setPromptVisible] = createSignal(false);
   const navigate = useNavigate();
-  const sortPivot = createSignal<Pivot>('position');
-  const sortDescending = createSignal(true);
+  const [sortPivot, setSortPivot] = createSignal<Pivot>('position');
+  const [sortDescending, setSortDescending] = createSignal(true);
 
-  const enrichedPlayers = createMemo(() => enrichPlayers(players(), games()));
   const sortedPlayers = createMemo(
     () => {
-      const pivot = sortPivot[0]();
-      const descending = sortDescending[0]();
+      const pivot = sortPivot();
+      const descending = sortDescending();
 
-      return enrichedPlayers().sort((a, b) => {
+      // TODO: Test if this needs to be copied
+      return players().sort((a, b) => {
         if (pivot === 'name') {
           const pivotA = a.name;
           const pivotB = b.name;
 
-          if (sortDescending[0]()) {
+          if (sortDescending()) {
             return pivotA.localeCompare(pivotB);
           } else {
             return pivotB.localeCompare(pivotA);
@@ -61,7 +61,7 @@ export const Leaderboard = () => {
         }
       });
     },
-    enrichedPlayers(),
+    [],
     { equals: false },
   );
 
@@ -71,7 +71,7 @@ export const Leaderboard = () => {
         visible={promptVisible}
         hide={() => setPromptVisible(false)}
         store={store}
-        self={() => players()?.find(p => p.id === self()?.id)}
+        self={() => players().find(p => p.id === self()?.id)}
         players={players}
         games={games}
       />
@@ -83,21 +83,63 @@ export const Leaderboard = () => {
           <thead class='routes-leaderboard-table-header'>
             <tr>
               <th />
-              {header('#', 'position', sortPivot, sortDescending)}
-              {header('Player', 'name', sortPivot, sortDescending)}
-              {header('Rating', 'rating', sortPivot, sortDescending)}
-              {header('Games', 'games', sortPivot, sortDescending)}
-              {header('Wins', 'wins', sortPivot, sortDescending)}
-              {header('Losses', 'losses', sortPivot, sortDescending)}
-              {header('Challenges won', 'challengesWon', sortPivot, sortDescending)}
-              {header('Challenges lost', 'challengesLost', sortPivot, sortDescending)}
-              {header('Points won', 'pointsWon', sortPivot, sortDescending)}
-              {header('Points lost', 'pointsLost', sortPivot, sortDescending)}
+              {header('#', 'position', sortPivot, setSortPivot, sortDescending, setSortDescending)}
+              {header('Player', 'name', sortPivot, setSortPivot, sortDescending, setSortDescending)}
+              {header(
+                'Rating',
+                'rating',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
+              {header('Games', 'games', sortPivot, setSortPivot, sortDescending, setSortDescending)}
+              {header('Wins', 'wins', sortPivot, setSortPivot, sortDescending, setSortDescending)}
+              {header(
+                'Losses',
+                'losses',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
+              {header(
+                'Challenges won',
+                'challengesWon',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
+              {header(
+                'Challenges lost',
+                'challengesLost',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
+              {header(
+                'Points won',
+                'pointsWon',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
+              {header(
+                'Points lost',
+                'pointsLost',
+                sortPivot,
+                setSortPivot,
+                sortDescending,
+                setSortDescending,
+              )}
             </tr>
           </thead>
           <tbody>
             <For each={sortedPlayers()}>
-              {p => playerRow(p, navigate, getIcon(p.position, players()?.length), self())}
+              {p => playerRow(p, navigate, getIcon(p.position, players().length), self())}
             </For>
           </tbody>
         </table>
@@ -109,8 +151,10 @@ export const Leaderboard = () => {
 const header = (
   name: string,
   field: Pivot,
-  [sortPivot, setSortPivot]: Signal<Pivot>,
-  [sortDescending, setSortDescending]: Signal<boolean>,
+  sortPivot: Accessor<Pivot>,
+  setSortPivot: Setter<Pivot>,
+  sortDescending: Accessor<boolean>,
+  setSortDescending: Setter<boolean>,
 ) => (
   <th
     onClick={() => {

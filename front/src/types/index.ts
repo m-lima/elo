@@ -1,6 +1,6 @@
 export type User = {
-  id: number;
-  pending?: boolean;
+  readonly id: number;
+  readonly pending?: boolean;
 };
 
 export type Player = {
@@ -30,13 +30,6 @@ export const playerFromTuple = ([
     rating,
     createdMs,
   };
-};
-
-export type PlayerStats = {
-  wins: number;
-  losses: number;
-  pointsWon: number;
-  pointsLost: number;
 };
 
 export type Game = {
@@ -96,3 +89,16 @@ export const inviteFromTuple = ([id, inviter, name, email, createdMs]: InviteTup
     createdMs,
   };
 };
+
+export type EnrichedPlayer = Player & {
+  readonly position: number;
+  readonly games: number;
+  readonly wins: number;
+  readonly losses: number;
+  readonly challengesWon: number;
+  readonly challengesLost: number;
+  readonly pointsWon: number;
+  readonly pointsLost: number;
+};
+
+export type Getter<T> = () => T | undefined;

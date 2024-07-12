@@ -1,4 +1,10 @@
-import { createResource, createSignal, ResourceActions, Resource as SolidResource } from 'solid-js';
+import {
+  createMemo,
+  createResource,
+  createSignal,
+  ResourceActions,
+  Resource as SolidResource,
+} from 'solid-js';
 
 import { Socket, state } from '../socket';
 import {
@@ -6,6 +12,7 @@ import {
   type Game,
   type Invite,
   type User,
+  type EnrichedPlayer,
   playerFromTuple,
   gameFromTuple,
   inviteFromTuple,
@@ -125,8 +132,7 @@ export class Store {
           return validated.games.map(gameFromTuple);
         });
       },
-      // TODO: Keep it descending. Change in the backend
-      games => games.sort((a, b) => a.createdMs - b.createdMs),
+      games => games.sort((a, b) => b.createdMs - a.createdMs),
     );
 
     this.invites = new Resource(
@@ -146,20 +152,27 @@ export class Store {
     );
   }
 
-  public getSelf() {
+  // TODO: Should these be copies?
+  public useSelf() {
     return this.self.get();
   }
 
-  public getPlayers() {
+  public usePlayers() {
     return this.players.get();
   }
 
-  public getGames() {
+  public useGames() {
     return this.games.get();
   }
 
-  public getInvites() {
+  public useInvites() {
     return this.invites.get();
+  }
+
+  public useEnrichedPlayers() {
+    const players = this.usePlayers();
+    const games = this.useGames();
+    return createMemo(() => enrichPlayers(players(), games()));
   }
 
   public renamePlayer(name: string) {
@@ -289,3 +302,62 @@ const upsert = <T extends Ided>(data: T[], datum: T) => {
 };
 
 type Subscriber = (message: string, error: boolean) => void;
+
+const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlayer[] => {
+  const enrichedPlayers = new Map(
+    players.map((p, i) => [
+      p.id,
+      {
+        position: i + 1,
+        games: 0,
+        wins: 0,
+        losses: 0,
+        challengesWon: 0,
+        challengesLost: 0,
+        pointsWon: 0,
+        pointsLost: 0,
+        ...p,
+      },
+    ]),
+  );
+
+  for (const game of games) {
+    const player_one = enrichedPlayers.get(game.playerOne);
+    if (player_one !== undefined) {
+      player_one.games += 1;
+      player_one.pointsWon += game.scoreOne;
+      player_one.pointsLost += game.scoreTwo;
+      if (game.scoreOne > game.scoreTwo) {
+        player_one.wins += 1;
+        if (game.challenge) {
+          player_one.challengesWon += 1;
+        }
+      } else {
+        player_one.losses += 1;
+        if (game.challenge) {
+          player_one.challengesLost += 1;
+        }
+      }
+    }
+
+    const player_two = enrichedPlayers.get(game.playerTwo);
+    if (player_two !== undefined) {
+      player_two.games += 1;
+      player_two.pointsLost += game.scoreOne;
+      player_two.pointsWon += game.scoreTwo;
+      if (game.scoreTwo > game.scoreOne) {
+        player_two.wins += 1;
+        if (game.challenge) {
+          player_two.challengesWon += 1;
+        }
+      } else {
+        player_two.losses += 1;
+        if (game.challenge) {
+          player_two.challengesLost += 1;
+        }
+      }
+    }
+  }
+
+  return Array.from(enrichedPlayers.values()).sort(sortPlayers);
+};

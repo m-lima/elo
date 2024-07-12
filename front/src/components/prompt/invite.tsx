@@ -1,8 +1,7 @@
 import { createMemo, createSignal } from 'solid-js';
 
 import { Store } from '../../store';
-import { type Invite as InviteType, type Player } from '../../types';
-import { type Getter } from '../../util';
+import { type Getter, type Invite as InviteType, type Player } from '../../types';
 
 import { CheckResult, Prompt, checkString, type Props } from './prompt';
 

@@ -63,12 +63,12 @@ export const Notifications = () => {
 };
 
 type Notification = {
-  id: number;
-  message: string;
-  error: boolean;
+  readonly id: number;
+  readonly message: string;
+  readonly error: boolean;
 };
 
 type Fade = {
-  id: number;
+  readonly id: number;
   fade: boolean;
 };

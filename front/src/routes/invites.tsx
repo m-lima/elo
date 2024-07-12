@@ -20,8 +20,9 @@ type User = {
 
 export const Invites = () => {
   const store = useStore();
-  const players = store.getPlayers();
-  const invites = store.getInvites();
+  const players = store.usePlayers();
+  // TODO: This is causing the loading popup to appear
+  const invites = store.useInvites();
   const [promptVisible, setPromptVisible] = createSignal(false);
 
   const roots = createMemo(

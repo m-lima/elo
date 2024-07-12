@@ -1,2 +1,2 @@
-# Front
 front/.env.production filter=git-crypt diff=git-crypt
+back/.env.production filter=git-crypt diff=git-crypt

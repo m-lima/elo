@@ -1,0 +1,2 @@
+# Front
+front/.env.production filter=git-crypt diff=git-crypt

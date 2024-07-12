@@ -19,7 +19,6 @@
     content: '';
   }
 
-  /* TODO: Center content vertically */
   & > .components-prompt-content {
     background-color: var(--color-background);
 

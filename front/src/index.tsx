@@ -25,8 +25,6 @@ const App = (props: ParentProps) => (
   </>
 );
 
-console.debug(import.meta.env.VITE_HOST_CHECK);
-
 render(
   () => {
     return (

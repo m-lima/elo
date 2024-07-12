@@ -15,7 +15,6 @@ const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
 );
 
 // TODO: Cookie for expanded setting
-// TODO: Setting for notifications
 export const Side = () => {
   const [expanded, setExpanded] = createSignal(true);
 

@@ -29,9 +29,9 @@ export const Leaderboard = () => {
   const games = store.useGames();
   const self = store.useSelf();
   const [promptVisible, setPromptVisible] = createSignal(false);
-  const navigate = useNavigate();
   const [sortPivot, setSortPivot] = createSignal<Pivot>('position');
   const [sortDescending, setSortDescending] = createSignal(true);
+  const navigate = useNavigate();
 
   const sortedPlayers = createMemo(
     () => {

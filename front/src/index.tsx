@@ -15,8 +15,8 @@ const socket = Store.makeSocket(
   `ws://${location.hostname}:3333/ws/binary`,
   `http://${location.hostname}:3333/check`,
 );
-const [socketState, setSocketState] = createSignal(socket.getState());
-socket.registerStateListener(state => setSocketState(state));
+const [socketState, setSocketState] = createSignal(socket.getState(), { equals: false });
+socket.registerStateListener(setSocketState);
 
 const store = new Store(socket);
 
@@ -31,7 +31,7 @@ render(
   () => {
     return (
       <WithStore store={store}>
-        <Status state={socketState()} />
+        <Status state={socketState} />
         <Notifications />
         <Routes root={App} />
       </WithStore>

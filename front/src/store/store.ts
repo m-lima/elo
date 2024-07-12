@@ -106,15 +106,9 @@ export class Store {
     this.players = new Resource(
       () => {
         const id = newRequestId();
-        return this.socket.request({ id, do: { player: 'list' } }, message => {
-          const validated = validateMessage(id, 'players', message);
-
-          if (validated === undefined) {
-            return;
-          }
-
-          return validated.players.map(playerFromTuple);
-        });
+        return this.socket.request({ id, do: { player: 'list' } }, message =>
+          validateMessage(id, 'players', message)?.players.map(playerFromTuple),
+        );
       },
       players => players.sort(sortPlayers),
     );
@@ -122,15 +116,9 @@ export class Store {
     this.games = new Resource(
       () => {
         const id = newRequestId();
-        return this.socket.request({ id, do: { game: 'list' } }, message => {
-          const validated = validateMessage(id, 'games', message);
-
-          if (validated === undefined) {
-            return;
-          }
-
-          return validated.games.map(gameFromTuple);
-        });
+        return this.socket.request({ id, do: { game: 'list' } }, message =>
+          validateMessage(id, 'games', message)?.games.map(gameFromTuple),
+        );
       },
       games => games.sort((a, b) => b.createdMs - a.createdMs),
     );
@@ -138,21 +126,14 @@ export class Store {
     this.invites = new Resource(
       () => {
         const id = newRequestId();
-        return this.socket.request({ id, do: { invite: 'list' } }, message => {
-          const validated = validateMessage(id, 'invites', message);
-
-          if (validated === undefined) {
-            return;
-          }
-
-          return validated.invites.map(inviteFromTuple);
-        });
+        return this.socket.request({ id, do: { invite: 'list' } }, message =>
+          validateMessage(id, 'invites', message)?.invites.map(inviteFromTuple),
+        );
       },
       invites => invites.sort((a, b) => b.createdMs - a.createdMs),
     );
   }
 
-  // TODO: Should these be copies?
   public useSelf() {
     return this.self.get();
   }
@@ -170,8 +151,8 @@ export class Store {
   }
 
   public useEnrichedPlayers() {
-    const players = this.usePlayers();
-    const games = this.useGames();
+    const players = this.players.get();
+    const games = this.games.get();
     return createMemo(() => enrichPlayers(players(), games()));
   }
 

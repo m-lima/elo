@@ -1,16 +1,16 @@
-import { Match, Switch } from 'solid-js';
+import { Accessor, Match, Switch } from 'solid-js';
 
 import { icon } from '.';
 import { state } from '../socket';
 
 import './status.css';
 
-export const Status = (props: { state: state.State }) => (
+export const Status = (props: { state: Accessor<state.State> }) => (
   <Switch>
-    <Match when={props.state === state.Disconnected.Connecting}>
+    <Match when={props.state() === state.Disconnected.Connecting}>
       <Connecting />
     </Match>
-    <Match when={props.state === state.Connected.Fetching}>
+    <Match when={props.state() === state.Connected.Fetching}>
       <Loading />
     </Match>
   </Switch>

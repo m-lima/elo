@@ -19,7 +19,6 @@ import {
 } from '../types';
 import { type Message, type Request, type Ided } from './message';
 import { newRequestId, ResponseError, validateDone, validateMessage } from './request';
-import { sortPlayers } from '../util';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
@@ -341,4 +340,13 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
   }
 
   return Array.from(enrichedPlayers.values()).sort(sortPlayers);
+};
+
+const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T, b: T) => {
+  const result = b.rating - a.rating;
+  if (result !== 0) {
+    return result;
+  }
+
+  return a.createdMs - b.createdMs;
 };

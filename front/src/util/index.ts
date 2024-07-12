@@ -1,9 +1,8 @@
-import { type Player } from '../types';
-
 export const name = 'EloPong';
 
 export const colors = {
   accent: '#ffa500',
+  accentSemiTransparent: '#ffa50080',
 };
 
 export const monthToString = (month: number) => {
@@ -33,13 +32,4 @@ export const monthToString = (month: number) => {
     case 11:
       return 'Dec';
   }
-};
-
-export const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T, b: T) => {
-  const result = b.rating - a.rating;
-  if (result !== 0) {
-    return result;
-  }
-
-  return a.createdMs - b.createdMs;
 };

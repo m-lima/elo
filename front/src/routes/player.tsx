@@ -244,17 +244,17 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
         const game =
           g.playerOne === player.id
             ? {
-              rating: lastRating,
-              pointsWon: g.scoreOne,
-              pointsLost: g.scoreTwo,
-              createdMs: g.createdMs,
-            }
+                rating: lastRating,
+                pointsWon: g.scoreOne,
+                pointsLost: g.scoreTwo,
+                createdMs: g.createdMs,
+              }
             : {
-              rating: lastRating,
-              pointsWon: g.scoreTwo,
-              pointsLost: g.scoreOne,
-              createdMs: g.createdMs,
-            };
+                rating: lastRating,
+                pointsWon: g.scoreTwo,
+                pointsLost: g.scoreOne,
+                createdMs: g.createdMs,
+              };
 
         lastRating = getLastRating(g);
         return game;
@@ -280,7 +280,7 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
                 label: 'Rating',
                 data: games().map(g => g.rating),
                 cubicInterpolationMode: 'monotone',
-                backgroundColor: colors.accent + '80',
+                backgroundColor: colors.accentSemiTransparent,
                 borderColor: colors.accent,
               },
             ],

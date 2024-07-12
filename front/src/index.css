@@ -157,7 +157,6 @@ table {
     grid-area: actions;
   }
 
-  /* TODO: On small screens, the left padding is not present (all others are) */
   & > #main {
     grid-area: main;
   }

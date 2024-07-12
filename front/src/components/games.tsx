@@ -8,7 +8,6 @@ import { monthToString } from '../util';
 import './games.css';
 
 // TODO: Make this more responsive
-// TODO: FIXME: The rating is broken
 export const Games = (props: {
   games: Getter<Game[]>;
   players: Getter<Player[]>;
@@ -28,8 +27,8 @@ export const Games = (props: {
 const gameRow = (game: ParsedGame) => {
   return (
     <tr>
-      <td class='components-games-align-right'>{playerRating(game.ratingOne)}</td>
-      <td class='components-games-align-right'>{playerName(game.playerOne)}</td>
+      <td class='components-games-align-right'>{playerRating(game.ratingOneDelta)}</td>
+      <td class='components-games-align-right'>{playerName(game.playerOne, game.playerOneName)}</td>
       <td class='components-games-align-right'>{game.scoreOne}</td>
       {game.challenge ? (
         <td class='components-games-align-challenge'>
@@ -42,7 +41,7 @@ const gameRow = (game: ParsedGame) => {
       )}
       <td>{game.scoreTwo}</td>
       <td>{playerName(game.playerTwo, game.playerTwoName)}</td>
-      <td>{playerRating(game.ratingTwo)}</td>
+      <td>{playerRating(game.ratingTwoDelta)}</td>
       <td class='components-games-align-right components-games-date'>
         {dateToString(game.created)}
       </td>

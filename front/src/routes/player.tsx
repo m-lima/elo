@@ -312,18 +312,32 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
                 label: 'Balance',
                 data: games().map(g => g.balance),
                 cubicInterpolationMode: 'monotone',
-                backgroundColor: colors.accent + '80',
-                borderColor: colors.accent,
+                backgroundColor: '#80808080',
+                borderColor: '#808080',
                 pointStyle: false,
                 segment: {
                   borderColor: (ctx: ScriptableLineSegmentContext) =>
                     ctx.p0.parsed.y > ctx.p1.parsed.y ? '#a03030' : '#30a030',
                 },
-                // fill: {
-                //   above: '#30a03080',
-                //   below: '#a0303080',
-                //   target: 'origin',
-                // },
+                yAxisID: 'balance',
+              },
+              {
+                label: 'Points won',
+                data: games().map(g => g.pointsWon),
+                cubicInterpolationMode: 'monotone',
+                backgroundColor: '#30a03080',
+                showLine: false,
+                pointStyle: false,
+                fill: 'origin',
+              },
+              {
+                label: 'Points lost',
+                data: games().map(g => -g.pointsLost),
+                cubicInterpolationMode: 'monotone',
+                backgroundColor: '#a0303080',
+                showLine: false,
+                pointStyle: false,
+                fill: 'origin',
               },
             ],
           }}
@@ -338,8 +352,15 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
               y: {
                 title: {
                   display: true,
+                  text: 'Points',
+                },
+              },
+              balance: {
+                title: {
+                  display: true,
                   text: 'Point balance',
                 },
+                position: 'right',
               },
             },
           }}

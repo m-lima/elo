@@ -17,7 +17,8 @@ import { error, Loading, Main } from '../pages';
 import { action, icon, prompt, Games } from '../components';
 import { type Getter, type EnrichedPlayer, type Game } from '../types';
 import { useStore } from '../store';
-import { monthToString, colors } from '../util';
+import { monthToString } from '../util';
+import * as consts from '../consts';
 
 import './player.css';
 
@@ -271,7 +272,7 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
 
   return (
     <>
-      <div>
+      <div class='routes-player-chart'>
         <Line
           data={{
             labels: games().map(g => dateToString(new Date(g.createdMs))),
@@ -280,8 +281,8 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
                 label: 'Rating',
                 data: games().map(g => g.rating),
                 cubicInterpolationMode: 'monotone',
-                backgroundColor: colors.accentSemiTransparent,
-                borderColor: colors.accent,
+                backgroundColor: consts.colors.accentSemiTransparent,
+                borderColor: consts.colors.accent,
               },
             ],
           }}
@@ -303,7 +304,7 @@ const Charts = (props: { games: Accessor<Game[]>; player: Getter<EnrichedPlayer>
           }}
         />
       </div>
-      <div>
+      <div class='routes-player-chart'>
         <Line
           data={{
             labels: games().map(g => dateToString(new Date(g.createdMs))),

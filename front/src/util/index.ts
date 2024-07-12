@@ -1,10 +1,3 @@
-export const name = 'EloPong';
-
-export const colors = {
-  accent: '#ffa500',
-  accentSemiTransparent: '#ffa50080',
-};
-
 export const monthToString = (month: number) => {
   switch (month) {
     case 0:

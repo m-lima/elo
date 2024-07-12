@@ -6,15 +6,13 @@ import { Routes } from './routes';
 import { Notifications, Status, Side } from './components';
 import { Store, WithStore } from './store';
 import { Wrapper } from './pages';
+import * as consts from './consts';
 
 import './index.css';
 
 const root = document.getElementById('root');
 
-const socket = Store.makeSocket(
-  `ws://${location.hostname}:3333/ws/binary`,
-  `http://${location.hostname}:3333/check`,
-);
+const socket = Store.makeSocket(consts.host.ws, consts.host.check);
 const [socketState, setSocketState] = createSignal(socket.getState(), { equals: false });
 socket.registerStateListener(setSocketState);
 
@@ -26,6 +24,8 @@ const App = (props: ParentProps) => (
     <Wrapper state={socketState()}>{props.children}</Wrapper>
   </>
 );
+
+console.debug(import.meta.env.VITE_HOST_CHECK);
 
 render(
   () => {

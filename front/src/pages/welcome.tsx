@@ -1,6 +1,6 @@
 import { JSXElement, createSignal } from 'solid-js';
 
-import * as util from '../util';
+import * as consts from '../consts';
 import { useStore } from '../store';
 
 import './welcome.css';
@@ -40,7 +40,7 @@ export const Welcome = () => {
         position={willAccept() !== undefined ? 'left' : undefined}
         header="You've been invited!!"
         text=<>
-          In order to access <b>{util.name}</b>, you must accept the invitation
+          In order to access <b>{consts.name}</b>, you must accept the invitation
         </>
         ok={{
           text: 'Accept',

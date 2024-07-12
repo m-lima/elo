@@ -57,7 +57,7 @@ fn main() -> std::process::ExitCode {
 }
 
 #[cfg(feature = "local")]
-async fn initialize(db: std::path::PathBuf) -> std::process::ExitCode {
+async fn initialize(db: std::path::PathBuf, count: u16) -> std::process::ExitCode {
     if let Err(error) = std::fs::OpenOptions::new()
         .create(true)
         .truncate(true)
@@ -75,7 +75,7 @@ async fn initialize(db: std::path::PathBuf) -> std::process::ExitCode {
         }
     };
 
-    if let Err(error) = handler::mock::initialize(&store).await {
+    if let Err(error) = handler::mock::initialize(&store, count).await {
         tracing::error!(?error, ?db, "Failed to initialize store");
         std::process::ExitCode::FAILURE
     } else {
@@ -86,8 +86,8 @@ async fn initialize(db: std::path::PathBuf) -> std::process::ExitCode {
 
 async fn async_main(args: args::Args) -> std::process::ExitCode {
     #[cfg(feature = "local")]
-    if args.init {
-        return initialize(args.db).await;
+    if let Some(count) = args.init {
+        return initialize(args.db, count).await;
     }
 
     let store = match store::Store::new(&args.db).await {

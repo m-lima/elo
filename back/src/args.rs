@@ -18,7 +18,7 @@ pub struct Args {
     pub port: u16,
     pub db: std::path::PathBuf,
     #[cfg(feature = "local")]
-    pub init: bool,
+    pub init: Option<u16>,
     pub smtp: Option<Smtp>,
 }
 
@@ -45,7 +45,7 @@ struct Inner {
     /// Initialize an empty database
     #[cfg(feature = "local")]
     #[arg(short, long)]
-    init: bool,
+    init: Option<u16>,
 
     #[command(flatten)]
     smtp: SmtpInner,

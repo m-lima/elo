@@ -30,16 +30,28 @@ struct Created {
     created_ms: i64,
 }
 
-pub async fn initialize(store: &store::Store) -> Result<(), Error> {
+pub async fn initialize(store: &store::Store, count: u16) -> Result<(), Error> {
     let auth = access::Auth::new(store.clone());
 
     let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
 
-    populate_users(store, &auth).await?;
-    populate_games(store, &auth, &mut rand).await?;
+    populate(store, &auth, &mut rand, count).await?;
     adjust_dates(store, &mut rand).await?;
 
     Ok(())
+}
+
+async fn populate<R>(
+    store: &store::Store,
+    auth: &access::Auth,
+    rand: &mut R,
+    count: u16,
+) -> Result<(), Error>
+where
+    R: rand::Rng,
+{
+    populate_users(store, auth).await?;
+    populate_games(store, auth, rand, count).await
 }
 
 async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(), Error> {
@@ -141,12 +153,15 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
     Ok(())
 }
 
-async fn populate_games(
+async fn populate_games<R>(
     store: &store::Store,
     auth: &access::Auth,
-    rand: &mut rand::rngs::StdRng,
-) -> Result<(), Error> {
-    use rand::Rng;
+    rand: &mut R,
+    count: u16,
+) -> Result<(), Error>
+where
+    R: rand::Rng,
+{
     use ws::Service;
 
     let players = {
@@ -170,7 +185,7 @@ async fn populate_games(
     let distribution =
         rand::distributions::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
 
-    for _ in 0..players.len() * 150 {
+    for _ in 0..players.len() * usize::from(count) {
         let (user, opponent) = {
             let one = rand.sample(&distribution);
             let two = {
@@ -222,7 +237,10 @@ async fn populate_games(
     Ok(())
 }
 
-async fn adjust_dates(store: &store::Store, rand: &mut rand::rngs::StdRng) -> Result<(), Error> {
+async fn adjust_dates<R>(store: &store::Store, rand: &mut R) -> Result<(), Error>
+where
+    R: rand::Rng,
+{
     let pool = store.raw_pool();
 
     let initial_date = 1_696_118_400_000;
@@ -230,13 +248,15 @@ async fn adjust_dates(store: &store::Store, rand: &mut rand::rngs::StdRng) -> Re
     adjust_game_dates(pool, initial_date, rand).await
 }
 
-async fn adjust_player_dates(
+async fn adjust_player_dates<R>(
     pool: &sqlx::SqlitePool,
     mut initial_date: i64,
-    rand: &mut rand::rngs::StdRng,
-) -> Result<i64, Error> {
+    rand: &mut R,
+) -> Result<i64, Error>
+where
+    R: rand::Rng,
+{
     use crate::types;
-    use rand::Rng;
 
     #[derive(sqlx::FromRow)]
     struct Player {
@@ -323,13 +343,15 @@ async fn adjust_player_dates(
     Ok(initial_date)
 }
 
-async fn adjust_game_dates(
+async fn adjust_game_dates<R>(
     pool: &sqlx::SqlitePool,
     mut initial_date: i64,
-    rand: &mut rand::rngs::StdRng,
-) -> Result<(), Error> {
+    rand: &mut R,
+) -> Result<(), Error>
+where
+    R: rand::Rng,
+{
     use crate::types;
-    use rand::Rng;
 
     #[derive(sqlx::FromRow)]
     struct Game {

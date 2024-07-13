@@ -1,14 +1,8 @@
 .components-prompt-game {
-  display: flex;
+  display: grid;
 
-  align-items: center;
+  grid-template-columns: 1fr auto;
   gap: 12px;
 
-  @media (max-width: 800px) {
-    display: grid;
-
-    grid-template-columns: 1fr auto;
-
-    align-items: center;
-  }
+  align-items: center;
 }

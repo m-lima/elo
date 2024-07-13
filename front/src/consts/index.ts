@@ -9,6 +9,7 @@ export const host = {
     import.meta.env.VITE_HOST_CHECK === undefined
       ? `http://${location.hostname}:3333/check`
       : import.meta.env.VITE_HOST_CHECK,
+  login: import.meta.env.VITE_HOST_LOGIN,
 };
 
 export const colors = {

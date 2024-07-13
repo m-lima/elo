@@ -12,7 +12,7 @@ import './index.css';
 
 const root = document.getElementById('root');
 
-const socket = Store.makeSocket(consts.host.ws, consts.host.check);
+const socket = Store.makeSocket(consts.host.ws, consts.host.check, consts.host.login);
 const [socketState, setSocketState] = createSignal(socket.getState(), { equals: false });
 socket.registerStateListener(setSocketState);
 

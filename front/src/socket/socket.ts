@@ -67,7 +67,7 @@ export class Socket<Request, Message> {
   private state: state.State;
   private attempts: number;
 
-  public constructor(url: string | URL, checkUrl?: string | URL) {
+  public constructor(url: string | URL, checkUrl?: string | URL, loginUrl?: string | URL) {
     this.requests = [];
     this.awaitingRequests = [];
     this.handlers = [];
@@ -77,10 +77,10 @@ export class Socket<Request, Message> {
 
     this.state = state.Disconnected.Closed;
     this.attempts = 0;
-    this.socket = this.connect(url, checkUrl);
+    this.socket = this.connect(url, checkUrl, loginUrl);
   }
 
-  private connect(url: string | URL, checkUrl?: string | URL) {
+  private connect(url: string | URL, checkUrl?: string | URL, loginUrl?: string | URL) {
     this.setState(state.Disconnected.Connecting);
 
     const socket = new WebSocket(url);
@@ -88,8 +88,18 @@ export class Socket<Request, Message> {
     socket.onerror = () => {
       // Check only in the first failure
       if (this.attempts === 0 && checkUrl !== undefined) {
-        void fetch(checkUrl, { credentials: 'include' }).then(r => {
-          if (r.status === 401 || r.status === 403) {
+        void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
+          if (r.status >= 300 && r.status < 400) {
+            if (loginUrl !== undefined) {
+              if (typeof loginUrl === 'string') {
+                window.location.href = loginUrl;
+              } else {
+                window.location.href = loginUrl.href;
+              }
+            } else {
+              this.setState(state.Disconnected.Unauthorized);
+            }
+          } else if (r.status === 401 || r.status === 403) {
             this.setState(state.Disconnected.Unauthorized);
           }
         });

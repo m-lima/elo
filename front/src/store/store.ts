@@ -30,8 +30,12 @@ export class Store {
   private readonly games: Resource<Game[]>;
   private readonly invites: Resource<Invite[]>;
 
-  public static makeSocket(url: string | URL, checkUrl?: string | URL): Socket<Request, Message> {
-    return new Socket(url, checkUrl);
+  public static makeSocket(
+    url: string | URL,
+    checkUrl?: string | URL,
+    loginUrl?: string | URL,
+  ): Socket<Request, Message> {
+    return new Socket(url, checkUrl, loginUrl);
   }
 
   public constructor(socket: Socket<Request, Message>) {

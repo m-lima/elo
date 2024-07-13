@@ -46,7 +46,7 @@ fn main() -> std::process::ExitCode {
         return std::process::ExitCode::FAILURE;
     }
 
-    tracing::info!(verbosity = %args.verbosity.level, port = %args.port, "Configuration loaded");
+    tracing::info!(?args, "Configuration loaded");
 
     if let Err(error) = boile_rs::rt::block_on(async_main(args)) {
         tracing::error!(?error, "Failed to start async environment");

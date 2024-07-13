@@ -90,6 +90,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         return initialize(args.db, count).await;
     }
 
+    #[cfg(not(feature = "local"))]
     if args.init && !args.db.exists() {
         if let Err(error) = std::fs::OpenOptions::new()
             .create_new(true)

@@ -2,7 +2,7 @@ use super::Store;
 use crate::types;
 
 impl Store {
-    pub async fn migrate(&self, rating: f64) -> Result<types::Player, sqlx::Error> {
+    pub async fn initialize(&self, rating: f64) -> Result<types::Player, sqlx::Error> {
         self.migrate().await?;
 
         sqlx::query_as!(

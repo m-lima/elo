@@ -66,7 +66,7 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
     }
 
     let user = store
-        .migrate(skillratings::elo::EloRating::new().rating)
+        .initialize(skillratings::elo::EloRating::new().rating)
         .await?;
 
     // USER

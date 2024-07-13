@@ -88,8 +88,8 @@ export class Socket<Request, Message> {
     socket.onerror = () => {
       // Check only in the first failure
       if (this.attempts === 0 && checkUrl !== undefined) {
-        void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
-          if ((r.status >= 300 && r.status < 400) || r.status === 401 || r.status === 403) {
+        void fetch(checkUrl, { credentials: 'include' }).then(r => {
+          if (r.status === 401 || r.status === 403) {
             this.setState(state.Disconnected.Unauthorized);
           }
         });

@@ -89,7 +89,7 @@ export class Socket<Request, Message> {
       // Check only in the first failure
       if (this.attempts === 0 && checkUrl !== undefined) {
         void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
-          if (r.status >= 300 && r.status < 400) {
+          if ((r.status >= 300 && r.status < 400) || r.status === 401) {
             if (loginUrl !== undefined) {
               if (typeof loginUrl === 'string') {
                 window.location.href = loginUrl;
@@ -99,7 +99,7 @@ export class Socket<Request, Message> {
             } else {
               this.setState(state.Disconnected.Unauthorized);
             }
-          } else if (r.status === 401 || r.status === 403) {
+          } else if (r.status === 403) {
             this.setState(state.Disconnected.Unauthorized);
           }
         });

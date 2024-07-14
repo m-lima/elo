@@ -204,8 +204,10 @@ const PlayerHeader = (props: { player: Getter<EnrichedPlayer>; playerCount: numb
         </span>
       </Match>
     </Switch>
-    <span class='routes-player-header-name'>{props.player()?.name}</span>
-    <span class='routes-player-header-score'># {props.player()?.position}</span>
+    <span class='routes-player-header-name-score'>
+      <span class='routes-player-header-name'>{props.player()?.name}</span>
+      <span class='routes-player-header-score'># {props.player()?.position}</span>
+    </span>
   </div>
 );
 

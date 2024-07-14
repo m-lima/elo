@@ -18,10 +18,10 @@
   flex-direction: column;
   gap: 24px;
 
-  .routes-player-header {
+  & > .routes-player-header {
     display: flex;
 
-    @media (max-width: 500px) {
+    @media (max-width: 400px) {
       flex-direction: column;
     }
 
@@ -29,9 +29,7 @@
 
     border-radius: 16px;
 
-    overflow-x: auto;
-
-    & .routes-player-header-badge {
+    & > .routes-player-header-badge {
       padding-left: 16px;
       padding-right: 16px;
 
@@ -45,7 +43,7 @@
       border-top-left-radius: inherit;
       border-bottom-left-radius: inherit;
 
-      @media (max-width: 500px) {
+      @media (max-width: 400px) {
         border-top-left-radius: inherit;
         border-top-right-radius: inherit;
         border-bottom-left-radius: unset;
@@ -80,33 +78,42 @@
       }
     }
 
-    & .routes-player-header-name {
-      display: inline-block;
+    & > .routes-player-header-name-score {
+      display: flex;
 
-      align-content: center;
-      white-space: wrap;
+      flex-flow: row wrap;
 
-      color: var(--color-accent);
+      overflow-x: auto;
+      width: 100%;
 
-      font-weight: bold;
-      font-size: 2.5em;
+      & > .routes-player-header-name {
+        display: inline-block;
 
-      margin-left: 32px;
-      margin-right: 32px;
-    }
+        align-content: center;
+        white-space: wrap;
 
-    & .routes-player-header-score {
-      font-weight: bold;
-      font-size: 2.5em;
+        color: var(--color-accent);
 
-      margin-left: auto;
-      margin-right: 32px;
+        font-weight: bold;
+        font-size: 2.5em;
 
-      align-content: center;
+        margin-left: 32px;
+        margin-right: 32px;
+      }
+
+      & > .routes-player-header-score {
+        font-weight: bold;
+        font-size: 2.5em;
+
+        margin-left: auto;
+        margin-right: 32px;
+
+        align-content: center;
+      }
     }
   }
 
-  .routes-player-stats {
+  & > .routes-player-stats {
     display: grid;
 
     margin-left: 24px;

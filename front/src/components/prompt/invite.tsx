@@ -25,16 +25,24 @@ export const Invite = (
     return checkString(clean, 'email', props.players, props.invites);
   });
 
+  const commit = () => {
+    if (invalidName() || invalidEmail()) {
+      return;
+    }
+
+    props.store.invitePlayer(name().trim(), cleanEmail(email())).then(r => {
+      if (r) {
+        props.hide();
+        setName('');
+        setEmail('');
+      }
+    });
+  };
+
   return (
     <Prompt
       visible={props.visible}
-      ok={() => {
-        props.store.invitePlayer(name().trim(), cleanEmail(email())).then(r => {
-          if (r) {
-            props.hide();
-          }
-        });
-      }}
+      ok={commit}
       cancel={props.hide}
       disabled={() => invalidName() !== CheckResult.Ok || invalidEmail() !== CheckResult.Ok}
     >
@@ -43,10 +51,18 @@ export const Invite = (
         <input
           class={invalidName() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
+          autofocus
           placeholder='Name'
           value={name()}
           onInput={e => setName(e.currentTarget.value)}
           onChange={e => setName(e.currentTarget.value.trim())}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              commit();
+            } else if (e.key === 'Escape') {
+              props.hide();
+            }
+          }}
         />
         <b>Email</b>
         <input
@@ -57,6 +73,13 @@ export const Invite = (
           onInput={e => setEmail(e.currentTarget.value)}
           onChange={e => {
             setEmail(cleanEmail(e.currentTarget.value));
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              commit();
+            } else if (e.key === 'Escape') {
+              props.hide();
+            }
           }}
         />
       </div>

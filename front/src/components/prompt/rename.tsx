@@ -19,16 +19,23 @@ export const Rename = (
 
   const invalid = createMemo(() => checkString(name(), 'name', props.players, props.invites));
 
+  const commit = () => {
+    if (invalid()) {
+      return;
+    }
+
+    props.store.renamePlayer(name().trim()).then(r => {
+      if (r) {
+        props.hide();
+        setName('');
+      }
+    });
+  };
+
   return (
     <Prompt
       visible={props.visible}
-      ok={() => {
-        props.store.renamePlayer(name().trim()).then(r => {
-          if (r) {
-            props.hide();
-          }
-        });
-      }}
+      ok={commit}
       cancel={props.hide}
       disabled={() => invalid() !== CheckResult.Ok}
     >
@@ -37,10 +44,18 @@ export const Rename = (
         <input
           class={invalid() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
+          autofocus
           placeholder={props.name}
           value={name()}
           onInput={e => setName(e.currentTarget.value)}
           onChange={e => setName(e.currentTarget.value.trim())}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              commit();
+            } else if (e.key === 'Escape') {
+              props.hide();
+            }
+          }}
         />
       </div>
     </Prompt>

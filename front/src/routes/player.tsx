@@ -14,7 +14,7 @@ import { Line } from 'solid-chartjs';
 import { Chart, Filler, ScriptableLineSegmentContext, Title, Tooltip } from 'chart.js';
 
 import { error, Loading, Main } from '../pages';
-import { action, Games, icon, More, prompt } from '../components';
+import { action, Games, icon, prompt } from '../components';
 import { type Getter, type EnrichedPlayer, type EnrichedGame } from '../types';
 import { useStore } from '../store';
 import { monthToString } from '../util';

@@ -133,7 +133,7 @@ export const Player = () => {
           <div class='routes-player' id='main'>
             <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
-            <Show when={playerGames().length > 0} fallback=<error.NotGames inline />>
+            <Show when={playerGames().length > 0} fallback=<NoGames />>
               <Charts games={playerGames} />
               <Games games={playerGames} />
             </Show>
@@ -370,6 +370,12 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
     </>
   );
 };
+
+const NoGames = () => (
+  <div class='routes-player-no-games'>
+    <error.NotGames inline />
+  </div>
+);
 
 const dateToString = (date: Date) =>
   `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;

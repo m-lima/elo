@@ -1,8 +1,8 @@
-import { Suspense, createSignal } from 'solid-js';
+import { Show, Suspense, createSignal } from 'solid-js';
 
 import { useStore } from '../store';
 import { prompt, Games as GameTable, action } from '../components';
-import { Loading, Main } from '../pages';
+import { error, Loading, Main } from '../pages';
 
 export const Games = () => {
   const store = useStore();
@@ -24,7 +24,9 @@ export const Games = () => {
         <action.Game action={() => setPromptVisible(true)} />
       </action.Actions>
       <Main>
-        <GameTable games={games} />
+        <Show when={games().length > 0} fallback=<error.NotGames inline />>
+          <GameTable games={games} />
+        </Show>
       </Main>
     </Suspense>
   );

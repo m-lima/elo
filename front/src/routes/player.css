@@ -1,22 +1,10 @@
-.routes-player-not-found {
-  height: 100%;
-
-  display: flex;
-  justify-content: center;
-  place-items: center;
-  text-align: center;
-  gap: 1em;
-
-  & > .routes-player-not-found-icon {
-    font-size: 7em;
-  }
-}
-
 .routes-player {
   display: flex;
 
   flex-direction: column;
   gap: 24px;
+
+  height: 100%;
 
   & > .routes-player-header {
     display: flex;
@@ -142,5 +130,9 @@
         grid-template-columns: auto 1fr;
       }
     }
+  }
+
+  .routes-player-no-games {
+    height: 100%;
   }
 }

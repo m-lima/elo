@@ -362,6 +362,11 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
           }}
         />
       </div>
+      <Show when={props.games().length > limit()}>
+        <button onClick={() => setLimit(l => l + 100)}>
+          <icon.DoubleLeft /> Plot more
+        </button>
+      </Show>
     </>
   );
 };

@@ -154,7 +154,7 @@ export const Player = () => {
             <PlayerStats player={player} />
             {/* TODO: No games error should replace the table as well */}
             <Show when={playerGames().length > 0} fallback=<error.NotGames inline />>
-              <Charts games={playerGames} player={player} />
+              <Charts games={playerGames} />
             </Show>
             <Games players={players} games={games} player={id} />
           </div>
@@ -231,7 +231,7 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
   </div>
 );
 
-const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedPlayer> }) => {
+const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
   const [responsive, setResponsive] = createSignal(false);
 
   onMount(() => {

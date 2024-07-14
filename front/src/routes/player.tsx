@@ -153,7 +153,8 @@ export const Player = () => {
           <div class='routes-player' id='main'>
             <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
-            <Show when={playerGames().length > 0}>
+            {/* TODO: No games error should replace the table as well */}
+            <Show when={playerGames().length > 0} fallback=<error.NotGames inline />>
               <Charts games={playerGames} player={player} />
             </Show>
             <Games players={players} games={games} player={id} />

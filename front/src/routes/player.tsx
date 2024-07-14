@@ -151,11 +151,7 @@ export const Player = () => {
         </action.Actions>
         <Main>
           <div class='routes-player' id='main'>
-            <PlayerHeader
-              self={id() === self()?.id}
-              player={player}
-              playerCount={players().length ?? 0}
-            />
+            <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
             <Show when={playerGames().length > 0}>
               <Charts games={playerGames} player={player} />
@@ -168,11 +164,7 @@ export const Player = () => {
   );
 };
 
-const PlayerHeader = (props: {
-  self: boolean;
-  player: Getter<EnrichedPlayer>;
-  playerCount: number;
-}) => (
+const PlayerHeader = (props: { player: Getter<EnrichedPlayer>; playerCount: number }) => (
   <div class='routes-player-header'>
     <Switch>
       <Match when={props.player()?.position === 1}>

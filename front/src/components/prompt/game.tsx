@@ -1,7 +1,7 @@
 import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
 
 import { Store } from '../../store';
-import { type Getter, type Player, type Game as GameType } from '../../types';
+import { type Getter, type Player } from '../../types';
 
 import { Prompt, type Props } from './prompt';
 
@@ -12,17 +12,14 @@ export const Game = (
     store: Store;
     self: Getter<Player>;
     players: Getter<Player[]>;
-    games: Getter<GameType[]>;
   },
 ) => {
-  const [maybePlayer, setPlayer] = createSignal<number | undefined>();
-  const [maybeOpponent, setOpponent] = createSignal<number | undefined>();
-
   const [score, setScore] = createSignal(11);
+  const [opponent, setOpponent] = createSignal<number | undefined>();
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
 
-  const players = createMemo(() => {
+  const opponents = createMemo(() => {
     const playersInner = props.players();
     if (playersInner === undefined) {
       return [];
@@ -31,38 +28,11 @@ export const Game = (
       .map(p => {
         return { id: p.id, name: p.name };
       })
+      .filter(p => p.id !== props.self()?.id)
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  const player = createMemo(() => maybePlayer() ?? props.self()?.id);
-
-  const opponents = createMemo(
-    () => {
-      const innerPlayer = player();
-      if (innerPlayer === undefined) {
-        return players();
-      }
-
-      return players().filter(p => p.id !== innerPlayer);
-    },
-    players(),
-    { equals: false },
-  );
-
-  const opponent = createMemo(() => {
-    const innerPlayer = player();
-    const opponentInner = maybeOpponent();
-    if (opponentInner !== undefined && opponentInner !== innerPlayer) {
-      return opponentInner;
-    }
-
-    const opponentsInner = opponents();
-    return opponentsInner.length === 0 ? undefined : opponentsInner[0].id;
-  });
-
-  const invalidPlayers = createMemo(() => player() === opponent());
-
-  const invalidScores = createMemo(() => {
+  const invalidScore = createMemo(() => {
     if (score() === opponentScore()) {
       return true;
     }
@@ -104,23 +74,15 @@ export const Game = (
       cancel={() => {
         props.hide();
       }}
-      disabled={() => invalidPlayers() || invalidScores()}
+      disabled={() => invalidScore() || opponent() === undefined}
     >
       <div class='components-prompt-game'>
-        <PlayerList
-          getter={player}
-          setter={setPlayer}
-          players={props.players}
-          invalid={invalidPlayers}
-        />
-        <Score getter={score} setter={setScore} invalid={invalidScores} />
-        <PlayerList
-          getter={opponent}
-          setter={setOpponent}
-          players={opponents}
-          invalid={invalidPlayers}
-        />
-        <Score getter={opponentScore} setter={setOpponentScore} invalid={invalidScores} />
+        <div class='components-prompt-game-self'>{props.self()?.name}</div>
+        <Score getter={score} setter={setScore} invalid={invalidScore} />
+        <select value={opponent()} onInput={e => setOpponent(Number(e.currentTarget.value))}>
+          <For each={opponents()}>{o => <option value={o.id}>{o.name}</option>}</For>
+        </select>
+        <Score getter={opponentScore} setter={setOpponentScore} invalid={invalidScore} />
         <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
           Challenge
         </label>
@@ -134,21 +96,6 @@ export const Game = (
     </Prompt>
   );
 };
-
-const PlayerList = (props: {
-  getter: Getter<number>;
-  setter: Setter<number | undefined>;
-  players: Getter<SimplePlayer[]>;
-  invalid: Accessor<boolean>;
-}) => (
-  <select
-    class={props.invalid() ? 'invalid' : undefined}
-    value={props.getter()}
-    onInput={e => props.setter(props.setter(Number(e.currentTarget.value)))}
-  >
-    <For each={props.players()}>{o => <option value={o.id}>{o.name}</option>}</For>
-  </select>
-);
 
 const Score = (props: {
   getter: Accessor<number>;
@@ -175,8 +122,3 @@ const Score = (props: {
     <option value={12}>12</option>
   </select>
 );
-
-type SimplePlayer = {
-  readonly id: number;
-  readonly name: string;
-};

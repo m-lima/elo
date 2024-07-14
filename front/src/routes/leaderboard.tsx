@@ -12,7 +12,6 @@ import './leaderboard.css';
 export const Leaderboard = () => {
   const store = useStore();
   const players = store.useEnrichedPlayers();
-  const games = store.useGames();
   const self = store.useSelf();
   const [promptVisible, setPromptVisible] = createSignal(false);
   const [sortPivot, setSortPivot] = createSignal<Pivot>('position');
@@ -85,7 +84,6 @@ export const Leaderboard = () => {
         store={store}
         self={() => players().find(p => p.id === self()?.id)}
         players={players}
-        games={games}
       />
       <action.Actions>
         <action.Game action={() => setPromptVisible(true)} />

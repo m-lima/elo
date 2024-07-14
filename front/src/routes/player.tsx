@@ -136,7 +136,6 @@ export const Player = () => {
           store={store}
           self={player}
           players={players}
-          games={games}
         />
         <action.Actions>
           <Switch>

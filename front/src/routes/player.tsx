@@ -28,7 +28,6 @@ enum Prompt {
   Game,
 }
 
-// TODO: The graph is unhappy with a reload of this page
 export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();

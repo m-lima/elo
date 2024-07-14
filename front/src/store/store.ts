@@ -13,6 +13,7 @@ import {
   type Invite,
   type User,
   type EnrichedPlayer,
+  type EnrichedGame,
   playerFromTuple,
   gameFromTuple,
   inviteFromTuple,
@@ -123,7 +124,7 @@ export class Store {
           validateMessage(id, 'games', message)?.games.map(gameFromTuple),
         );
       },
-      games => games.sort((a, b) => b.createdMs - a.createdMs),
+      games => games.sort((a, b) => a.createdMs - b.createdMs),
     );
 
     this.invites = new Resource(
@@ -145,10 +146,6 @@ export class Store {
     return this.players.get();
   }
 
-  public useGames() {
-    return this.games.get();
-  }
-
   public useInvites() {
     return this.invites.get();
   }
@@ -157,6 +154,12 @@ export class Store {
     const players = this.players.get();
     const games = this.games.get();
     return createMemo(() => enrichPlayers(players(), games()));
+  }
+
+  public useEnrichedGames() {
+    const players = this.players.get();
+    const games = this.games.get();
+    return createMemo(() => enrichGames(games(), players()));
   }
 
   public renamePlayer(name: string) {
@@ -292,6 +295,7 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
     players.map((p, i) => [
       p.id,
       {
+        ...p,
         position: i + 1,
         games: 0,
         wins: 0,
@@ -300,7 +304,6 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
         challengesLost: 0,
         pointsWon: 0,
         pointsLost: 0,
-        ...p,
       },
     ]),
   );
@@ -344,6 +347,63 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
   }
 
   return Array.from(enrichedPlayers.values()).sort(sortPlayers);
+};
+
+const enrichGames = (games: Game[] = [], players: Player[] = []): EnrichedGame[] => {
+  const playerRatings = new Map(
+    players.map(p => [p.id, { name: p.name, rating: p.rating, balance: 0 }]),
+  );
+
+  return games
+    .map(g => {
+      const playerOne = playerRatings.get(g.playerOne);
+      const playerTwo = playerRatings.get(g.playerTwo);
+      const balanceOne = (playerOne?.balance ?? 0) + g.scoreOne - g.scoreTwo;
+      const balanceTwo = (playerTwo?.balance ?? 0) + g.scoreTwo - g.scoreOne;
+
+      if (playerOne !== undefined) {
+        playerOne.balance = balanceOne;
+      }
+
+      if (playerTwo !== undefined) {
+        playerTwo.balance = balanceTwo;
+      }
+
+      return {
+        ...g,
+        balanceOne,
+        balanceTwo,
+      };
+    })
+    .reverse()
+    .map(g => {
+      const playerOne = playerRatings.get(g.playerOne);
+      const playerTwo = playerRatings.get(g.playerTwo);
+      const ratingOne = playerOne?.rating ?? g.ratingOne;
+      const ratingTwo = playerTwo?.rating ?? g.ratingTwo;
+      let ratingDelta: number | undefined;
+
+      if (playerOne !== undefined) {
+        ratingDelta = playerOne.rating - g.ratingOne;
+        playerOne.rating = g.ratingOne;
+      }
+
+      if (playerTwo !== undefined) {
+        if (ratingDelta === undefined) {
+          ratingDelta = g.ratingTwo - playerTwo.rating;
+        }
+        playerTwo.rating = g.ratingTwo;
+      }
+
+      return {
+        ...g,
+        ratingOne,
+        ratingTwo,
+        playerOneName: playerOne?.name,
+        playerTwoName: playerTwo?.name,
+        ratingDelta,
+      };
+    });
 };
 
 const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T, b: T) => {

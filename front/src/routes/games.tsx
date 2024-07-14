@@ -7,8 +7,8 @@ import { Loading, Main } from '../pages';
 export const Games = () => {
   const store = useStore();
   const self = store.useSelf();
-  const games = store.useGames();
   const players = store.usePlayers();
+  const games = store.useEnrichedGames();
   const [promptVisible, setPromptVisible] = createSignal(false);
 
   return (
@@ -24,7 +24,7 @@ export const Games = () => {
         <action.Game action={() => setPromptVisible(true)} />
       </action.Actions>
       <Main>
-        <GameTable players={players} games={games} />
+        <GameTable games={games} />
       </Main>
     </Suspense>
   );

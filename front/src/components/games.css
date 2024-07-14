@@ -1,37 +1,68 @@
-.components-games-align-right {
-  text-align: right;
-}
+.components-games {
+  white-space: wrap;
 
-.components-games-align-challenge {
-  text-align: center;
-  padding-left: 10px;
-  padding-right: 10px;
-  color: white;
-  filter: drop-shadow(0 0 4px);
-}
+  .components-games-align-right {
+    text-align: right;
+  }
 
-.components-games-align-versus {
-  text-align: center;
-  padding-left: 10px;
-  padding-right: 10px;
-}
+  .components-games-align-challenge {
+    text-align: center;
+    padding-left: 4px;
+    padding-right: 4px;
+    color: white;
+    filter: drop-shadow(0 0 4px);
+  }
 
-.components-games-align-center {
-  text-align: center;
-}
+  .components-games-align-versus {
+    text-align: center;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
 
-.components-games-rating-positive {
-  color: #80cc80;
-}
+  .components-games-align-center {
+    text-align: center;
+  }
 
-.components-games-rating-negative {
-  color: #cc8080;
-}
+  .components-games-rating-positive {
+    color: #80cc80;
+  }
 
-.components-games-unknown {
-  color: var(--color-foreground-dark);
-}
+  .components-games-rating-negative {
+    color: #cc8080;
+  }
 
-.components-games-date {
-  color: var(--color-foreground-dark);
+  .components-games-unknown {
+    color: var(--color-foreground-dark);
+  }
+
+  .components-games-tail {
+    display: flex;
+    gap: 4px;
+    flex-flow: row wrap;
+  }
+
+  .components-games-date {
+    color: var(--color-foreground-dark);
+    margin-left: auto;
+  }
+
+  .components-games-more {
+    cursor: pointer;
+
+    width: 100%;
+    text-align: center;
+
+    font-size: 3em;
+
+    will-change: background-color;
+    transition: background-color var(--duration-animation);
+
+    &:hover {
+      background-color: var(--color-background-bright);
+    }
+
+    &:active {
+      background-color: var(--color-background-dark);
+    }
+  }
 }

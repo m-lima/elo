@@ -1,21 +1,21 @@
 import {
   createMemo,
   createSignal,
-  Match,
-  type Accessor,
+  onCleanup,
   onMount,
+  type Accessor,
+  Match,
   Show,
   Suspense,
   Switch,
-  onCleanup,
 } from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
 import { Line } from 'solid-chartjs';
 import { Chart, Filler, ScriptableLineSegmentContext, Title, Tooltip } from 'chart.js';
 
 import { error, Loading, Main } from '../pages';
-import { action, icon, prompt, Games } from '../components';
-import { type Getter, type EnrichedPlayer } from '../types';
+import { action, Games, icon, More, prompt } from '../components';
+import { type Getter, type EnrichedPlayer, type EnrichedGame } from '../types';
 import { useStore } from '../store';
 import { monthToString } from '../util';
 import * as consts from '../consts';
@@ -32,8 +32,8 @@ export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const store = useStore();
-  const games = store.useGames();
   const players = store.useEnrichedPlayers();
+  const games = store.useEnrichedGames();
   const invites = store.useInvites();
   const self = store.useSelf();
 
@@ -68,43 +68,29 @@ export const Player = () => {
     }
   });
 
-  const playerGames = createMemo(
-    () => {
-      const innerGames = games();
-      const innerPlayer = player();
-      if (innerGames === undefined || innerPlayer === undefined) {
-        return [];
-      }
-
-      let rating = innerPlayer.rating;
-      return innerGames
-        .filter(g => g.playerOne === innerPlayer.id || g.playerTwo === innerPlayer.id)
-        .map(g => {
-          if (g.playerOne === innerPlayer.id) {
-            const value = {
-              rating,
-              pointsWon: g.scoreOne,
-              pointsLost: g.scoreTwo,
-              challenge: g.challenge,
-              createdMs: g.createdMs,
-            };
-            rating = g.ratingOne;
-            return value;
-          } else {
-            const value = {
-              rating,
-              pointsWon: g.scoreTwo,
-              pointsLost: g.scoreOne,
-              challenge: g.challenge,
-              createdMs: g.createdMs,
-            };
-            rating = g.ratingTwo;
-            return value;
-          }
-        });
-    },
-    [],
-    { equals: false },
+  const playerGames = createMemo(() =>
+    games()
+      .filter(g => g.playerOne === id() || g.playerTwo === id())
+      .map(g => {
+        if (g.playerTwo === id()) {
+          return {
+            ...g,
+            playerOne: g.playerTwo,
+            playerTwo: g.playerOne,
+            balanceOne: g.balanceTwo,
+            balanceTwo: g.balanceOne,
+            scoreOne: g.scoreTwo,
+            scoreTwo: g.scoreOne,
+            ratingOne: g.ratingTwo,
+            ratingTwo: g.ratingOne,
+            ratingDelta: g.ratingDelta !== undefined ? -g.ratingDelta : undefined,
+            playerOneName: g.playerTwoName,
+            playerTwoName: g.playerOneName,
+          };
+        } else {
+          return g;
+        }
+      }),
   );
 
   return (
@@ -147,11 +133,10 @@ export const Player = () => {
           <div class='routes-player' id='main'>
             <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
-            {/* TODO: No games error should replace the table as well */}
             <Show when={playerGames().length > 0} fallback=<error.NotGames inline />>
               <Charts games={playerGames} />
+              <Games games={playerGames} />
             </Show>
-            <Games players={players} games={games} player={id} />
           </div>
         </Main>
       </Show>
@@ -226,8 +211,10 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
   </div>
 );
 
-const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
+const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
   const [responsive, setResponsive] = createSignal(false);
+  // TODO: Use this limit
+  const [limit, setLimit] = createSignal(100);
 
   onMount(() => {
     Chart.register(Title, Tooltip, Filler);
@@ -258,14 +245,16 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
 
   const games = createMemo(
     () => {
-      let balance = 0;
-      return Array.from(props.games())
+      return Array.from(props.games().filter((_, i) => i < limit()))
         .reverse()
         .map(g => {
-          balance += g.pointsWon - g.pointsLost;
           return {
-            balance,
-            ...g,
+            balance: g.balanceOne,
+            rating: g.ratingOne,
+            pointsWon: g.scoreOne,
+            pointsLost: g.scoreTwo,
+            challenge: g.challenge,
+            createdMs: g.createdMs,
           };
         });
     },
@@ -379,11 +368,3 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
 
 const dateToString = (date: Date) =>
   `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;
-
-type PlayerGame = {
-  readonly rating: number;
-  readonly pointsWon: number;
-  readonly pointsLost: number;
-  readonly challenge: boolean;
-  readonly createdMs: number;
-};

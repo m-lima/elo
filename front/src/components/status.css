@@ -1,4 +1,5 @@
 .components-status {
+  z-index: 2;
   position: fixed;
   bottom: 0;
   right: 0;

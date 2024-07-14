@@ -101,4 +101,12 @@ export type EnrichedPlayer = Player & {
   readonly pointsLost: number;
 };
 
+export type EnrichedGame = Game & {
+  readonly playerOneName?: string;
+  readonly playerTwoName?: string;
+  readonly balanceOne: number;
+  readonly balanceTwo: number;
+  readonly ratingDelta?: number;
+};
+
 export type Getter<T> = () => T | undefined;

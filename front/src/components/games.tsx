@@ -1,33 +1,38 @@
-import { For, createMemo } from 'solid-js';
+import { createSignal, createMemo, For, Show } from 'solid-js';
 import { A } from '@solidjs/router';
 
 import { icon } from '.';
-import { type Getter, type Game, type Player } from '../types';
+import { type Getter, type EnrichedGame } from '../types';
 import { monthToString } from '../util';
 
 import './games.css';
 
-// TODO: Make this more responsive
-export const Games = (props: {
-  games: Getter<Game[]>;
-  players: Getter<Player[]>;
-  player?: Getter<number>;
-}) => {
-  const games = createMemo(() => parseGames(props.games(), props.players(), props.player?.()));
+export const Games = (props: { games: Getter<EnrichedGame[]> }) => {
+  const [limit, setLimit] = createSignal(100);
+
+  const filteredGames = createMemo(() => props.games()?.filter((_, i) => i < limit()), [], {
+    equals: false,
+  });
 
   return (
-    <table>
-      <tbody>
-        <For each={games()}>{gameRow}</For>
-      </tbody>
-    </table>
+    <div class='components-games'>
+      <table class='components-games'>
+        <tbody>
+          <For each={filteredGames()}>{gameRow}</For>
+        </tbody>
+      </table>
+      <Show when={Number(props.games()?.length) > limit()}>
+        <div class='components-games-more' onClick={() => setLimit(l => l + 100)}>
+          <icon.DoubleDown />
+        </div>
+      </Show>
+    </div>
   );
 };
 
-const gameRow = (game: ParsedGame) => {
+const gameRow = (game: EnrichedGame) => {
   return (
     <tr>
-      <td class='components-games-align-right'>{playerRating(game.ratingOneDelta)}</td>
       <td class='components-games-align-right'>{playerName(game.playerOne, game.playerOneName)}</td>
       <td class='components-games-align-right'>{game.scoreOne}</td>
       {game.challenge ? (
@@ -41,9 +46,11 @@ const gameRow = (game: ParsedGame) => {
       )}
       <td>{game.scoreTwo}</td>
       <td>{playerName(game.playerTwo, game.playerTwoName)}</td>
-      <td>{playerRating(game.ratingTwoDelta)}</td>
-      <td class='components-games-align-right components-games-date'>
-        {dateToString(game.created)}
+      <td class='components-games-tail'>
+        {playerRating(game.ratingDelta)}
+        <span class='components-games-align-right components-games-date'>
+          {dateToString(new Date(game.createdMs))}
+        </span>
       </td>
     </tr>
   );
@@ -71,49 +78,5 @@ const playerRating = (rating?: number) => {
   }
 };
 
-type ParsedGame = Game & {
-  readonly playerOneName?: string;
-  readonly playerTwoName?: string;
-  readonly ratingOneDelta?: number;
-  readonly ratingTwoDelta?: number;
-  readonly created: Date;
-};
-
-const parseGames = (games: Game[] = [], players: Player[] = [], player?: number): ParsedGame[] => {
-  const playerRatings = new Map(players.map(p => [p.id, { name: p.name, rating: p.rating }]));
-
-  const parsedGames = games.map(g => {
-    const playerOne = playerRatings.get(g.playerOne);
-    const playerTwo = playerRatings.get(g.playerTwo);
-    let ratingOneDelta: number | undefined;
-    let ratingTwoDelta: number | undefined;
-
-    if (playerOne !== undefined) {
-      ratingOneDelta = playerOne.rating - g.ratingOne;
-      playerOne.rating = g.ratingOne;
-    }
-
-    if (playerTwo !== undefined) {
-      ratingTwoDelta = playerTwo.rating - g.ratingTwo;
-      playerTwo.rating = g.ratingTwo;
-    }
-
-    return {
-      ...g,
-      playerOneName: playerOne?.name,
-      playerTwoName: playerTwo?.name,
-      ratingOneDelta,
-      ratingTwoDelta,
-      created: new Date(g.createdMs),
-    };
-  });
-
-  if (player !== undefined) {
-    return parsedGames.filter(g => g.playerOne === player || g.playerTwo === player);
-  } else {
-    return parsedGames;
-  }
-};
-
 const dateToString = (date: Date) =>
-  `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  `${String(date.getDate()).padStart(2, '0')}-${monthToString(date.getMonth())} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;

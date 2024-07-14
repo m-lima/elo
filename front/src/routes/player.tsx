@@ -72,40 +72,36 @@ export const Player = () => {
   const playerGames = createMemo(
     () => {
       const innerGames = games();
-      const innerId = id();
-      if (innerGames === undefined || innerId === undefined) {
+      const innerPlayer = player();
+      if (innerGames === undefined || innerPlayer === undefined) {
         return [];
       }
 
-      let balance = 0;
+      let rating = innerPlayer.rating;
       return innerGames
-        .filter(g => g.playerOne === innerId || g.playerTwo === innerId)
+        .filter(g => g.playerOne === innerPlayer.id || g.playerTwo === innerPlayer.id)
         .map(g => {
-          if (g.playerOne === innerId) {
-            return {
-              rating: g.ratingOne,
+          if (g.playerOne === innerPlayer.id) {
+            const value = {
+              rating,
               pointsWon: g.scoreOne,
               pointsLost: g.scoreTwo,
               challenge: g.challenge,
               createdMs: g.createdMs,
             };
+            rating = g.ratingOne;
+            return value;
           } else {
-            return {
-              rating: g.ratingTwo,
+            const value = {
+              rating,
               pointsWon: g.scoreTwo,
               pointsLost: g.scoreOne,
               challenge: g.challenge,
               createdMs: g.createdMs,
             };
+            rating = g.ratingTwo;
+            return value;
           }
-        })
-        .reverse()
-        .map(g => {
-          balance += g.pointsWon - g.pointsLost;
-          return {
-            balance,
-            ...g,
-          };
         });
     },
     [],
@@ -261,26 +257,41 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
     Chart.unregister(Title, Tooltip, Filler);
   });
 
+  const games = createMemo(
+    () => {
+      let balance = 0;
+      return Array.from(props.games())
+        .reverse()
+        .map(g => {
+          balance += g.pointsWon - g.pointsLost;
+          return {
+            balance,
+            ...g,
+          };
+        });
+    },
+    [],
+    { equals: false },
+  );
+
   return (
     <>
       <div id='routes-player-chart-rating'>
         <Line
           height={300}
           data={{
-            labels: props.games().map(g => dateToString(new Date(g.createdMs))),
+            labels: games().map(g => dateToString(new Date(g.createdMs))),
             datasets: [
               {
                 label: 'Rating',
-                data: props.games().map(g => g.rating),
+                data: games().map(g => g.rating),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: consts.colors.accentSemiTransparent,
                 borderColor: consts.colors.accent,
-                pointBackgroundColor: props
-                  .games()
-                  .map(g => (g.challenge ? 'white' : consts.colors.accentSemiTransparent)),
-                pointBorderColor: props
-                  .games()
-                  .map(g => (g.challenge ? 'white' : consts.colors.accent)),
+                pointBackgroundColor: games().map(g =>
+                  g.challenge ? 'white' : consts.colors.accentSemiTransparent,
+                ),
+                pointBorderColor: games().map(g => (g.challenge ? 'white' : consts.colors.accent)),
               },
             ],
           }}
@@ -306,11 +317,11 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: props.games().map(g => dateToString(new Date(g.createdMs))),
+            labels: games().map(g => dateToString(new Date(g.createdMs))),
             datasets: [
               {
                 label: 'Balance',
-                data: props.games().map(g => g.balance),
+                data: games().map(g => g.balance),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#80808080',
                 borderColor: '#808080',
@@ -319,25 +330,26 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
                   borderColor: (ctx: ScriptableLineSegmentContext) =>
                     ctx.p0.parsed.y > ctx.p1.parsed.y ? '#a03030' : '#30a030',
                 },
-                yAxisID: 'balance',
               },
               {
                 label: 'Points won',
-                data: props.games().map(g => g.pointsWon),
+                data: games().map(g => g.pointsWon),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#30a03080',
                 showLine: false,
                 pointStyle: false,
                 fill: 'origin',
+                yAxisID: 'balance',
               },
               {
                 label: 'Points lost',
-                data: props.games().map(g => -g.pointsLost),
+                data: games().map(g => -g.pointsLost),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#a0303080',
                 showLine: false,
                 pointStyle: false,
                 fill: 'origin',
+                yAxisID: 'balance',
               },
             ],
           }}
@@ -352,15 +364,11 @@ const Charts = (props: { games: Accessor<PlayerGame[]> }) => {
               y: {
                 title: {
                   display: true,
-                  text: 'Points',
+                  text: 'Score',
                 },
               },
               balance: {
-                title: {
-                  display: true,
-                  text: 'Point balance',
-                },
-                position: 'right',
+                display: false,
               },
             },
           }}
@@ -375,7 +383,6 @@ const dateToString = (date: Date) =>
 
 type PlayerGame = {
   readonly rating: number;
-  readonly balance: number;
   readonly pointsWon: number;
   readonly pointsLost: number;
   readonly challenge: boolean;

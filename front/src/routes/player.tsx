@@ -73,31 +73,40 @@ export const Player = () => {
     () => {
       const innerGames = games();
       const innerId = id();
-      return innerGames === undefined || innerId === undefined
-        ? []
-        : innerGames
-            .filter(g => g.playerOne === innerId || g.playerTwo === innerId)
-            .map(g => {
-              if (g.playerOne === innerId) {
-                return {
-                  opponent: g.playerTwo,
-                  rating: g.ratingOne,
-                  pointsWon: g.scoreOne,
-                  pointsLost: g.scoreTwo,
-                  challenge: g.challenge,
-                  createdMs: g.createdMs,
-                };
-              } else {
-                return {
-                  opponent: g.playerOne,
-                  rating: g.ratingTwo,
-                  pointsWon: g.scoreTwo,
-                  pointsLost: g.scoreOne,
-                  challenge: g.challenge,
-                  createdMs: g.createdMs,
-                };
-              }
-            });
+      if (innerGames === undefined || innerId === undefined) {
+        return [];
+      }
+
+      let balance = 0;
+      return innerGames
+        .filter(g => g.playerOne === innerId || g.playerTwo === innerId)
+        .map(g => {
+          if (g.playerOne === innerId) {
+            return {
+              rating: g.ratingOne,
+              pointsWon: g.scoreOne,
+              pointsLost: g.scoreTwo,
+              challenge: g.challenge,
+              createdMs: g.createdMs,
+            };
+          } else {
+            return {
+              rating: g.ratingTwo,
+              pointsWon: g.scoreTwo,
+              pointsLost: g.scoreOne,
+              challenge: g.challenge,
+              createdMs: g.createdMs,
+            };
+          }
+        })
+        .reverse()
+        .map(g => {
+          balance += g.pointsWon - g.pointsLost;
+          return {
+            balance,
+            ...g,
+          };
+        });
     },
     [],
     { equals: false },
@@ -229,57 +238,46 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
 );
 
 const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedPlayer> }) => {
+  const [responsive, setResponsive] = createSignal(false);
+
   onMount(() => {
     Chart.register(Title, Tooltip, Filler);
+
+    // ChartJS was trying to get the size of the parent component, but SolidJS
+    // only constructs the elements and not necessarily add it to the DOM.
+    //
+    // Since there is no lifecycle hook for being added to the DOM, this
+    // timeout hack does the trick
+    const schedule = () => {
+      setTimeout(() => {
+        if (
+          !!document.getElementById('routes-player-chart-rating') &&
+          !!document.getElementById('routes-player-chart-score')
+        ) {
+          setResponsive(true);
+        } else {
+          schedule();
+        }
+      }, 0);
+    };
+    schedule();
   });
 
   onCleanup(() => {
     Chart.unregister(Title, Tooltip, Filler);
   });
 
-  const games = createMemo(() => {
-    const player = props.player();
-    if (player === undefined) {
-      return [];
-    }
-
-    const innerGames = props.games();
-    if (innerGames.length < 1) {
-      return [];
-    }
-
-    let lastRating = player.rating;
-    let balance = 0;
-
-    return innerGames
-      .map(g => {
-        const game = {
-          ...g,
-          rating: lastRating,
-        };
-        lastRating = g.rating;
-        return game;
-      })
-      .reverse()
-      .map(g => {
-        balance += g.pointsWon - g.pointsLost;
-        return {
-          balance,
-          ...g,
-        };
-      });
-  });
-
   return (
     <>
-      <div class='routes-player-chart'>
+      <div id='routes-player-chart-rating'>
         <Line
+          height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            labels: props.games().map(g => dateToString(new Date(g.createdMs))),
             datasets: [
               {
                 label: 'Rating',
-                data: games().map(g => g.rating),
+                data: props.games().map(g => g.rating),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: consts.colors.accentSemiTransparent,
                 borderColor: consts.colors.accent,
@@ -287,7 +285,7 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
             ],
           }}
           options={{
-            responsive: true,
+            responsive: responsive(),
             maintainAspectRatio: false,
             interaction: {
               mode: 'index',
@@ -304,14 +302,15 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
           }}
         />
       </div>
-      <div class='routes-player-chart'>
+      <div id='routes-player-chart-score'>
         <Line
+          height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            labels: props.games().map(g => dateToString(new Date(g.createdMs))),
             datasets: [
               {
                 label: 'Balance',
-                data: games().map(g => g.balance),
+                data: props.games().map(g => g.balance),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#80808080',
                 borderColor: '#808080',
@@ -324,7 +323,7 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
               },
               {
                 label: 'Points won',
-                data: games().map(g => g.pointsWon),
+                data: props.games().map(g => g.pointsWon),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#30a03080',
                 showLine: false,
@@ -333,7 +332,7 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
               },
               {
                 label: 'Points lost',
-                data: games().map(g => -g.pointsLost),
+                data: props.games().map(g => -g.pointsLost),
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: '#a0303080',
                 showLine: false,
@@ -343,7 +342,7 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
             ],
           }}
           options={{
-            responsive: true,
+            responsive: responsive(),
             maintainAspectRatio: false,
             interaction: {
               mode: 'index',
@@ -375,8 +374,8 @@ const dateToString = (date: Date) =>
   `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;
 
 type PlayerGame = {
-  readonly opponent: number;
   readonly rating: number;
+  readonly balance: number;
   readonly pointsWon: number;
   readonly pointsLost: number;
   readonly challenge: boolean;

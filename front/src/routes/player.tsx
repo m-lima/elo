@@ -281,6 +281,12 @@ const Charts = (props: { games: Accessor<PlayerGame[]>; player: Getter<EnrichedP
                 cubicInterpolationMode: 'monotone',
                 backgroundColor: consts.colors.accentSemiTransparent,
                 borderColor: consts.colors.accent,
+                pointBackgroundColor: props
+                  .games()
+                  .map(g => (g.challenge ? 'white' : consts.colors.accentSemiTransparent)),
+                pointBorderColor: props
+                  .games()
+                  .map(g => (g.challenge ? 'white' : consts.colors.accent)),
               },
             ],
           }}

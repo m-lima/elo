@@ -192,6 +192,7 @@ export class Socket<Request, Message> {
   }
 
   private onMessage(e: MessageEvent) {
+    // TODO: Add a flag to enable compression
     if (!(e.data instanceof ArrayBuffer)) {
       console.error('Received a text message on a binary channel:');
       console.error(e.data);

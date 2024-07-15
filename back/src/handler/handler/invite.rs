@@ -78,7 +78,7 @@ impl<'a> Invite<'a, access::Pending> {
             model::request::Invite::Accept => {
                 let rating = skillratings::elo::EloRating::new().rating;
                 let (player, initiator) = invites
-                    .accept(self.handler.user.id(), self.handler.user.email(), rating)
+                    .accept(self.handler.user.id(), rating)
                     .await
                     .map_err(model::Error::Store)?;
 
@@ -102,7 +102,7 @@ impl<'a> Invite<'a, access::Pending> {
             }
             model::request::Invite::Reject => {
                 let (invite, initiator) = invites
-                    .reject(self.handler.user.id(), self.handler.user.email())
+                    .reject(self.handler.user.id())
                     .await
                     .map_err(model::Error::Store)?;
 

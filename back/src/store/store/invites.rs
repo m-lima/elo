@@ -15,7 +15,7 @@ impl<'a> From<&'a super::Store> for Invites<'a> {
 
 impl Invites<'_> {
     pub async fn auth(&self, email: &str) -> Result<Option<types::User>> {
-        let email = email.trim();
+        let email = email.trim().to_lowercase();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
         }
@@ -71,7 +71,7 @@ impl Invites<'_> {
             return Err(Error::BlankValue("name"));
         }
 
-        let email = email.trim();
+        let email = email.trim().to_lowercase();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
         }
@@ -157,12 +157,7 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn accept(
-        &self,
-        id: types::Id,
-        email: &str,
-        rating: f64,
-    ) -> Result<(types::Player, types::User)> {
+    pub async fn accept(&self, id: types::Id, rating: f64) -> Result<(types::Player, types::User)> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let invite = sqlx::query_as!(
@@ -171,8 +166,7 @@ impl Invites<'_> {
             DELETE FROM
                 invites
             WHERE
-                id = $1 AND
-                email = $2
+                id = $1
             RETURNING
                 id,
                 inviter,
@@ -181,7 +175,6 @@ impl Invites<'_> {
                 created_ms AS "created_ms: types::Millis"
             "#,
             id,
-            email,
         )
         .fetch_one(tx.as_mut())
         .await
@@ -241,7 +234,7 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn reject(&self, id: types::Id, email: &str) -> Result<(types::Invite, types::User)> {
+    pub async fn reject(&self, id: types::Id) -> Result<(types::Invite, types::User)> {
         let mut tx = self.pool.begin().await.map_err(Error::Query)?;
 
         let invite = sqlx::query_as!(
@@ -250,8 +243,7 @@ impl Invites<'_> {
             DELETE FROM
                 invites
             WHERE
-                id = $1 AND
-                email = $2
+                id = $1
             RETURNING
                 id,
                 inviter,
@@ -260,7 +252,6 @@ impl Invites<'_> {
                 created_ms AS "created_ms: types::Millis"
             "#,
             id,
-            email,
         )
         .fetch_one(tx.as_mut())
         .await

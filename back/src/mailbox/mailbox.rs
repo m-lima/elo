@@ -21,7 +21,7 @@ impl Mailbox {
             return Err(Error::MissingName);
         }
 
-        let email = trim!(email);
+        let email = trim!(email).to_lowercase();
 
         let address = email.parse()?;
 

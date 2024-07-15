@@ -16,7 +16,7 @@ impl<'a> From<&'a super::Store> for Players<'a> {
 impl Players<'_> {
     #[tracing::instrument(skip(self))]
     pub async fn auth(&self, email: &str) -> Result<Option<types::User>> {
-        let email = email.trim();
+        let email = email.trim().to_lowercase();
         if email.is_empty() {
             return Err(Error::BlankValue("email"));
         }

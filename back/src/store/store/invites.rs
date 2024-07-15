@@ -36,7 +36,7 @@ impl Invites<'_> {
         )
         .fetch_optional(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
@@ -56,7 +56,7 @@ impl Invites<'_> {
         )
         .fetch_all(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
@@ -76,7 +76,7 @@ impl Invites<'_> {
             return Err(Error::BlankValue("email"));
         }
 
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+        let mut tx = self.pool.begin().await?;
 
         if sqlx::query_as!(
             super::Id,
@@ -93,8 +93,7 @@ impl Invites<'_> {
             email,
         )
         .fetch_optional(tx.as_mut())
-        .await
-        .map_err(Error::Query)?
+        .await?
         .is_some()
         {
             return Err(Error::AlreadyExists);
@@ -123,10 +122,9 @@ impl Invites<'_> {
             email
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        tx.commit().await?;
 
         Ok(invite)
     }
@@ -153,12 +151,12 @@ impl Invites<'_> {
         )
         .fetch_one(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn accept(&self, id: types::Id, rating: f64) -> Result<(types::Player, types::User)> {
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+        let mut tx = self.pool.begin().await?;
 
         let invite = sqlx::query_as!(
             types::Invite,
@@ -177,8 +175,7 @@ impl Invites<'_> {
             id,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
         let player = sqlx::query_as!(
             types::Player,
@@ -207,8 +204,7 @@ impl Invites<'_> {
             rating,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
         let inviter = sqlx::query_as!(
             types::User,
@@ -225,17 +221,16 @@ impl Invites<'_> {
             invite.inviter,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        tx.commit().await?;
 
         Ok((player, inviter))
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn reject(&self, id: types::Id) -> Result<(types::Invite, types::User)> {
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+        let mut tx = self.pool.begin().await?;
 
         let invite = sqlx::query_as!(
             types::Invite,
@@ -254,8 +249,7 @@ impl Invites<'_> {
             id,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
         let inviter = sqlx::query_as!(
             types::User,
@@ -272,10 +266,9 @@ impl Invites<'_> {
             invite.inviter,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        tx.commit().await?;
 
         Ok((invite, inviter))
     }

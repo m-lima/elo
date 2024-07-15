@@ -37,7 +37,7 @@ impl Players<'_> {
         )
         .fetch_optional(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
@@ -61,7 +61,7 @@ impl Players<'_> {
         )
         .fetch_all(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
@@ -71,7 +71,7 @@ impl Players<'_> {
             return Err(Error::BlankValue("name"));
         }
 
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+        let mut tx = self.pool.begin().await?;
 
         if sqlx::query_as!(
             super::Id,
@@ -93,8 +93,7 @@ impl Players<'_> {
             name
         )
         .fetch_optional(tx.as_mut())
-        .await
-        .map_err(Error::Query)?
+        .await?
         .is_some()
         {
             return Err(Error::AlreadyExists);
@@ -124,7 +123,7 @@ impl Players<'_> {
         .await
         .map_err(Error::from)?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        tx.commit().await?;
 
         Ok(player)
     }

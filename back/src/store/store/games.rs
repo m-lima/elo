@@ -42,7 +42,7 @@ impl Games<'_> {
         )
         .fetch_all(self.pool)
         .await
-        .map_err(Error::Query)
+        .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self, rating_updater))]
@@ -60,7 +60,7 @@ impl Games<'_> {
     {
         validate_game(player_one, player_two, score_one, score_two)?;
 
-        let mut tx = self.pool.begin().await.map_err(Error::Query)?;
+        let mut tx = self.pool.begin().await?;
 
         let (rating_one, rating_two) = ratings(player_one, player_two, tx.as_mut()).await?;
 
@@ -81,7 +81,7 @@ impl Games<'_> {
             )
             .fetch_optional(tx.as_mut())
             .await
-            .map_err(Error::Query)?
+            ?
             .and_then(|d| d.days)
             .map_or(true, |d| d > 0);
 
@@ -132,8 +132,7 @@ impl Games<'_> {
             challenge,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
         let (rating_one, rating_two) =
             rating_updater(rating_one, rating_two, score_one > score_two, challenge);
@@ -159,8 +158,7 @@ impl Games<'_> {
             rating_one,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
         let two = sqlx::query_as!(
             types::Player,
@@ -183,10 +181,9 @@ impl Games<'_> {
             rating_two,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map_err(Error::Query)?;
+        .await?;
 
-        tx.commit().await.map_err(Error::Query)?;
+        tx.commit().await?;
 
         Ok((game, one, two))
     }
@@ -248,7 +245,7 @@ where
     )
     .fetch_one(executor)
     .await
-    .map_err(Error::Query)
+    .map_err(Error::from)
     .map(|r| (r.one, r.two))
 }
 

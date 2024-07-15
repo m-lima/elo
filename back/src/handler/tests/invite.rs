@@ -1,10 +1,6 @@
 use super::*;
 use crate::mailbox;
 
-const WHITE_SPACE: &str = " 	\n	 ";
-const INVITED_NAME: &str = "invited";
-const INVITED_EMAIL: &str = "invited@email.com";
-
 #[sqlx::test]
 async fn ok(pool: sqlx::sqlite::SqlitePool) {
     let (player, store) = init(&pool).await;
@@ -234,38 +230,5 @@ async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
     {
         model::Error::Store(store::Error::AlreadyExists) => {}
         e => panic!("Unexpected error: {e:?}"),
-    }
-}
-
-impl RichHandler<access::Regular> {
-    async fn invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
-        self.call_ok(model::Request::Invite(model::request::Invite::Player {
-            name: String::from(name),
-            email: String::from(email),
-        }))
-        .await;
-
-        self.check_invite(name, email, id)
-    }
-
-    fn check_invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
-        let invite = match self.email.try_recv().unwrap() {
-            smtp::Payload::Invite(smtp) => smtp,
-            p @ smtp::Payload::InviteOutcome { .. } => panic!("Unexpected email: {p:?}"),
-        };
-
-        assert_eq!(invite.name(), INVITED_NAME);
-        assert_eq!(invite.email(), INVITED_EMAIL);
-
-        let invite = match self.push.try_recv().unwrap() {
-            model::Push::Player(model::push::Player::Invited(invite)) => invite,
-            p => panic!("Unexpected push: {p:?}"),
-        };
-
-        assert_eq!(invite.inviter, id);
-        assert_eq!(invite.name, name);
-        assert_eq!(invite.email, email);
-
-        invite
     }
 }

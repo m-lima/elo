@@ -6,6 +6,9 @@ mod invite;
 
 const TESTER_NAME: &str = "tester";
 const TESTER_EMAIL: &str = "tester@email.com";
+const INVITED_NAME: &str = "invited";
+const INVITED_EMAIL: &str = "invited@email.com";
+const WHITE_SPACE: &str = " 	\n	 ";
 
 async fn init(pool: &sqlx::SqlitePool) -> (types::Player, store::Store) {
     let player = add_test_user(pool).await;
@@ -92,6 +95,37 @@ impl RichHandler<access::Regular> {
             push,
             email,
         }
+    }
+
+    async fn invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
+        self.call_ok(model::Request::Invite(model::request::Invite::Player {
+            name: String::from(name),
+            email: String::from(email),
+        }))
+        .await;
+
+        self.check_invite(name, email, id)
+    }
+
+    fn check_invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
+        let invite = match self.email.try_recv().unwrap() {
+            smtp::Payload::Invite(smtp) => smtp,
+            p @ smtp::Payload::InviteOutcome { .. } => panic!("Unexpected email: {p:?}"),
+        };
+
+        assert_eq!(invite.name(), INVITED_NAME);
+        assert_eq!(invite.email(), INVITED_EMAIL);
+
+        let invite = match self.push.try_recv().unwrap() {
+            model::Push::Player(model::push::Player::Invited(invite)) => invite,
+            p => panic!("Unexpected push: {p:?}"),
+        };
+
+        assert_eq!(invite.inviter, id);
+        assert_eq!(invite.name, name);
+        assert_eq!(invite.email, email);
+
+        invite
     }
 }
 

@@ -64,6 +64,34 @@ impl Games<'_> {
 
         let (rating_one, rating_two) = ratings(player_one, player_two, tx.as_mut()).await?;
 
+        if challenge {
+            let more_than_one_day = sqlx::query!(
+                r#"
+                SELECT
+                    (STRFTIME('%s', 'now') - (MAX(CREAted_ms) / 1000)) / (24 * 60 * 60) AS "days: i32"
+                FROM
+                    games
+                WHERE
+                    challenge
+                    AND player_one IN ($1, $2)
+                    AND player_two IN ($1, $2)
+                "#,
+                player_one,
+                player_two
+            )
+            .fetch_optional(tx.as_mut())
+            .await
+            .map_err(Error::Query)?
+            .and_then(|d| d.days)
+            .map_or(true, |d| d > 0);
+
+            if !more_than_one_day {
+                return Err(Error::InvalidValue(
+                    "Players cannot challenge each other more than once a day",
+                ));
+            }
+        }
+
         let game = sqlx::query_as!(
             types::Game,
             r#"
@@ -282,5 +310,98 @@ mod tests {
 
         assert!((rating_one - one.rating).abs() < f64::EPSILON);
         assert!((rating_two - two.rating).abs() < f64::EPSILON);
+    }
+
+    #[sqlx::test]
+    async fn challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
+        let one = sqlx::query_as!(
+            types::Player,
+            r#"
+            INSERT INTO players (
+                name,
+                email,
+                rating
+            ) VALUES (
+                'one',
+                'one',
+                100
+            ) RETURNING
+                id,
+                name,
+                email,
+                inviter,
+                rating,
+                created_ms AS "created_ms: types::Millis"
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        let two = sqlx::query_as!(
+            types::Player,
+            r#"
+            INSERT INTO players (
+                name,
+                email,
+                rating
+            ) VALUES (
+                'two',
+                'two',
+                200
+            ) RETURNING
+                id,
+                name,
+                email,
+                inviter,
+                rating,
+                created_ms AS "created_ms: types::Millis"
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        let store = super::super::Store { pool: pool.clone() };
+        let games = store.games();
+        let challenge = games
+            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
+            .await
+            .unwrap();
+        games
+            .register(one.id, two.id, 11, 0, false, |a, b, _, _| (a, b))
+            .await
+            .unwrap();
+
+        let error = games
+            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
+            .await
+            .unwrap_err();
+
+        match error {
+            Error::InvalidValue(s) => assert_eq!(s, "Players cannot challenge each other more than once a day"),
+            e => panic!("Expected `Error::InvalidValue(\"Players cannot challenge each other more than once a day\")`, got: {e:?}"),
+        }
+
+        #[allow(clippy::cast_possible_truncation)]
+        let created_ms = (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            - 24 * 60 * 60 * 1000) as i64;
+
+        sqlx::query!(
+            "UPDATE games SET created_ms = $1 WHERE id = $2",
+            created_ms,
+            challenge.0.id
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+        games
+            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
+            .await
+            .unwrap();
     }
 }

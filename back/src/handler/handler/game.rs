@@ -1,23 +1,29 @@
 use super::super::{access, model};
+use crate::smtp;
 
 #[derive(Debug)]
-pub struct Game<'a, A>
+pub struct Game<'a, A, S>
 where
     A: super::Access,
+    S: smtp::Smtp,
 {
-    handler: &'a mut super::Handler<A>,
+    handler: &'a mut super::Handler<A, S>,
 }
 
-impl<'a, A> Game<'a, A>
+impl<'a, A, S> Game<'a, A, S>
 where
     A: super::Access,
+    S: smtp::Smtp,
 {
-    pub fn new(handler: &'a mut super::Handler<A>) -> Self {
+    pub fn new(handler: &'a mut super::Handler<A, S>) -> Self {
         Self { handler }
     }
 }
 
-impl<'a> Game<'a, access::Regular> {
+impl<'a, S> Game<'a, access::Regular, S>
+where
+    S: smtp::Smtp,
+{
     pub async fn handle(
         self,
         request: model::request::Game,
@@ -76,7 +82,10 @@ impl<'a> Game<'a, access::Regular> {
     }
 }
 
-impl<'a> Game<'a, access::Pending> {
+impl<'a, S> Game<'a, access::Pending, S>
+where
+    S: smtp::Smtp,
+{
     // allow(clippy::unused_async): To match the expected signature
     #[allow(clippy::unused_async)]
     pub async fn handle(self, _: model::request::Game) -> Result<model::Response, model::Error> {

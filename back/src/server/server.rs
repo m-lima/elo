@@ -7,12 +7,15 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(
+    pub async fn new<S>(
         port: u16,
         store: store::Store,
         broadcaster: handler::Broadcaster,
-        smtp: smtp::Smtp,
-    ) -> Result<Self, Error> {
+        smtp: S,
+    ) -> Result<Self, Error>
+    where
+        S: smtp::Smtp,
+    {
         let router = route(store.clone(), broadcaster, smtp)
             .layer(layer::auth::Auth::new(handler::Auth::new(store.clone())))
             .layer(layer::logger());
@@ -33,11 +36,14 @@ impl Server {
     }
 }
 
-fn route(store: store::Store, broadcaster: handler::Broadcaster, smtp: smtp::Smtp) -> axum::Router {
-    fn upgrade<M: ws::Mode>(
+fn route<S>(store: store::Store, broadcaster: handler::Broadcaster, smtp: S) -> axum::Router
+where
+    S: smtp::Smtp,
+{
+    fn upgrade<M: ws::Mode, S: smtp::Smtp>(
         store: store::Store,
         broadcaster: handler::Broadcaster,
-        smtp: smtp::Smtp,
+        smtp: S,
     ) -> axum::routing::MethodRouter<()> {
         axum::routing::get(
             |upgrade: axum::extract::WebSocketUpgrade,
@@ -63,7 +69,10 @@ fn route(store: store::Store, broadcaster: handler::Broadcaster, smtp: smtp::Smt
     axum::Router::new()
         .route(
             "/ws/text",
-            upgrade::<String>(store.clone(), broadcaster.clone(), smtp.clone()),
+            upgrade::<String, S>(store.clone(), broadcaster.clone(), smtp.clone()),
         )
-        .route("/ws/binary", upgrade::<Vec<u8>>(store, broadcaster, smtp))
+        .route(
+            "/ws/binary",
+            upgrade::<Vec<u8>, S>(store, broadcaster, smtp),
+        )
 }

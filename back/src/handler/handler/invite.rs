@@ -2,23 +2,28 @@ use super::super::{access, model};
 use crate::{mailbox, smtp};
 
 #[derive(Debug)]
-pub struct Invite<'a, A>
+pub struct Invite<'a, A, S>
 where
     A: super::Access,
+    S: smtp::Smtp,
 {
-    handler: &'a mut super::Handler<A>,
+    handler: &'a mut super::Handler<A, S>,
 }
 
-impl<'a, A> Invite<'a, A>
+impl<'a, A, S> Invite<'a, A, S>
 where
     A: super::Access,
+    S: smtp::Smtp,
 {
-    pub fn new(handler: &'a mut super::Handler<A>) -> Self {
+    pub fn new(handler: &'a mut super::Handler<A, S>) -> Self {
         Self { handler }
     }
 }
 
-impl<'a> Invite<'a, access::Regular> {
+impl<'a, S> Invite<'a, access::Regular, S>
+where
+    S: smtp::Smtp,
+{
     pub async fn handle(
         self,
         request: model::request::Invite,
@@ -67,7 +72,10 @@ impl<'a> Invite<'a, access::Regular> {
     }
 }
 
-impl<'a> Invite<'a, access::Pending> {
+impl<'a, S> Invite<'a, access::Pending, S>
+where
+    S: smtp::Smtp,
+{
     pub async fn handle(
         self,
         request: model::request::Invite,

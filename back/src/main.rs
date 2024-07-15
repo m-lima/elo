@@ -117,8 +117,9 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
 
     let broadcaster = handler::Broadcaster::new();
 
+    // TODO: Make this not a dynamic dispatch
     let smtp = if let Some(smtp) = args.smtp {
-        match smtp::Smtp::new(smtp.link, smtp.smtp, smtp.from).await {
+        match smtp::Sender::new(smtp.link, smtp.smtp, smtp.from).await {
             Ok(smtp) => smtp,
             Err(error) => {
                 tracing::error!(?error, "Failed to create SMTP service");
@@ -126,7 +127,7 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
             }
         }
     } else {
-        smtp::Smtp::empty()
+        smtp::Sender::empty()
     };
 
     let server = match server::Server::new(args.port, store, broadcaster, smtp).await {

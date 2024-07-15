@@ -57,6 +57,12 @@ impl Store {
     }
 }
 
+impl From<sqlx::SqlitePool> for Store {
+    fn from(pool: sqlx::SqlitePool) -> Self {
+        Self { pool }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub struct Id {
     pub id: crate::types::Id,

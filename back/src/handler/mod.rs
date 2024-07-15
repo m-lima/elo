@@ -9,3 +9,6 @@ pub use handler::Handler;
 
 #[cfg(feature = "local")]
 pub mod mock;
+
+#[cfg(test)]
+mod tests;

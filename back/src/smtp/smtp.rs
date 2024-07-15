@@ -2,12 +2,16 @@ use super::error::Error;
 use super::payload::Payload;
 use crate::mailbox;
 
+pub trait Smtp: Clone + Send + 'static {
+    fn send(&mut self, payload: Payload) -> impl std::future::Future<Output = ()> + Send;
+}
+
 #[derive(Debug, Clone)]
-pub struct Smtp {
+pub struct Sender {
     tx: Option<tokio::sync::mpsc::Sender<Payload>>,
 }
 
-impl Smtp {
+impl Sender {
     pub async fn new(
         link: hyper::Uri,
         host: hyper::Uri,
@@ -24,8 +28,10 @@ impl Smtp {
     pub fn empty() -> Self {
         Self { tx: None }
     }
+}
 
-    pub async fn send(&mut self, payload: Payload) {
+impl Smtp for Sender {
+    async fn send(&mut self, payload: Payload) {
         if let Some(tx) = self.tx.as_ref() {
             if tx.send(payload).await.is_err() {
                 tracing::error!("SMTP channel closed");

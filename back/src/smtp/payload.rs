@@ -1,5 +1,6 @@
 use crate::mailbox;
 
+#[derive(Debug, Clone)]
 pub enum Payload {
     Invite(mailbox::Mailbox),
     InviteOutcome {

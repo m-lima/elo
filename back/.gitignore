@@ -1,4 +1,3 @@
 /target
-/mock
 /db
 !db/elo.sqlite

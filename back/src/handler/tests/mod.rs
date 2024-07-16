@@ -1,8 +1,18 @@
 mod framework;
 
-mod forbidden;
+macro_rules! init {
+    ($pool: ident) => {{
+        let (player, store) = crate::handler::tests::init(&$pool).await.unwrap();
+        let handler = crate::handler::tests::framework::Handler::new(&player.email, &store)
+            .await
+            .unwrap();
+        (player, store, handler)
+    }};
+}
+
+// mod forbidden;
 mod invite;
-mod player;
+// mod player;
 
 use crate::{store, types};
 

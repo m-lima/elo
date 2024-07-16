@@ -8,7 +8,7 @@ pub struct Handler<A>
 where
     A: handler::Access,
 {
-    handler: handler::Handler<A, Smtp>,
+    inner: handler::Handler<A, Smtp>,
     push: tokio::sync::broadcast::Receiver<model::Push>,
     email: tokio::sync::mpsc::Receiver<smtp::Payload>,
 }
@@ -32,7 +32,7 @@ impl Handler<access::Regular> {
         let handler = handler::Handler::new(user, store.clone(), broadcaster, smtp);
 
         Ok(Self {
-            handler,
+            inner: handler,
             push,
             email,
         })
@@ -58,7 +58,7 @@ impl Handler<access::Pending> {
         let handler = handler::Handler::new(user, store.clone(), broadcaster, smtp);
 
         Ok(Self {
-            handler,
+            inner: handler,
             push,
             email,
         })
@@ -66,7 +66,7 @@ impl Handler<access::Pending> {
 }
 
 impl Handler<access::Regular> {
-    async fn invite(&mut self, name: &str, email: &str) -> Result<types::Invite> {
+    pub async fn invite(&mut self, name: &str, email: &str) -> Result<types::Invite> {
         match self
             .call(model::Request::Invite(model::request::Invite::Player {
                 name: String::from(name),
@@ -81,13 +81,13 @@ impl Handler<access::Regular> {
             .some()?
         {
             model::Push::Player(model::push::Player::Invited(invite)) => Ok(invite),
-            p => Err(Error::UnexpectedPush(p)),
+            p => Err(Error::from(p)),
         }
     }
 }
 
 impl Handler<access::Pending> {
-    async fn accept(
+    pub async fn accept(
         &mut self,
         player: &types::Player,
         invited: &types::Invite,
@@ -110,7 +110,7 @@ impl Handler<access::Pending> {
             .some()?
         {
             model::Push::Player(model::push::Player::Joined(joined)) => Ok(joined),
-            p => Err(Error::UnexpectedPush(p)),
+            p => Err(Error::from(p)),
         }
     }
 }
@@ -119,9 +119,10 @@ impl<A> Handler<A>
 where
     A: handler::Access,
 {
-    async fn call<'a>(&'a mut self, request: model::Request) -> ResponseVerifier<'a> {
+    #[must_use]
+    pub async fn call(&mut self, request: model::Request) -> ResponseVerifier<'_> {
         ResponseVerifier::new(
-            ws::Service::call(&mut self.handler, request).await,
+            ws::Service::call(&mut self.inner, request).await,
             &mut self.email,
             &mut self.push,
         )
@@ -138,7 +139,7 @@ where
     }
 }
 
-struct ResponseVerifier<'a> {
+pub struct ResponseVerifier<'a> {
     response: std::result::Result<model::Response, model::Error>,
     next: EmailVerifier<'a>,
 }
@@ -161,7 +162,7 @@ impl<'a> ResponseVerifier<'a> {
 
     pub fn ok(self, expected: model::Response) -> Result<EmailVerifier<'a>> {
         match self.response {
-            Ok(r) => NotEqual::assert(r, expected).map(|_| self.next),
+            Ok(r) => Equal::assert(r, expected).map(|()| self.next),
             Err(e) => Err(Error::ResponseError(e)),
         }
     }
@@ -169,12 +170,12 @@ impl<'a> ResponseVerifier<'a> {
     pub fn err(self, expected: model::Error) -> Result<EmailVerifier<'a>> {
         match self.response {
             Ok(r) => Err(Error::UnexpectedResponse(r)),
-            Err(e) => NotEqual::assert(e, expected).map(|_| self.next),
+            Err(e) => Equal::assert(e, expected).map(|()| self.next),
         }
     }
 }
 
-struct EmailVerifier<'a> {
+pub struct EmailVerifier<'a> {
     email: &'a mut tokio::sync::mpsc::Receiver<smtp::Payload>,
     next: PushVerifier<'a>,
 }
@@ -192,18 +193,18 @@ impl<'a> EmailVerifier<'a> {
 
     pub fn some(self, expected: smtp::Payload) -> Result<PushVerifier<'a>> {
         match self.email.try_recv() {
-            Ok(p) => NotEqual::assert(p, expected).map(|_| self.next),
+            Ok(p) => Equal::assert(p, expected).map(|()| self.next),
             Err(tokio::sync::mpsc::error::TryRecvError::Empty) => Err(Error::NoMessage),
             e @ Err(_) => Err(Error::BadChannel(format!("{e:?}"))),
         }
     }
 
-    pub fn none(mut self) -> Result<PushVerifier<'a>> {
-        check_empty_email(&mut self.email).map(|_| self.next)
+    pub fn none(self) -> Result<PushVerifier<'a>> {
+        check_empty_email(self.email).map(|()| self.next)
     }
 }
 
-struct PushVerifier<'a> {
+pub struct PushVerifier<'a> {
     push: &'a mut tokio::sync::broadcast::Receiver<model::Push>,
 }
 
@@ -221,14 +222,14 @@ impl<'a> PushVerifier<'a> {
     }
 
     pub fn none(mut self) -> Result {
-        check_empty_push(&mut self.push)
+        check_empty_push(self.push)
     }
 }
 
 fn check_empty_push(push: &mut tokio::sync::broadcast::Receiver<model::Push>) -> Result {
     match push.try_recv() {
         Err(tokio::sync::broadcast::error::TryRecvError::Empty) => Ok(()),
-        Ok(p) => Err(Error::UnexpectedPush(p)),
+        Ok(p) => Err(Error::from(p)),
         e @ Err(_) => Err(Error::BadChannel(format!("{e:?}"))),
     }
 }
@@ -252,28 +253,31 @@ pub enum Error {
     #[error("Wrong user access")]
     UserAccess,
     #[error("Error response: {0:?}")]
+    #[allow(clippy::enum_variant_names)]
     ResponseError(model::Error),
     #[error("Unexpected response: {0:?}")]
     UnexpectedResponse(model::Response),
-    #[error("Unexpected push: {0:?}")]
-    UnexpectedPush(model::Push),
+    #[error("Unexpected push: {0}")]
+    UnexpectedPush(String),
     #[error("Unexpected email: {0:?}")]
     UnexpectedEmail(smtp::Payload),
     #[error("No messages in queue")]
     NoMessage,
     #[error("Message queue in bad state: {0}")]
     BadChannel(String),
-    #[error("Values differ: {0:?}")]
-    NotEqual(NotEqual),
+    #[error("{0}")]
+    NotEqual(String),
 }
 
-#[derive(Debug)]
-struct NotEqual {
-    value: String,
-    expected: String,
+impl From<model::Push> for Error {
+    fn from(value: model::Push) -> Self {
+        Self::UnexpectedPush(format!("{value:?}"))
+    }
 }
 
-impl NotEqual {
+struct Equal;
+
+impl Equal {
     fn assert<V, E>(value: V, expected: E) -> Result
     where
         V: std::fmt::Debug,
@@ -281,10 +285,14 @@ impl NotEqual {
     {
         let value = format!("{value:?}");
         let expected = format!("{expected:?}");
-        if value != expected {
-            Err(Error::NotEqual(Self { value, expected }))
-        } else {
+        if value == expected {
             Ok(())
+        } else {
+            Err(Error::NotEqual(format!(
+                r#"Values differ
+{value}
+{expected}"#
+            )))
         }
     }
 }

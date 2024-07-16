@@ -1,5 +1,6 @@
 use super::model;
 
+// TODO: Move out of `handler`
 #[derive(Debug, Clone)]
 pub struct Broadcaster {
     sender: tokio::sync::broadcast::Sender<model::Push>,

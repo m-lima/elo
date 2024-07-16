@@ -1,8 +1,10 @@
-use super::*;
-use crate::{server, smtp, store, types, ws};
+mod framework;
 
 mod forbidden;
 mod invite;
+mod player;
+
+use crate::{store, types};
 
 const TESTER_NAME: &str = "tester";
 const TESTER_EMAIL: &str = "tester@email.com";
@@ -10,14 +12,14 @@ const INVITED_NAME: &str = "invited";
 const INVITED_EMAIL: &str = "invited@email.com";
 const WHITE_SPACE: &str = " 	\n	 ";
 
-async fn init(pool: &sqlx::SqlitePool) -> (types::Player, store::Store) {
-    let player = add_test_user(pool).await;
+async fn init(pool: &sqlx::SqlitePool) -> sqlx::Result<(types::Player, store::Store)> {
+    let player = add_test_user(pool).await?;
     let store = store::Store::from(pool.clone());
 
-    (player, store)
+    Ok((player, store))
 }
 
-async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> types::Player {
+async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> sqlx::Result<types::Player> {
     sqlx::query_as!(
         types::Player,
         r#"
@@ -42,144 +44,4 @@ async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> types::Player {
     )
     .fetch_one(pool)
     .await
-    .unwrap()
-}
-
-#[derive(Clone)]
-struct TestSmtp {
-    tx: tokio::sync::mpsc::Sender<smtp::Payload>,
-}
-
-impl TestSmtp {
-    fn new() -> (Self, tokio::sync::mpsc::Receiver<smtp::Payload>) {
-        let (tx, rx) = tokio::sync::mpsc::channel(16);
-        (Self { tx }, rx)
-    }
-}
-
-impl smtp::Smtp for TestSmtp {
-    async fn send(&mut self, payload: smtp::Payload) {
-        self.tx.send(payload).await.unwrap();
-    }
-}
-
-struct RichHandler<A>
-where
-    A: handler::Access,
-{
-    handler: Handler<A, TestSmtp>,
-    push: tokio::sync::broadcast::Receiver<model::Push>,
-    email: tokio::sync::mpsc::Receiver<smtp::Payload>,
-}
-
-impl RichHandler<access::Regular> {
-    async fn new(user: &str, store: &store::Store) -> Self {
-        let broadcaster = Broadcaster::new();
-        let push = broadcaster.subscribe();
-        let (smtp, email) = TestSmtp::new();
-
-        let auth = access::Auth::new(store.clone());
-        let user = match server::auth::Provider::auth(&auth, user)
-            .await
-            .unwrap()
-            .unwrap()
-        {
-            access::Dynamic::Regular(user) => user,
-            access::Dynamic::Pending(_) => unreachable!(),
-        };
-
-        let handler = handler::Handler::new(user, store.clone(), broadcaster, smtp);
-
-        Self {
-            handler,
-            push,
-            email,
-        }
-    }
-
-    async fn invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
-        self.call_ok(model::Request::Invite(model::request::Invite::Player {
-            name: String::from(name),
-            email: String::from(email),
-        }))
-        .await;
-
-        self.check_invite(name, email, id)
-    }
-
-    fn check_invite(&mut self, name: &str, email: &str, id: types::Id) -> types::Invite {
-        let invite = match self.email.try_recv().unwrap() {
-            smtp::Payload::Invite(smtp) => smtp,
-            p @ smtp::Payload::InviteOutcome { .. } => panic!("Unexpected email: {p:?}"),
-        };
-
-        assert_eq!(invite.name(), INVITED_NAME);
-        assert_eq!(invite.email(), INVITED_EMAIL);
-
-        let invite = match self.push.try_recv().unwrap() {
-            model::Push::Player(model::push::Player::Invited(invite)) => invite,
-            p => panic!("Unexpected push: {p:?}"),
-        };
-
-        assert_eq!(invite.inviter, id);
-        assert_eq!(invite.name, name);
-        assert_eq!(invite.email, email);
-
-        invite
-    }
-}
-
-impl RichHandler<access::Pending> {
-    async fn pending(user: &str, store: &store::Store) -> Self {
-        let broadcaster = Broadcaster::new();
-        let push = broadcaster.subscribe();
-        let (smtp, email) = TestSmtp::new();
-
-        let auth = access::Auth::new(store.clone());
-        let user = match server::auth::Provider::auth(&auth, user)
-            .await
-            .unwrap()
-            .unwrap()
-        {
-            access::Dynamic::Pending(user) => user,
-            access::Dynamic::Regular(_) => unreachable!(),
-        };
-
-        let handler = handler::Handler::new(user, store.clone(), broadcaster, smtp);
-
-        Self {
-            handler,
-            push,
-            email,
-        }
-    }
-}
-
-impl<A> RichHandler<A>
-where
-    A: handler::Access,
-{
-    async fn call_ok(&mut self, request: model::Request) -> model::Response {
-        use ws::Service;
-        self.handler.call(request).await.unwrap()
-    }
-
-    async fn call_err(&mut self, request: model::Request) -> model::Error {
-        use ws::Service;
-        let result = self.handler.call(request).await.unwrap_err();
-        self.check_no_message();
-        result
-    }
-
-    fn check_no_message(&mut self) {
-        assert_eq!(
-            self.push.try_recv().unwrap_err(),
-            tokio::sync::broadcast::error::TryRecvError::Empty
-        );
-
-        assert_eq!(
-            self.email.try_recv().unwrap_err(),
-            tokio::sync::mpsc::error::TryRecvError::Empty
-        );
-    }
 }

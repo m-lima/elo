@@ -2,98 +2,99 @@ use super::*;
 
 #[sqlx::test]
 async fn pending_only(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store) = init(&pool).await;
-    let mut handler = RichHandler::new(&player.email, &store).await;
+    let (player, store) = init(&pool).await.unwrap();
+    let mut handler = framework::Handler::new(&player.email, &store).await;
 
-    match handler
-        .call_err(model::Request::Invite(model::request::Invite::Accept))
+    handler
+        .call_err(
+            model::Request::Invite(model::request::Invite::Accept),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Invite(model::request::Invite::Reject))
+    handler
+        .call_err(
+            model::Request::Invite(model::request::Invite::Reject),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 }
 
 #[sqlx::test]
 async fn regular_only(pool: sqlx::sqlite::SqlitePool) {
     let (player, store) = init(&pool).await;
     let mut handler = RichHandler::new(&player.email, &store).await;
-    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL, player.id).await;
+    let invited = handler
+        .invite(INVITED_NAME, INVITED_EMAIL, player.id)
+        .await
+        .unwrap();
     let mut handler = RichHandler::pending(&invited.email, &store).await;
 
-    match handler
-        .call_err(model::Request::Player(model::request::Player::List))
+    handler
+        .call_err(
+            model::Request::Player(model::request::Player::List),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Player(model::request::Player::Rename(
-            String::new(),
-        )))
+    handler
+        .call_err(
+            model::Request::Player(model::request::Player::Rename(String::new())),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Game(model::request::Game::List))
+    handler
+        .call_err(
+            model::Request::Game(model::request::Game::List),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Game(model::request::Game::Register {
-            opponent: 0,
-            score: 0,
-            opponent_score: 0,
-            challenge: false,
-        }))
+    handler
+        .call_err(
+            model::Request::Game(model::request::Game::Register {
+                opponent: 0,
+                score: 0,
+                opponent_score: 0,
+                challenge: false,
+            }),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Invite(model::request::Invite::List))
+    handler
+        .call_err(
+            model::Request::Invite(model::request::Invite::List),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Invite(model::request::Invite::Cancel(0)))
+    handler
+        .call_err(
+            model::Request::Invite(model::request::Invite::Cancel(0)),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 
-    match handler
-        .call_err(model::Request::Invite(model::request::Invite::Player {
-            name: String::new(),
-            email: String::new(),
-        }))
+    handler
+        .call_err(
+            model::Request::Invite(model::request::Invite::Player {
+                name: String::new(),
+                email: String::new(),
+            }),
+            model::Error::Forbidden,
+        )
         .await
-    {
-        model::Error::Forbidden => {}
-        e => panic!("Unexpected error: {e:?}"),
-    }
+        .unwrap();
 }
 
 #[sqlx::test]
@@ -101,31 +102,33 @@ async fn id(pool: sqlx::sqlite::SqlitePool) {
     let (player, store) = init(&pool).await;
     let mut handler = RichHandler::new(&player.email, &store).await;
 
-    match handler
-        .call_ok(model::Request::Player(model::request::Player::Id))
-        .await
-    {
-        model::Response::User { id, pending } => {
-            assert_eq!(id, player.id);
-            assert_eq!(pending, None);
-        }
-        e => panic!("Unexpected response: {e:?}"),
-    }
+    handler
+        .call_ok(
+            model::Request::Player(model::request::Player::Id),
+            model::Response::User {
+                id: player.id,
+                pending: None,
+            },
+        )
+        .await;
 
     handler.check_no_message();
 
-    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL, player.id).await;
+    let invited = handler
+        .invite(INVITED_NAME, INVITED_EMAIL, player.id)
+        .await
+        .unwrap();
 
     let mut handler = RichHandler::pending(&invited.email, &store).await;
 
-    match handler
-        .call_ok(model::Request::Player(model::request::Player::Id))
+    handler
+        .call_ok(
+            model::Request::Player(model::request::Player::Id),
+            model::Response::User {
+                id: invited.id,
+                pending: Some(true),
+            },
+        )
         .await
-    {
-        model::Response::User { id, pending } => {
-            assert_eq!(id, invited.id);
-            assert_eq!(pending, Some(true));
-        }
-        e => panic!("Unexpected response: {e:?}"),
-    }
+        .unwrap();
 }

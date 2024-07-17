@@ -162,6 +162,17 @@ async fn cancel(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
+async fn cancel_not_found(pool: sqlx::sqlite::SqlitePool) {
+    let mut handler = init!(pool).2;
+
+    handler
+        .call(model::Request::Invite(model::request::Invite::Cancel(100)))
+        .await
+        .err(model::Error::Store(store::Error::NotFound))
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
     let mut handler = init!(pool).2;
 

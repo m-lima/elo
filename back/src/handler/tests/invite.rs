@@ -2,6 +2,55 @@ use super::{super::model, *};
 use crate::{mailbox, smtp};
 
 #[sqlx::test]
+async fn list(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    handler
+        .call(model::Request::Invite(model::request::Invite::List))
+        .await
+        .ok(model::Response::Invites(Vec::new()))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
+
+    handler
+        .call(model::Request::Invite(model::request::Invite::List))
+        .await
+        .ok(model::Response::Invites(
+            [invited.clone()]
+                .map(types::InviteTuple::from)
+                .into_iter()
+                .collect(),
+        ))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    framework::Handler::pending(&invited.email, &store)
+        .await
+        .unwrap()
+        .accept(&player, &invited)
+        .await
+        .unwrap();
+
+    handler
+        .call(model::Request::Invite(model::request::Invite::List))
+        .await
+        .ok(model::Response::Invites(Vec::new()))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn ok(pool: sqlx::sqlite::SqlitePool) {
     let (player, _, mut handler) = init!(pool);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();

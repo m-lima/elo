@@ -221,7 +221,7 @@ impl<'a> PushVerifier<'a> {
         }
     }
 
-    pub fn none(mut self) -> Result {
+    pub fn none(self) -> Result {
         check_empty_push(self.push)
     }
 }

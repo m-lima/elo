@@ -10,7 +10,7 @@ macro_rules! init {
     }};
 }
 
-// mod forbidden;
+mod forbidden;
 mod invite;
 // mod player;
 

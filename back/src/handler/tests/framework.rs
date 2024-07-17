@@ -167,10 +167,13 @@ impl<'a> ResponseVerifier<'a> {
         }
     }
 
-    pub fn err(self, expected: model::Error) -> Result<EmailVerifier<'a>> {
+    pub fn err(self, expected: model::Error) -> Result {
         match self.response {
             Ok(r) => Err(Error::UnexpectedResponse(r)),
-            Err(e) => Equal::assert(e, expected).map(|()| self.next),
+            Err(e) => Equal::assert(e, expected)
+                .map(|()| self.next)
+                .and_then(EmailVerifier::none)
+                .and_then(PushVerifier::none),
         }
     }
 }

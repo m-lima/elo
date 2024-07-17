@@ -1,6 +1,42 @@
 use super::{super::model, *};
 
 #[sqlx::test]
+async fn id(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    handler
+        .call(model::Request::Player(model::request::Player::Id))
+        .await
+        .ok(model::Response::User {
+            id: player.id,
+            pending: None,
+        })
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
+
+    let mut handler = framework::Handler::pending(&invited.email, &store)
+        .await
+        .unwrap();
+    handler
+        .call(model::Request::Player(model::request::Player::Id))
+        .await
+        .ok(model::Response::User {
+            id: invited.id,
+            pending: Some(true),
+        })
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn list(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
@@ -178,5 +214,29 @@ async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
         )))
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+}
+
+#[sqlx::test]
+async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
+    let (_, store, mut handler) = init!(pool);
+    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
+
+    let mut handler = framework::Handler::pending(&invited.email, &store)
+        .await
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::List))
+        .await
+        .err(model::Error::Forbidden)
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            String::new(),
+        )))
+        .await
+        .err(model::Error::Forbidden)
         .unwrap();
 }

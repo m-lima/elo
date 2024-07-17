@@ -12,7 +12,7 @@ macro_rules! init {
 
 mod forbidden;
 mod invite;
-// mod player;
+mod player;
 
 use crate::{store, types};
 

@@ -1,83 +1,182 @@
-use super::*;
+use super::{super::model, *};
 
 #[sqlx::test]
 async fn list(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store) = init(&pool).await;
-    let mut handler = RichHandler::new(&player.email, &store).await;
-
-    handler.invite(INVITED_NAME, INVITED_EMAIL, player.id).await;
+    let (player, store, mut handler) = init!(pool);
+    handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
     let accepted = {
-        let invited = handler
-            .invite("accepted", "accepted@email.com", player.id)
+        let accepted = handler
+            .invite("accepted", "accepted@email.com")
             .await
             .unwrap();
 
-        RichHandler::pending(&invited.email, &store)
+        framework::Handler::pending(&accepted.email, &store)
             .await
-            .accept(&player, &invited)
+            .unwrap()
+            .accept(&player, &accepted)
             .await
             .unwrap()
     };
 
     handler
-        .call_ok(
-            model::Request::Player(model::request::Player::List),
-            model::Response::Players(
-                [player.clone(), accepted.clone()]
-                    .map(types::PlayerTuple::from)
-                    .into_iter()
-                    .collect(),
-            ),
-        )
-        .await;
-
-    handler.check_no_message();
+        .call(model::Request::Player(model::request::Player::List))
+        .await
+        .ok(model::Response::Players(
+            [player.clone(), accepted.clone()]
+                .map(types::PlayerTuple::from)
+                .into_iter()
+                .collect(),
+        ))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
 }
 
 #[sqlx::test]
 async fn rename(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store) = init(&pool).await;
-    let mut handler = RichHandler::new(&player.email, &store).await;
+    let (player, store, mut handler) = init!(pool);
+    let invited = {
+        let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
-    handler.invite(INVITED_NAME, INVITED_EMAIL, player.id).await;
-    let accepted = {
-        let invited = handler
-            .invite("accepted", "accepted@email.com", player.id)
+        framework::Handler::pending(&invited.email, &store)
             .await
-            .unwrap();
-
-        RichHandler::pending(&invited.email, &store)
-            .await
+            .unwrap()
             .accept(&player, &invited)
             .await
             .unwrap()
     };
 
-    handler
-        .call_done(model::Request::Player(model::request::Player::Rename(
+    let model::Push::Player(model::push::Player::Renamed {
+        player: rename_player,
+        old,
+        new,
+    }) = handler
+        .call(model::Request::Player(model::request::Player::Rename(
             String::from("new"),
         )))
-        .await;
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
 
-    // handler.check_no_email();
+    assert_eq!(rename_player, player.id);
+    assert_eq!(old, TESTER_NAME);
+    assert_eq!(new, "new");
 
     handler
-        .call_ok(
-            model::Request::Player(model::request::Player::List),
-            model::Response::Players(
-                [
-                    types::Player {
-                        name: String::from("new"),
-                        ..player.clone()
-                    },
-                    accepted.clone(),
-                ]
-                .map(types::PlayerTuple::from)
-                .into_iter()
-                .collect(),
-            ),
-        )
-        .await;
+        .call(model::Request::Player(model::request::Player::List))
+        .await
+        .ok(model::Response::Players(
+            [
+                types::Player {
+                    name: String::from("new"),
+                    ..player.clone()
+                },
+                invited.clone(),
+            ]
+            .map(types::PlayerTuple::from)
+            .into_iter()
+            .collect(),
+        ))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
 
-    handler.check_no_message();
+#[sqlx::test]
+async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
+    let mut handler = init!(pool).2;
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            String::new(),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::BlankValue("name")))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            String::from(WHITE_SPACE),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::BlankValue("name")))
+        .unwrap();
+}
+
+#[sqlx::test]
+async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+    handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
+    let accepted = {
+        let accepted = handler
+            .invite("accepted", "accepted@email.com")
+            .await
+            .unwrap();
+
+        framework::Handler::pending(&accepted.email, &store)
+            .await
+            .unwrap()
+            .accept(&player, &accepted)
+            .await
+            .unwrap()
+    };
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            player.name.clone(),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            String::from(INVITED_NAME),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            accepted.name.clone(),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            format!("{WHITE_SPACE}{}{WHITE_SPACE}", player.name),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            format!("{WHITE_SPACE}{INVITED_NAME}{WHITE_SPACE}"),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
+
+    handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            format!("{WHITE_SPACE}{}{WHITE_SPACE}", accepted.name),
+        )))
+        .await
+        .err(model::Error::Store(store::Error::AlreadyExists))
+        .unwrap();
 }

@@ -117,7 +117,7 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
                     user,
                     store.clone(),
                     super::Broadcaster::new(),
-                    smtp::Smtp::empty(),
+                    smtp::Sender::empty(),
                 );
                 handler
                     .call(model::Request::Invite(model::request::Invite::Accept))
@@ -130,7 +130,7 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
             user,
             store.clone(),
             super::Broadcaster::new(),
-            smtp::Smtp::empty(),
+            smtp::Sender::empty(),
         );
         for _ in 0..amount {
             let (invitee, amount) = players.next().ok_or(Error::WrongCount)?;
@@ -171,7 +171,7 @@ where
             user,
             store.clone(),
             super::Broadcaster::new(),
-            smtp::Smtp::empty(),
+            smtp::Sender::empty(),
         );
         let model::Response::Players(players) = handler
             .call(model::Request::Player(model::request::Player::List))
@@ -218,7 +218,7 @@ where
             get_registered_user(auth, &user.2).await?,
             store.clone(),
             super::Broadcaster::new(),
-            smtp::Smtp::empty(),
+            smtp::Sender::empty(),
         );
 
         let model::Response::Done = handler

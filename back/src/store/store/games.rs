@@ -64,29 +64,27 @@ impl Games<'_> {
 
         let (rating_one, rating_two) = ratings(player_one, player_two, tx.as_mut()).await?;
 
-        // (STRFTIME('%d', 'now') - (STRFTIME('%d', MAX(CREAted_ms) / 1000), 'UNIX')) AS
         if challenge {
-            let more_than_one_day = sqlx::query!(
+            let challenged_today = sqlx::query!(
                 r#"
                 SELECT
-                    (STRFTIME('%s', 'now') - (MAX(CREAted_ms) / 1000)) / (24 * 60 * 60) AS "days: i32"
+                    id
                 FROM
                     games
                 WHERE
                     challenge
                     AND player_one IN ($1, $2)
                     AND player_two IN ($1, $2)
+                    AND STRFTIME('%Y%m%d', 'now') = STRFTIME('%Y%m%d', created_ms / 1000, 'unixepoch')
                 "#,
                 player_one,
-                player_two
+                player_two,
             )
             .fetch_optional(tx.as_mut())
-            .await
-            ?
-            .and_then(|d| d.days)
-            .map_or(true, |d| d > 0);
+            .await?
+            .is_some();
 
-            if !more_than_one_day {
+            if challenged_today {
                 return Err(Error::InvalidValue(
                     "Players cannot challenge each other more than once a day",
                 ));

@@ -64,6 +64,7 @@ impl Games<'_> {
 
         let (rating_one, rating_two) = ratings(player_one, player_two, tx.as_mut()).await?;
 
+        // (STRFTIME('%d', 'now') - (STRFTIME('%d', MAX(CREAted_ms) / 1000), 'UNIX')) AS
         if challenge {
             let more_than_one_day = sqlx::query!(
                 r#"
@@ -199,6 +200,14 @@ fn validate_game(
         Err(Error::InvalidValue("Players cannot be equal"))
     } else if score_one == score_two {
         Err(Error::InvalidValue("Scores cannot be equal"))
+    } else if score_one > 12 || score_two > 12 {
+        Err(Error::InvalidValue(
+            "Games cannot have a score larger than 12",
+        ))
+    } else if score_one < 11 && score_two < 11 {
+        Err(Error::InvalidValue(
+            "Games must have a winner with at least 11 points",
+        ))
     } else if (score_one == 12 && score_two != 10) || (score_two == 12 && score_one != 10) {
         Err(Error::InvalidValue("Tie breaks require a 12x10 score"))
     } else if (score_one == 11 && score_two >= 11) || (score_two == 11 && score_one >= 11) {

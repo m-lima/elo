@@ -40,19 +40,10 @@ async fn id(pool: sqlx::sqlite::SqlitePool) {
 async fn list(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
-    let accepted = {
-        let accepted = handler
-            .invite("accepted", "accepted@email.com")
-            .await
-            .unwrap();
-
-        framework::Handler::pending(&accepted.email, &store)
-            .await
-            .unwrap()
-            .accept(&player, &accepted)
-            .await
-            .unwrap()
-    };
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
 
     handler
         .call(model::Request::Player(model::request::Player::List))
@@ -73,16 +64,10 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
 #[sqlx::test]
 async fn rename(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
-    let invited = {
-        let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
-
-        framework::Handler::pending(&invited.email, &store)
-            .await
-            .unwrap()
-            .accept(&player, &invited)
-            .await
-            .unwrap()
-    };
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
 
     let model::Push::Player(model::push::Player::Renamed {
         player: rename_player,
@@ -116,7 +101,7 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
                     name: String::from("new"),
                     ..player.clone()
                 },
-                invited.clone(),
+                accepted.clone(),
             ]
             .map(types::PlayerTuple::from)
             .into_iter()
@@ -160,7 +145,7 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
                     name: String::from(TESTER_NAME),
                     ..player.clone()
                 },
-                invited.clone(),
+                accepted.clone(),
             ]
             .map(types::PlayerTuple::from)
             .into_iter()
@@ -198,19 +183,10 @@ async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
 async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
-    let accepted = {
-        let accepted = handler
-            .invite("accepted", "accepted@email.com")
-            .await
-            .unwrap();
-
-        framework::Handler::pending(&accepted.email, &store)
-            .await
-            .unwrap()
-            .accept(&player, &accepted)
-            .await
-            .unwrap()
-    };
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
 
     handler
         .call(model::Request::Player(model::request::Player::Rename(

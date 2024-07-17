@@ -10,7 +10,7 @@ macro_rules! init {
     }};
 }
 
-mod forbidden;
+mod game;
 mod invite;
 mod player;
 
@@ -20,6 +20,8 @@ const TESTER_NAME: &str = "tester";
 const TESTER_EMAIL: &str = "tester@email.com";
 const INVITED_NAME: &str = "invited";
 const INVITED_EMAIL: &str = "invited@email.com";
+const ACCEPTED_NAME: &str = "accepted";
+const ACCEPTED_EMAIL: &str = "accepted@email.com";
 const WHITE_SPACE: &str = " 	\n	 ";
 
 async fn init(pool: &sqlx::SqlitePool) -> sqlx::Result<(types::Player, store::Store)> {

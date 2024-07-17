@@ -84,15 +84,18 @@ impl Handler<access::Regular> {
             p => Err(Error::from(p)),
         }
     }
-}
 
-impl Handler<access::Pending> {
-    pub async fn accept(
+    pub async fn invite_full(
         &mut self,
         player: &types::Player,
-        invited: &types::Invite,
+        store: &store::Store,
+        name: &str,
+        email: &str,
     ) -> Result<types::Player> {
-        match self
+        let accepted = self.invite(name, email).await?;
+
+        match Handler::pending(&accepted.email, store)
+            .await?
             .call(model::Request::Invite(model::request::Invite::Accept))
             .await
             .done()?
@@ -102,8 +105,8 @@ impl Handler<access::Pending> {
                     email: player.email.clone(),
                 },
                 invitee: mailbox::Proto {
-                    name: invited.name.clone(),
-                    email: invited.email.clone(),
+                    name: String::from(name),
+                    email: String::from(email),
                 },
                 accepted: true,
             })?

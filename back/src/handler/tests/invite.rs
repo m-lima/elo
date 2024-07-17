@@ -35,8 +35,23 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
     framework::Handler::pending(&invited.email, &store)
         .await
         .unwrap()
-        .accept(&player, &invited)
+        .call(model::Request::Invite(model::request::Invite::Accept))
         .await
+        .done()
+        .unwrap()
+        .some(smtp::Payload::InviteOutcome {
+            inviter: mailbox::Proto {
+                name: player.name.clone(),
+                email: player.email.clone(),
+            },
+            invitee: mailbox::Proto {
+                name: invited.name.clone(),
+                email: invited.email.clone(),
+            },
+            accepted: true,
+        })
+        .unwrap()
+        .some()
         .unwrap();
 
     handler
@@ -89,18 +104,15 @@ async fn normalization(pool: sqlx::sqlite::SqlitePool) {
 #[sqlx::test]
 async fn accept(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
-    let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
-
-    let mut handler = framework::Handler::pending(&invited.email, &store)
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
         .await
         .unwrap();
 
-    let joined = handler.accept(&player, &invited).await.unwrap();
-
-    assert_eq!(joined.name, invited.name);
-    assert_eq!(joined.email, invited.email);
-    assert_eq!(joined.inviter, Some(player.id));
-    assert!((joined.rating - skillratings::elo::EloRating::new().rating).abs() < f64::EPSILON);
+    assert_eq!(accepted.name, ACCEPTED_NAME);
+    assert_eq!(accepted.email, ACCEPTED_EMAIL);
+    assert_eq!(accepted.inviter, Some(player.id));
+    assert!((accepted.rating - skillratings::elo::EloRating::new().rating).abs() < f64::EPSILON);
 }
 
 #[sqlx::test]
@@ -166,7 +178,7 @@ async fn cancel_not_found(pool: sqlx::sqlite::SqlitePool) {
     let mut handler = init!(pool).2;
 
     handler
-        .call(model::Request::Invite(model::request::Invite::Cancel(100)))
+        .call(model::Request::Invite(model::request::Invite::Cancel(27)))
         .await
         .err(model::Error::Store(store::Error::NotFound))
         .unwrap();

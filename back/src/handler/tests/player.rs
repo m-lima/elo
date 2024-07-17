@@ -127,6 +127,50 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
         .unwrap()
         .none()
         .unwrap();
+
+    let model::Push::Player(model::push::Player::Renamed {
+        player: rename_player,
+        old,
+        new,
+    }) = handler
+        .call(model::Request::Player(model::request::Player::Rename(
+            String::from(TESTER_NAME),
+        )))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(rename_player, player.id);
+    assert_eq!(old, "new");
+    assert_eq!(new, TESTER_NAME);
+
+    handler
+        .call(model::Request::Player(model::request::Player::List))
+        .await
+        .ok(model::Response::Players(
+            [
+                types::Player {
+                    name: String::from(TESTER_NAME),
+                    ..player.clone()
+                },
+                invited.clone(),
+            ]
+            .map(types::PlayerTuple::from)
+            .into_iter()
+            .collect(),
+        ))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
 }
 
 #[sqlx::test]

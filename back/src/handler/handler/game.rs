@@ -48,24 +48,7 @@ where
                         (score, opponent_score),
                         challenge,
                         skillratings::elo::EloRating::new().rating,
-                        |one, two, won, challenge| {
-                            let ratings = skillratings::elo::elo(
-                                &skillratings::elo::EloRating { rating: one },
-                                &skillratings::elo::EloRating { rating: two },
-                                if won {
-                                    &skillratings::Outcomes::WIN
-                                } else {
-                                    &skillratings::Outcomes::LOSS
-                                },
-                                &skillratings::elo::EloConfig::new(),
-                            );
-                            let delta = ratings.0.rating - one;
-                            if challenge {
-                                delta * 3.0
-                            } else {
-                                delta
-                            }
-                        },
+                        super::rating_updater,
                     )
                     .await
                     .map_err(model::Error::Store)?;

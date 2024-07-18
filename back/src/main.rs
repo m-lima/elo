@@ -130,6 +130,11 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         return std::process::ExitCode::FAILURE;
     }
 
+    if let Err(error) = handler::refresh(&store).await {
+        tracing::error!(?error, db = ?args.db, "Failed to refresh database");
+        return std::process::ExitCode::FAILURE;
+    }
+
     let broadcaster = handler::Broadcaster::new();
 
     // TODO: Make this not a dynamic dispatch

@@ -109,3 +109,30 @@ where
         result
     }
 }
+
+pub async fn refresh(store: &store::Store) -> Result<(), store::Error> {
+    store
+        .games()
+        .refresh(skillratings::elo::EloRating::new().rating, rating_updater)
+        .await
+        .map(|_| ())
+}
+
+fn rating_updater(one: f64, two: f64, won: bool, challenge: bool) -> f64 {
+    let ratings = skillratings::elo::elo(
+        &skillratings::elo::EloRating { rating: one },
+        &skillratings::elo::EloRating { rating: two },
+        if won {
+            &skillratings::Outcomes::WIN
+        } else {
+            &skillratings::Outcomes::LOSS
+        },
+        &skillratings::elo::EloConfig::new(),
+    );
+    let delta = ratings.0.rating - one;
+    if challenge {
+        delta * 3.0
+    } else {
+        delta
+    }
+}

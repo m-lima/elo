@@ -5,7 +5,7 @@ mod model;
 
 pub use access::{Auth, Dynamic as UserAccess};
 pub use broadcaster::Broadcaster;
-pub use handler::Handler;
+pub use handler::{refresh, Handler};
 
 #[cfg(feature = "local")]
 pub mod mock;

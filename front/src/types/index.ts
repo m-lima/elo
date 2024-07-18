@@ -8,26 +8,17 @@ export type Player = {
   readonly name: string;
   readonly email: string;
   readonly inviter?: number;
-  readonly rating: number;
   readonly createdMs: number;
 };
 
-export type PlayerTuple = [number, string, string, number | null, number, number];
+export type PlayerTuple = [number, string, string, number | null, number];
 
-export const playerFromTuple = ([
-  id,
-  name,
-  email,
-  inviter,
-  rating,
-  createdMs,
-]: PlayerTuple): Player => {
+export const playerFromTuple = ([id, name, email, inviter, createdMs]: PlayerTuple): Player => {
   return {
     id,
     name,
     email,
     inviter: inviter !== null ? inviter : undefined,
-    rating,
     createdMs,
   };
 };
@@ -40,11 +31,23 @@ export type Game = {
   readonly scoreTwo: number;
   readonly ratingOne: number;
   readonly ratingTwo: number;
+  readonly ratingDelta: number;
   readonly challenge: boolean;
   readonly createdMs: number;
 };
 
-export type GameTuple = [number, number, number, number, number, number, number, boolean, number];
+export type GameTuple = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  boolean,
+  number,
+];
 
 export const gameFromTuple = ([
   id,
@@ -54,6 +57,7 @@ export const gameFromTuple = ([
   scoreTwo,
   ratingOne,
   ratingTwo,
+  ratingDelta,
   challenge,
   createdMs,
 ]: GameTuple): Game => {
@@ -65,6 +69,7 @@ export const gameFromTuple = ([
     scoreTwo,
     ratingOne,
     ratingTwo,
+    ratingDelta,
     challenge,
     createdMs,
   };
@@ -92,6 +97,7 @@ export const inviteFromTuple = ([id, inviter, name, email, createdMs]: InviteTup
 
 export type EnrichedPlayer = Player & {
   readonly position: number;
+  readonly rating: number;
   readonly games: number;
   readonly wins: number;
   readonly losses: number;
@@ -106,7 +112,6 @@ export type EnrichedGame = Game & {
   readonly playerTwoName?: string;
   readonly balanceOne: number;
   readonly balanceTwo: number;
-  readonly ratingDelta?: number;
 };
 
 export type Getter<T> = () => T | undefined;

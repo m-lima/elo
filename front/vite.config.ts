@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true
+        enabled: true,
       },
       manifest: {
         short_name: 'PongElo',
@@ -23,9 +23,9 @@ export default defineConfig({
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any',
-          }
-        ]
-      }
-    })
+          },
+        ],
+      },
+    }),
   ],
 });

@@ -28,6 +28,7 @@ enum Prompt {
   Game,
 }
 
+// TODO: Bug when creating a game from the screen of another player
 export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ export const Player = () => {
         if (g.playerTwo === id()) {
           return {
             ...g,
+            ratingDelta: -g.ratingDelta,
             playerOne: g.playerTwo,
             playerTwo: g.playerOne,
             balanceOne: g.balanceTwo,
@@ -83,7 +85,6 @@ export const Player = () => {
             scoreTwo: g.scoreOne,
             ratingOne: g.ratingTwo,
             ratingTwo: g.ratingOne,
-            ratingDelta: g.ratingDelta !== undefined ? -g.ratingDelta : undefined,
             playerOneName: g.playerTwoName,
             playerTwoName: g.playerOneName,
           };

@@ -107,35 +107,26 @@ export class Store {
       );
     });
 
-    this.players = new Resource(
-      () => {
-        const id = newRequestId();
-        return this.socket.request({ id, do: { player: 'list' } }, message =>
-          validateMessage(id, 'players', message)?.players.map(playerFromTuple),
-        );
-      },
-      players => players.sort(sortPlayers),
-    );
+    this.players = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { player: 'list' } }, message =>
+        validateMessage(id, 'players', message)?.players.map(playerFromTuple),
+      );
+    });
 
-    this.games = new Resource(
-      () => {
-        const id = newRequestId();
-        return this.socket.request({ id, do: { game: 'list' } }, message =>
-          validateMessage(id, 'games', message)?.games.map(gameFromTuple),
-        );
-      },
-      games => games.sort((a, b) => a.createdMs - b.createdMs),
-    );
+    this.games = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { game: 'list' } }, message =>
+        validateMessage(id, 'games', message)?.games.map(gameFromTuple),
+      );
+    });
 
-    this.invites = new Resource(
-      () => {
-        const id = newRequestId();
-        return this.socket.request({ id, do: { invite: 'list' } }, message =>
-          validateMessage(id, 'invites', message)?.invites.map(inviteFromTuple),
-        );
-      },
-      invites => invites.sort((a, b) => b.createdMs - a.createdMs),
-    );
+    this.invites = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { invite: 'list' } }, message =>
+        validateMessage(id, 'invites', message)?.invites.map(inviteFromTuple),
+      );
+    });
   }
 
   public useSelf() {
@@ -292,11 +283,11 @@ type Subscriber = (message: string, error: boolean) => void;
 
 const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlayer[] => {
   const enrichedPlayers = new Map(
-    players.map((p, i) => [
+    players.map(p => [
       p.id,
       {
         ...p,
-        position: i + 1,
+        rating: 0,
         games: 0,
         wins: 0,
         losses: 0,
@@ -309,50 +300,64 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
   );
 
   for (const game of games) {
-    const player_one = enrichedPlayers.get(game.playerOne);
-    if (player_one !== undefined) {
-      player_one.games += 1;
-      player_one.pointsWon += game.scoreOne;
-      player_one.pointsLost += game.scoreTwo;
+    const playerOne = enrichedPlayers.get(game.playerOne);
+    if (playerOne !== undefined) {
+      playerOne.rating = game.ratingOne + game.ratingDelta;
+      playerOne.games += 1;
+      playerOne.pointsWon += game.scoreOne;
+      playerOne.pointsLost += game.scoreTwo;
       if (game.scoreOne > game.scoreTwo) {
-        player_one.wins += 1;
+        playerOne.wins += 1;
         if (game.challenge) {
-          player_one.challengesWon += 1;
+          playerOne.challengesWon += 1;
         }
       } else {
-        player_one.losses += 1;
+        playerOne.losses += 1;
         if (game.challenge) {
-          player_one.challengesLost += 1;
+          playerOne.challengesLost += 1;
         }
       }
     }
 
-    const player_two = enrichedPlayers.get(game.playerTwo);
-    if (player_two !== undefined) {
-      player_two.games += 1;
-      player_two.pointsLost += game.scoreOne;
-      player_two.pointsWon += game.scoreTwo;
+    const playerTwo = enrichedPlayers.get(game.playerTwo);
+    if (playerTwo !== undefined) {
+      playerTwo.rating = game.ratingTwo - game.ratingDelta;
+      playerTwo.games += 1;
+      playerTwo.pointsLost += game.scoreOne;
+      playerTwo.pointsWon += game.scoreTwo;
       if (game.scoreTwo > game.scoreOne) {
-        player_two.wins += 1;
+        playerTwo.wins += 1;
         if (game.challenge) {
-          player_two.challengesWon += 1;
+          playerTwo.challengesWon += 1;
         }
       } else {
-        player_two.losses += 1;
+        playerTwo.losses += 1;
         if (game.challenge) {
-          player_two.challengesLost += 1;
+          playerTwo.challengesLost += 1;
         }
       }
     }
   }
 
-  return Array.from(enrichedPlayers.values()).sort(sortPlayers);
+  return Array.from(enrichedPlayers.values())
+    .sort((a, b) => {
+      const rating = b.rating - a.rating;
+      if (rating !== 0) {
+        return rating;
+      }
+
+      return b.createdMs - a.createdMs;
+    })
+    .map((p, i) => {
+      return {
+        ...p,
+        position: i + 1,
+      };
+    });
 };
 
 const enrichGames = (games: Game[] = [], players: Player[] = []): EnrichedGame[] => {
-  const playerRatings = new Map(
-    players.map(p => [p.id, { name: p.name, rating: p.rating, balance: 0 }]),
-  );
+  const playerRatings = new Map(players.map(p => [p.id, { name: p.name, balance: 0 }]));
 
   return games
     .map(g => {
@@ -371,46 +376,13 @@ const enrichGames = (games: Game[] = [], players: Player[] = []): EnrichedGame[]
 
       return {
         ...g,
+        ratingOne: g.ratingOne + g.ratingDelta,
+        ratingTwo: g.ratingTwo - g.ratingDelta,
         balanceOne,
         balanceTwo,
-      };
-    })
-    .reverse()
-    .map(g => {
-      const playerOne = playerRatings.get(g.playerOne);
-      const playerTwo = playerRatings.get(g.playerTwo);
-      const ratingOne = playerOne?.rating ?? g.ratingOne;
-      const ratingTwo = playerTwo?.rating ?? g.ratingTwo;
-      let ratingDelta: number | undefined;
-
-      if (playerOne !== undefined) {
-        ratingDelta = playerOne.rating - g.ratingOne;
-        playerOne.rating = g.ratingOne;
-      }
-
-      if (playerTwo !== undefined) {
-        if (ratingDelta === undefined) {
-          ratingDelta = g.ratingTwo - playerTwo.rating;
-        }
-        playerTwo.rating = g.ratingTwo;
-      }
-
-      return {
-        ...g,
-        ratingOne,
-        ratingTwo,
         playerOneName: playerOne?.name,
         playerTwoName: playerTwo?.name,
-        ratingDelta,
       };
-    });
-};
-
-const sortPlayers = <T extends Pick<Player, 'rating' | 'createdMs'>>(a: T, b: T) => {
-  const result = b.rating - a.rating;
-  if (result !== 0) {
-    return result;
-  }
-
-  return a.createdMs - b.createdMs;
+    })
+    .reverse();
 };

@@ -18,7 +18,7 @@ import {
   gameFromTuple,
   inviteFromTuple,
 } from '../types';
-import { type Message, type Request, type Ided } from './message';
+import { type Message, type Request, type Ided, type PushPlayer, type PushGame } from './message';
 import { newRequestId, ResponseError, validateDone, validateMessage } from './request';
 
 export class Store {
@@ -51,47 +51,9 @@ export class Store {
     this.socket.registerHandler(message => {
       if ('push' in message) {
         if ('player' in message.push) {
-          if ('renamed' in message.push.player) {
-            const rename = message.push.player.renamed;
-            this.players.set(players =>
-              players.map(p => (p.id === rename.player ? { ...p, name: rename.new } : p)),
-            );
-            this.broadcast(`Player ${rename.old} changed their name to ${rename.new}`, false);
-          } else if ('invited' in message.push.player) {
-            const invite = message.push.player.invited;
-            this.invites.set(invites => upsert(invites, invite));
-            this.broadcast(`Player ${invite.name} was invited`, false);
-          } else if ('uninvited' in message.push.player) {
-            const uninvite = message.push.player.uninvited;
-            this.invites.set(invites => invites.filter(i => i.id !== uninvite.id));
-            this.broadcast(`Invitation for ${uninvite.name} was lifted`, false);
-          } else if ('joined' in message.push.player) {
-            const join = message.push.player.joined;
-            this.invites.set(invites => invites.filter(i => i.email !== join.email));
-            this.players.set(players => upsert(players, join));
-            this.broadcast(`Player ${join.name} joined the fun`, false);
-          }
+          this.handlePushPlayer(message.push.player);
         } else if ('game' in message.push) {
-          if ('registered' in message.push.game) {
-            const [game, playerOne, playerTwo] = message.push.game.registered;
-            this.games.set(games => upsert(games, game));
-            this.players.set(players => {
-              upsert(players, playerOne);
-              upsert(players, playerTwo);
-              return players;
-            });
-            if (game.scoreOne > game.scoreTwo) {
-              this.broadcast(
-                `${playerOne.name} beat ${playerTwo.name} ${game.scoreOne} to ${game.scoreTwo}`,
-                false,
-              );
-            } else {
-              this.broadcast(
-                `${playerTwo.name} beat ${playerOne.name} ${game.scoreTwo} to ${game.scoreOne}`,
-                false,
-              );
-            }
-          }
+          this.handlePushGame(message.push.game);
         }
       }
       return true;
@@ -212,6 +174,74 @@ export class Store {
     this.games.reload();
     this.invites.reload();
   }
+
+  private handlePushPlayer(message: PushPlayer) {
+    if ('renamed' in message) {
+      const rename = message.renamed;
+      this.players.set(players =>
+        players.map(p => (p.id === rename.player ? { ...p, name: rename.new } : p)),
+      );
+      this.broadcast(`Player ${rename.old} changed their name to ${rename.new}`, false);
+    } else if ('invited' in message) {
+      const invite = message.invited;
+      this.invites.set(invites => upsert(invites, invite));
+      this.broadcast(`Player ${invite.name} was invited`, false);
+    } else if ('uninvited' in message) {
+      const uninvite = message.uninvited;
+      this.invites.set(invites => invites.filter(i => i.id !== uninvite.id));
+      this.broadcast(`Invitation for ${uninvite.name} was lifted`, false);
+    } else if ('joined' in message) {
+      const join = message.joined;
+      this.invites.set(invites => invites.filter(i => i.email !== join.email));
+      this.players.set(players => upsert(players, join));
+      this.broadcast(`Player ${join.name} joined the fun`, false);
+    }
+  }
+
+  private handlePushGame(message: PushGame) {
+    if ('registered' in message) {
+      const registered = message.registered;
+      const game = registered.updates.reduce<Game | undefined>((acc, curr) => {
+        const game = gameFromTuple(curr);
+        this.games.set(games => upsert(games, game));
+        if (game.id === registered.game) {
+          acc = game;
+        }
+        return acc;
+      }, undefined);
+
+      if (game === undefined) {
+        return;
+      }
+
+      const players = this.players.raw()?.latest;
+      if (players === undefined) {
+        return;
+      }
+
+      const playerOne = players.find(p => p.id === game.playerOne);
+      if (playerOne === undefined) {
+        return;
+      }
+
+      const playerTwo = players.find(p => p.id === game.playerTwo);
+      if (playerTwo === undefined) {
+        return;
+      }
+
+      if (game.scoreOne > game.scoreTwo) {
+        this.broadcast(
+          `${playerOne.name} beat ${playerTwo.name} ${game.scoreOne} to ${game.scoreTwo}`,
+          false,
+        );
+      } else {
+        this.broadcast(
+          `${playerTwo.name} beat ${playerOne.name} ${game.scoreTwo} to ${game.scoreOne}`,
+          false,
+        );
+      }
+    }
+  }
 }
 
 class Resource<T> {
@@ -224,6 +254,10 @@ class Resource<T> {
   constructor(fetcher: () => Promise<T>, mapper?: (data: T) => T) {
     this.fetcher = fetcher;
     this.mapper = mapper;
+  }
+
+  public raw(): SolidResource<T> | undefined {
+    return this.data;
   }
 
   public get(): SolidResource<T> {

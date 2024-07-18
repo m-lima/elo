@@ -3,7 +3,6 @@ import {
   type GameTuple,
   type PlayerTuple,
   type Player,
-  type Game,
   type User,
   type Invite,
 } from '../types';
@@ -61,5 +60,8 @@ export type PushPlayer =
   | { uninvited: Invite }
   | { joined: Player };
 export type PushGame = {
-  registered: [Game, Player, Player];
+  registered: {
+    game: number;
+    updates: GameTuple[];
+  };
 };

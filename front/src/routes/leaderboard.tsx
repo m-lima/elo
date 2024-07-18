@@ -9,6 +9,7 @@ import { useStore } from '../store';
 import './leaderboard.css';
 
 // TODO: Make this more responsive
+// TODO: Graph pie charts for players
 export const Leaderboard = () => {
   const store = useStore();
   const players = store.useEnrichedPlayers();

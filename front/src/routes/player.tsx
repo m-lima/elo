@@ -28,7 +28,6 @@ enum Prompt {
   Game,
 }
 
-// TODO: Bug when creating a game from the screen of another player
 export const Player = () => {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -116,8 +115,9 @@ export const Player = () => {
           visible={() => visiblePrompt() === Prompt.Game}
           hide={setVisiblePrompt}
           store={store}
-          self={player}
           players={players}
+          self={self}
+          opponent={player}
         />
         <action.Actions>
           <Switch>

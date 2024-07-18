@@ -1,7 +1,7 @@
 import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
 
 import { Store } from '../../store';
-import { type Getter, type Player } from '../../types';
+import { type Getter, type Player, type User } from '../../types';
 
 import { Prompt, type Props } from './prompt';
 
@@ -10,14 +10,17 @@ import './game.css';
 export const Game = (
   props: Props & {
     store: Store;
-    self: Getter<Player>;
     players: Getter<Player[]>;
+    self: Getter<User>;
+    opponent?: Getter<Player>;
   },
 ) => {
   const [score, setScore] = createSignal(11);
   const [opponent, setOpponent] = createSignal<number | undefined>();
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
+
+  const selfName = createMemo(() => props.players()?.find(p => p.id === props.self()?.id)?.name);
 
   const opponents = createMemo(() => {
     const playersInner = props.players();
@@ -77,9 +80,12 @@ export const Game = (
       disabled={() => invalidScore() || opponent() === undefined}
     >
       <div class='components-prompt-game'>
-        <div class='components-prompt-game-self'>{props.self()?.name}</div>
+        <div class='components-prompt-game-self'>{selfName()}</div>
         <Score getter={score} setter={setScore} invalid={invalidScore} />
-        <select value={opponent()} onInput={e => setOpponent(Number(e.currentTarget.value))}>
+        <select
+          value={opponent() ?? props.opponent?.()?.id}
+          onInput={e => setOpponent(Number(e.currentTarget.value))}
+        >
           <For each={opponents()}>{o => <option value={o.id}>{o.name}</option>}</For>
         </select>
         <Score getter={opponentScore} setter={setOpponentScore} invalid={invalidScore} />

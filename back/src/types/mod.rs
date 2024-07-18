@@ -14,19 +14,11 @@ pub struct Player {
     pub name: String,
     pub email: String,
     pub inviter: Option<Id>,
-    pub rating: f64,
     pub created_ms: Millis,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct PlayerTuple(
-    pub Id,
-    pub String,
-    pub String,
-    pub Option<Id>,
-    pub f64,
-    pub Millis,
-);
+pub struct PlayerTuple(pub Id, pub String, pub String, pub Option<Id>, pub Millis);
 
 impl From<Player> for PlayerTuple {
     fn from(value: Player) -> Self {
@@ -35,7 +27,6 @@ impl From<Player> for PlayerTuple {
             value.name,
             value.email,
             value.inviter,
-            value.rating,
             value.created_ms,
         )
     }
@@ -77,6 +68,7 @@ pub(crate) struct Game {
     pub score_two: i64,
     pub rating_one: f64,
     pub rating_two: f64,
+    pub rating_delta: f64,
     pub challenge: bool,
     pub created_ms: Millis,
 }
@@ -88,6 +80,7 @@ pub(crate) struct GameTuple(
     pub Id,
     pub i64,
     pub i64,
+    pub f64,
     pub f64,
     pub f64,
     pub bool,
@@ -104,6 +97,7 @@ impl From<Game> for GameTuple {
             value.score_two,
             value.rating_one,
             value.rating_two,
+            value.rating_delta,
             value.challenge,
             value.created_ms,
         )

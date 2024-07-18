@@ -84,9 +84,8 @@ where
 
         match request {
             model::request::Invite::Accept => {
-                let rating = skillratings::elo::EloRating::new().rating;
                 let (player, initiator) = invites
-                    .accept(self.handler.user.id(), rating)
+                    .accept(self.handler.user.id())
                     .await
                     .map_err(model::Error::Store)?;
 

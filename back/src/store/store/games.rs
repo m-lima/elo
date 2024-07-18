@@ -21,48 +21,24 @@ impl<'a> From<&'a super::Store> for Games<'a> {
 impl Games<'_> {
     #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::Game>> {
-        sqlx::query_as!(
-            types::Game,
-            r#"
-            SELECT
-                id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                rating_one,
-                rating_two,
-                challenge,
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                games
-            ORDER BY
-                created_ms ASC
-            "#
-        )
-        .fetch_all(self.pool)
-        .await
-        .map_err(Error::from)
+        Self::list_games(self.pool).await
     }
 
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,
-        player_one: types::Id,
-        player_two: types::Id,
-        score_one: u8,
-        score_two: u8,
+        (player_one, player_two): (types::Id, types::Id),
+        (score_one, score_two): (u8, u8),
         challenge: bool,
+        default_rating: f64,
         rating_updater: F,
-    ) -> Result<(types::Game, types::Player, types::Player)>
+    ) -> Result<(types::Id, Vec<types::Game>)>
     where
-        F: Copy + Fn(f64, f64, bool, bool) -> (f64, f64),
+        F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
         validate_game(player_one, player_two, score_one, score_two)?;
 
         let mut tx = self.pool.begin().await?;
-
-        let (rating_one, rating_two) = ratings(player_one, player_two, tx.as_mut()).await?;
 
         if challenge {
             let challenged_today = sqlx::query!(
@@ -92,26 +68,56 @@ impl Games<'_> {
         }
 
         let game = sqlx::query_as!(
-            types::Game,
+            super::Id,
             r#"
             INSERT INTO games (
                 player_one,
                 player_two,
                 score_one,
                 score_two,
+                challenge,
                 rating_one,
                 rating_two,
-                challenge
+                rating_delta
             ) VALUES (
                 $1,
                 $2,
                 $3,
                 $4,
                 $5,
-                $6,
-                $7
+                0,
+                0,
+                0
             )
             RETURNING
+                id
+            "#,
+            player_one,
+            player_two,
+            score_one,
+            score_two,
+            challenge,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map(|r| r.id)?;
+
+        let updates = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
+
+        tx.commit().await?;
+
+        Ok((game, updates))
+    }
+
+    async fn list_games<'c, 'e, E>(executor: E) -> Result<Vec<types::Game>>
+    where
+        'c: 'e,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
+    {
+        sqlx::query_as!(
+            types::Game,
+            r#"
+            SELECT
                 id,
                 player_one,
                 player_two,
@@ -119,73 +125,155 @@ impl Games<'_> {
                 score_two,
                 rating_one,
                 rating_two,
+                rating_delta,
                 challenge,
                 created_ms AS "created_ms: types::Millis"
-            "#,
-            player_one,
-            player_two,
-            score_one,
-            score_two,
-            rating_one,
-            rating_two,
-            challenge,
+            FROM
+                games
+            ORDER BY
+                created_ms ASC
+            "#
         )
-        .fetch_one(tx.as_mut())
-        .await?;
+        .fetch_all(executor)
+        .await
+        .map_err(Error::from)
+    }
 
-        let (rating_one, rating_two) =
-            rating_updater(rating_one, rating_two, score_one > score_two, challenge);
-
-        let one = sqlx::query_as!(
-            types::Player,
-            r#"
-            UPDATE
-                players
-            SET
-                rating = $2
-            WHERE
-                id = $1
-            RETURNING
-                id AS "id!: _",
-                name AS "name!: _",
-                email AS "email!: _",
-                inviter AS "inviter!: _",
-                rating AS "rating!: _",
-                created_ms AS "created_ms!: types::Millis"
-            "#,
-            game.player_one,
-            rating_one,
-        )
-        .fetch_one(tx.as_mut())
-        .await?;
-
-        let two = sqlx::query_as!(
-            types::Player,
-            r#"
-            UPDATE
-                players
-            SET
-                rating = $2
-            WHERE
-                id = $1
-            RETURNING
-                id AS "id!: _",
-                name AS "name!: _",
-                email AS "email!: _",
-                inviter AS "inviter!: _",
-                rating AS "rating!: _",
-                created_ms AS "created_ms!: types::Millis"
-            "#,
-            game.player_two,
-            rating_two,
-        )
-        .fetch_one(tx.as_mut())
-        .await?;
-
+    #[tracing::instrument(skip(self, rating_updater))]
+    pub async fn refresh<F>(
+        &self,
+        default_rating: f64,
+        rating_updater: F,
+    ) -> Result<Vec<types::Game>>
+    where
+        F: Copy + Fn(f64, f64, bool, bool) -> f64,
+    {
+        let mut tx = self.pool.begin().await?;
+        let games = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
         tx.commit().await?;
 
-        Ok((game, one, two))
+        Ok(games)
     }
+
+    async fn execute_refresh<F>(
+        default_rating: f64,
+        rating_updater: F,
+        tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
+    ) -> Result<Vec<types::Game>>
+    where
+        F: Copy + Fn(f64, f64, bool, bool) -> f64,
+    {
+        let updates = Self::build_updates(default_rating, rating_updater, tx.as_mut()).await?;
+
+        if let Some(mut query) = build_update_query(&updates) {
+            query
+                .build_query_as()
+                .fetch_all(tx.as_mut())
+                .await
+                .map_err(Into::into)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    async fn build_updates<'c, 'e, E, F>(
+        default_rating: f64,
+        rating_updater: F,
+        executor: E,
+    ) -> Result<Vec<RatingUpdate>>
+    where
+        'c: 'e,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
+        F: Copy + Fn(f64, f64, bool, bool) -> f64,
+    {
+        macro_rules! f64_ne {
+            ($one: expr, $two: expr) => {
+                ($one - $two).abs() > f64::EPSILON
+            };
+        }
+
+        let updates = Self::list_games(executor).await?;
+        let mut last_ratings = std::collections::HashMap::<types::Id, f64>::new();
+
+        Ok(updates
+            .into_iter()
+            .filter_map(|game| {
+                let rating_one = last_ratings
+                    .get(&game.player_one)
+                    .copied()
+                    .unwrap_or(default_rating);
+                let rating_two = last_ratings
+                    .get(&game.player_two)
+                    .copied()
+                    .unwrap_or(default_rating);
+
+                let rating_delta = rating_updater(
+                    rating_one,
+                    rating_two,
+                    game.score_one > game.score_two,
+                    game.challenge,
+                );
+
+                last_ratings.insert(game.player_one, rating_one + rating_delta);
+                last_ratings.insert(game.player_two, rating_two - rating_delta);
+
+                (f64_ne!(rating_one, game.rating_one)
+                    || f64_ne!(rating_two, game.rating_two)
+                    || f64_ne!(rating_delta, game.rating_delta))
+                .then_some(RatingUpdate {
+                    id: game.id,
+                    rating_one,
+                    rating_two,
+                    rating_delta,
+                })
+            })
+            .collect())
+    }
+}
+
+struct RatingUpdate {
+    id: types::Id,
+    rating_one: f64,
+    rating_two: f64,
+    rating_delta: f64,
+}
+
+fn build_update_query(
+    updates: &[RatingUpdate],
+) -> Option<sqlx::QueryBuilder<'static, sqlx::Sqlite>> {
+    if updates.is_empty() {
+        return None;
+    }
+
+    let mut builder = sqlx::QueryBuilder::new("UPDATE games SET rating_one = CASE");
+    for update in updates {
+        builder.push(" WHEN id = ");
+        builder.push_bind(update.id);
+        builder.push(" THEN ");
+        builder.push_bind(update.rating_one);
+    }
+    builder.push(" ELSE rating_one END, rating_two = CASE");
+    for update in updates {
+        builder.push(" WHEN id = ");
+        builder.push_bind(update.id);
+        builder.push(" THEN ");
+        builder.push_bind(update.rating_two);
+    }
+    builder.push(" ELSE rating_two END, rating_delta = CASE");
+    for update in updates {
+        builder.push(" WHEN id = ");
+        builder.push_bind(update.id);
+        builder.push(" THEN ");
+        builder.push_bind(update.rating_delta);
+    }
+    builder.push(" ELSE rating_delta END WHERE id IN (");
+    let mut separated_builder = builder.separated(',');
+    for update in updates {
+        separated_builder.push_bind(update.id);
+    }
+    builder.push(") RETURNING id, player_one, player_two, score_one, score_two, rating_one, rating_two, rating_delta, challenge, created_ms");
+
+    Some(builder)
 }
 
 fn validate_game(
@@ -212,200 +300,5 @@ fn validate_game(
         Err(Error::InvalidValue("There can only be one winner"))
     } else {
         Ok(())
-    }
-}
-
-async fn ratings<'c, 'e, E>(
-    player_one: types::Id,
-    player_two: types::Id,
-    executor: E,
-) -> Result<(f64, f64)>
-where
-    'c: 'e,
-    E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
-{
-    sqlx::query!(
-        r#"
-        SELECT
-            one.rating as one,
-            two.rating as two
-        FROM
-            (
-                SELECT
-                    rating
-                FROM
-                    players
-                WHERE
-                    id = $1
-            ) AS one,
-            (
-                SELECT
-                    rating
-                FROM
-                    players
-                WHERE
-                    id = $2
-            ) AS two;
-        "#,
-        player_one,
-        player_two,
-    )
-    .fetch_one(executor)
-    .await
-    .map_err(Error::from)
-    .map(|r| (r.one, r.two))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[sqlx::test]
-    async fn ratings(pool: sqlx::sqlite::SqlitePool) {
-        let one = sqlx::query_as!(
-            types::Player,
-            r#"
-            INSERT INTO players (
-                name,
-                email,
-                rating
-            ) VALUES (
-                'one',
-                'one',
-                100
-            ) RETURNING
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                created_ms AS "created_ms: types::Millis"
-            "#,
-        )
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-
-        let two = sqlx::query_as!(
-            types::Player,
-            r#"
-            INSERT INTO players (
-                name,
-                email,
-                rating
-            ) VALUES (
-                'two',
-                'two',
-                200
-            ) RETURNING
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                created_ms AS "created_ms: types::Millis"
-            "#,
-        )
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-
-        let (rating_one, rating_two) = super::ratings(one.id, two.id, &pool).await.unwrap();
-
-        assert!((rating_one - one.rating).abs() < f64::EPSILON);
-        assert!((rating_two - two.rating).abs() < f64::EPSILON);
-    }
-
-    #[sqlx::test]
-    async fn challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
-        let one = sqlx::query_as!(
-            types::Player,
-            r#"
-            INSERT INTO players (
-                name,
-                email,
-                rating
-            ) VALUES (
-                'one',
-                'one',
-                100
-            ) RETURNING
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                created_ms AS "created_ms: types::Millis"
-            "#,
-        )
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-
-        let two = sqlx::query_as!(
-            types::Player,
-            r#"
-            INSERT INTO players (
-                name,
-                email,
-                rating
-            ) VALUES (
-                'two',
-                'two',
-                200
-            ) RETURNING
-                id,
-                name,
-                email,
-                inviter,
-                rating,
-                created_ms AS "created_ms: types::Millis"
-            "#,
-        )
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-
-        let store = super::super::Store { pool: pool.clone() };
-        let games = store.games();
-        let challenge = games
-            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
-            .await
-            .unwrap();
-        games
-            .register(one.id, two.id, 11, 0, false, |a, b, _, _| (a, b))
-            .await
-            .unwrap();
-
-        let error = games
-            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
-            .await
-            .unwrap_err();
-
-        match error {
-            Error::InvalidValue(s) => assert_eq!(s, "Players cannot challenge each other more than once a day"),
-            e => panic!("Expected `Error::InvalidValue(\"Players cannot challenge each other more than once a day\")`, got: {e:?}"),
-        }
-
-        #[allow(clippy::cast_possible_truncation)]
-        let created_ms = (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis()
-            - 24 * 60 * 60 * 1000) as i64;
-
-        sqlx::query!(
-            "UPDATE games SET created_ms = $1 WHERE id = $2",
-            created_ms,
-            challenge.0.id
-        )
-        .fetch_all(&pool)
-        .await
-        .unwrap();
-
-        games
-            .register(one.id, two.id, 11, 0, true, |a, b, _, _| (a, b))
-            .await
-            .unwrap();
     }
 }

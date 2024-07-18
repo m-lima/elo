@@ -1,4 +1,5 @@
 use super::{super::model, *};
+use crate::types;
 
 #[sqlx::test]
 async fn list(pool: sqlx::sqlite::SqlitePool) {
@@ -19,7 +20,7 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered(game, _, _)) = handler
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
             opponent: accepted.id,
             score: 11,
@@ -37,10 +38,13 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
     handler
         .call(model::Request::Game(model::request::Game::List))
         .await
-        .ok(model::Response::Games(vec![types::GameTuple::from(game)]))
+        .ok(model::Response::Games(updates))
         .unwrap()
         .none()
         .unwrap()
@@ -57,7 +61,7 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered(game, one, two)) = handler
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
             opponent: accepted.id,
             score: 11,
@@ -75,36 +79,43 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    let game = {
+        let game = updates.into_iter().next().unwrap();
+        types::Game {
+            id: game.0,
+            player_one: game.1,
+            player_two: game.2,
+            score_one: game.3,
+            score_two: game.4,
+            rating_one: game.5,
+            rating_two: game.6,
+            rating_delta: game.7,
+            challenge: game.8,
+            created_ms: game.9,
+        }
+    };
+
+    let rating_delta = skillratings::elo::elo(
+        &skillratings::elo::EloRating::new(),
+        &skillratings::elo::EloRating::new(),
+        &skillratings::Outcomes::WIN,
+        &skillratings::elo::EloConfig::new(),
+    )
+    .0
+    .rating
+        - skillratings::elo::EloRating::new().rating;
+
     assert_eq!(game.player_one, player.id);
     assert_eq!(game.player_two, accepted.id);
     assert_eq!(game.score_one, 11);
     assert_eq!(game.score_two, 0);
-    assert!((game.rating_one - player.rating).abs() < f64::EPSILON);
-    assert!((game.rating_two - accepted.rating).abs() < f64::EPSILON);
+    assert!((game.rating_one - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
+    assert!((game.rating_two - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
+    assert!((game.rating_delta - rating_delta).abs() <= f64::EPSILON);
     assert!(!game.challenge);
-
-    let expected_scores = skillratings::elo::elo(
-        &skillratings::elo::EloRating {
-            rating: player.rating,
-        },
-        &skillratings::elo::EloRating {
-            rating: accepted.rating,
-        },
-        &skillratings::Outcomes::WIN,
-        &skillratings::elo::EloConfig::new(),
-    );
-
-    let player = types::Player {
-        rating: expected_scores.0.rating,
-        ..player
-    };
-    let accepted = types::Player {
-        rating: expected_scores.1.rating,
-        ..accepted
-    };
-
-    assert_eq!(one, player);
-    assert_eq!(two, accepted);
 
     handler
         .call(model::Request::Game(model::request::Game::List))
@@ -115,16 +126,51 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
         .unwrap()
         .none()
         .unwrap();
+}
+
+#[sqlx::test]
+async fn register_many(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let mut games = Vec::with_capacity(3);
+    for _ in 0..3 {
+        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+            .call(model::Request::Game(model::request::Game::Register {
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+            }))
+            .await
+            .done()
+            .unwrap()
+            .none()
+            .unwrap()
+            .some()
+            .unwrap()
+        {
+            println!("{updates:?}");
+            assert_eq!(updates.len(), 1);
+            assert_eq!(updates[0].0, game);
+            games.push(updates.into_iter().next().unwrap());
+        } else {
+            panic!()
+        }
+    }
 
     handler
-        .call(model::Request::Player(model::request::Player::List))
+        .call(model::Request::Game(model::request::Game::List))
         .await
-        .ok(model::Response::Players(
-            [player, accepted]
-                .map(types::PlayerTuple::from)
-                .into_iter()
-                .collect(),
-        ))
+        .ok(model::Response::Games(games.clone()))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
         .unwrap();
 }
 

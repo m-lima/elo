@@ -112,7 +112,6 @@ async fn accept(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(accepted.name, ACCEPTED_NAME);
     assert_eq!(accepted.email, ACCEPTED_EMAIL);
     assert_eq!(accepted.inviter, Some(player.id));
-    assert!((accepted.rating - skillratings::elo::EloRating::new().rating).abs() < f64::EPSILON);
 }
 
 #[sqlx::test]

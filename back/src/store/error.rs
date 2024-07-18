@@ -18,6 +18,7 @@ impl From<sqlx::Error> for Error {
             sqlx::Error::Database(e) if e.code().map_or(false, |c| c == "2067") => {
                 Error::AlreadyExists
             }
+            sqlx::Error::Database(e) if e.code().map_or(false, |c| c == "787") => Error::NotFound,
             sqlx::Error::RowNotFound => Error::NotFound,
             e => Error::Query(e),
         }

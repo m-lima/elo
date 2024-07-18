@@ -155,7 +155,7 @@ impl Invites<'_> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn accept(&self, id: types::Id, rating: f64) -> Result<(types::Player, types::User)> {
+    pub async fn accept(&self, id: types::Id) -> Result<(types::Player, types::User)> {
         let mut tx = self.pool.begin().await?;
 
         let invite = sqlx::query_as!(
@@ -183,25 +183,21 @@ impl Invites<'_> {
             INSERT INTO players (
                 name,
                 email,
-                inviter,
-                rating
+                inviter
             ) VALUES (
                 $1,
                 $2,
-                $3,
-                $4
+                $3
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                rating,
                 created_ms AS "created_ms: types::Millis"
             "#,
             invite.name,
             invite.email,
             invite.inviter,
-            rating,
         )
         .fetch_one(tx.as_mut())
         .await?;

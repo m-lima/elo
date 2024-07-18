@@ -10,18 +10,15 @@ async fn insert(
         r#"
         INSERT INTO players (
             name,
-            email,
-            rating
+            email
         ) VALUES (
             $1,
-            $2,
-            0
-        ) RETURNING
+            $2
+       ) RETURNING
             id,
             name,
             email,
             inviter,
-            rating,
             created_ms AS "created_ms: types::Millis"
         "#,
         name,
@@ -66,18 +63,15 @@ mod constraints {
             r#"
             INSERT INTO players (
                 name,
-                email,
-                rating
+                email
             ) VALUES (
                 "bla",
-                NULL,
-                0
+                NULL
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                rating,
                 created_ms AS "created_ms: types::Millis"
             "#
         )
@@ -152,14 +146,18 @@ mod constraints {
                 score_one,
                 score_two,
                 rating_one,
-                rating_two
+                rating_two,
+                rating_delta,
+                challenge
             ) VALUES (
                 $1,
                 $1,
                 0,
                 0,
                 0,
-                0
+                0,
+                0,
+                false
             ) RETURNING
                 id,
                 player_one,
@@ -168,6 +166,7 @@ mod constraints {
                 score_two,
                 rating_one,
                 rating_two,
+                rating_delta,
                 challenge,
                 created_ms AS "created_ms: types::Millis"
             "#,
@@ -204,14 +203,18 @@ mod constraints {
                         score_one,
                         score_two,
                         rating_one,
-                        rating_two
+                        rating_two,
+                        rating_delta,
+                        challenge
                     ) VALUES (
                         $1,
                         $2,
                         $3,
                         $4,
                         0,
-                        0
+                        0,
+                        0,
+                        false
                     ) RETURNING
                         id,
                         player_one,
@@ -220,6 +223,7 @@ mod constraints {
                         score_two,
                         rating_one,
                         rating_two,
+                        rating_delta,
                         challenge,
                         created_ms AS "created_ms: types::Millis"
                     "#,
@@ -341,19 +345,16 @@ mod constraints {
             INSERT INTO players (
                 inviter,
                 name,
-                email,
-                rating
+                email
             ) VALUES (
                 $1,
                 "namer",
-                "emailer",
-                0
+                "emailer"
             ) RETURNING
                 id,
                 name,
                 email,
                 inviter,
-                rating,
                 created_ms AS "created_ms: types::Millis"
             "#,
             player.id,
@@ -369,7 +370,6 @@ mod constraints {
                 name: String::from("namer"),
                 email: String::from("emailer"),
                 inviter: Some(player.id),
-                rating: 0.0,
                 created_ms: new_player.created_ms,
             }
         );
@@ -401,7 +401,6 @@ mod constraints {
                 name,
                 email,
                 inviter,
-                rating,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 players
@@ -418,7 +417,6 @@ mod constraints {
                 name: String::from("namer"),
                 email: String::from("emailer"),
                 inviter: None,
-                rating: 0.0,
                 created_ms: new_player.created_ms,
             }
         );

@@ -5,7 +5,6 @@ CREATE TABLE players (
   email       TEXT    NOT NULL UNIQUE
     CHECK(LENGTH(TRIM(email)) > 0 AND LENGTH(email) <= 128),
   inviter     INTEGER,
-  rating      REAL NOT NULL,
   created_ms  INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
@@ -26,22 +25,30 @@ CREATE TABLE invites (
 );
 
 CREATE TABLE games (
-  id         INTEGER NOT NULL PRIMARY KEY,
-  player_one INTEGER NOT NULL,
-  player_two INTEGER NOT NULL
+  id           INTEGER NOT NULL PRIMARY KEY,
+  player_one   INTEGER NOT NULL
     CHECK(player_one <> player_two),
-  score_one  INTEGER NOT NULL,
-  score_two  INTEGER NOT NULL
+  player_two   INTEGER NOT NULL
+    CHECK(player_one <> player_two),
+  score_one    INTEGER NOT NULL
     CHECK(
       (score_one = 11 AND score_two < 11)
       OR (score_one = 12 AND score_two = 10)
       OR (score_one < 11 AND score_two = 11)
       OR (score_one = 10 AND score_two = 12)
     ),
-  rating_one REAL    NOT NULL,
-  rating_two REAL    NOT NULL,
-  challenge  BOOLEAN NOT NULL DEFAULT FALSE,
-  created_ms INTEGER NOT NULL
+  score_two    INTEGER NOT NULL
+    CHECK(
+      (score_one = 11 AND score_two < 11)
+      OR (score_one = 12 AND score_two = 10)
+      OR (score_one < 11 AND score_two = 11)
+      OR (score_one = 10 AND score_two = 12)
+    ),
+  rating_one   REAL    NOT NULL,
+  rating_two   REAL    NOT NULL,
+  rating_delta REAL    NOT NULL,
+  challenge    BOOLEAN NOT NULL,
+  created_ms   INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
   FOREIGN KEY(player_one) REFERENCES players(id) ON DELETE CASCADE,

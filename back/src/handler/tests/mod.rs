@@ -37,18 +37,15 @@ async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> sqlx::Result<types::P
         r#"
         INSERT INTO players (
             name,
-            email,
-            rating
+            email
         ) VALUES (
             $1,
-            $2,
-            1000
+            $2
         ) RETURNING
             id,
             name,
             email,
             inviter,
-            rating,
             created_ms AS "created_ms: types::Millis"
         "#,
         TESTER_NAME,

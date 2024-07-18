@@ -50,12 +50,10 @@ impl Players<'_> {
                 name,
                 email,
                 inviter,
-                rating,
                 created_ms AS "created_ms: types::Millis"
             FROM
                 players
             ORDER BY
-                rating DESC,
                 created_ms ASC
             "#
         )
@@ -113,7 +111,6 @@ impl Players<'_> {
                 name AS "name!: _",
                 email AS "email!: _",
                 inviter AS "inviter!: _",
-                rating AS "rating!: _",
                 created_ms AS "created_ms!: types::Millis"
             "#,
             id,

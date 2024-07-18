@@ -65,9 +65,7 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
         (name, email)
     }
 
-    let user = store
-        .initialize(skillratings::elo::EloRating::new().rating)
-        .await?;
+    let user = store.initialize().await?;
 
     // USER
     // |- A

@@ -16,7 +16,7 @@ export const Game = (
   },
 ) => {
   const [score, setScore] = createSignal(11);
-  const [opponent, setOpponent] = createSignal<number | undefined>();
+  const [maybeOpponent, setOpponent] = createSignal<number | undefined>();
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
 
@@ -59,6 +59,8 @@ export const Game = (
     return true;
   });
 
+  const opponent = createMemo(() => maybeOpponent() ?? props.opponent?.()?.id);
+
   return (
     <Prompt
       visible={props.visible}
@@ -82,10 +84,7 @@ export const Game = (
       <div class='components-prompt-game'>
         <div class='components-prompt-game-self'>{selfName()}</div>
         <Score getter={score} setter={setScore} invalid={invalidScore} />
-        <select
-          value={opponent() ?? props.opponent?.()?.id}
-          onInput={e => setOpponent(Number(e.currentTarget.value))}
-        >
+        <select value={opponent()} onInput={e => setOpponent(Number(e.currentTarget.value))}>
           <For each={opponents()}>{o => <option value={o.id}>{o.name}</option>}</For>
         </select>
         <Score getter={opponentScore} setter={setOpponentScore} invalid={invalidScore} />

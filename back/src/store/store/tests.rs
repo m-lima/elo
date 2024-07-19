@@ -235,7 +235,6 @@ mod constraints {
                 .fetch_one(&pool)
                 .await;
 
-                println!("Scores: [{one:02} x {two:02}]");
                 if (one == 12 && two == 10)
                     || (one == 10 && two == 12)
                     || (one == 11 && two < 11)

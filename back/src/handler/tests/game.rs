@@ -154,7 +154,6 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            println!("{updates:?}");
             assert_eq!(updates.len(), 1);
             assert_eq!(updates[0].0, game);
             games.push(updates.into_iter().next().unwrap());

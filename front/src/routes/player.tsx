@@ -214,7 +214,6 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
 
 const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
   const [responsive, setResponsive] = createSignal(false);
-  // TODO: Use this limit
   const [limit, setLimit] = createSignal(100);
 
   onMount(() => {
@@ -245,8 +244,8 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
   });
 
   const games = createMemo(
-    () => {
-      return Array.from(props.games().filter((_, i) => i < limit()))
+    () =>
+      Array.from(props.games().filter((_, i) => i < limit()))
         .reverse()
         .map(g => {
           return {
@@ -257,8 +256,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
             challenge: g.challenge,
             createdMs: g.createdMs,
           };
-        });
-    },
+        }),
     [],
     { equals: false },
   );
@@ -317,14 +315,14 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
                 pointStyle: false,
                 segment: {
                   borderColor: (ctx: ScriptableLineSegmentContext) =>
-                    ctx.p0.parsed.y > ctx.p1.parsed.y ? '#a03030' : '#30a030',
+                    ctx.p0.parsed.y > ctx.p1.parsed.y ? consts.colors.red : consts.colors.green,
                 },
               },
               {
                 label: 'Points won',
                 data: games().map(g => g.pointsWon),
                 cubicInterpolationMode: 'monotone',
-                backgroundColor: '#30a03080',
+                backgroundColor: consts.colors.greenSemiTransparent,
                 showLine: false,
                 pointStyle: false,
                 fill: 'origin',
@@ -334,7 +332,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
                 label: 'Points lost',
                 data: games().map(g => -g.pointsLost),
                 cubicInterpolationMode: 'monotone',
-                backgroundColor: '#a0303080',
+                backgroundColor: consts.colors.redSemiTransparent,
                 showLine: false,
                 pointStyle: false,
                 fill: 'origin',

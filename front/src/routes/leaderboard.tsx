@@ -1,15 +1,26 @@
-import { For, JSX, Suspense, createMemo, createSignal } from 'solid-js';
+import {
+  type Accessor,
+  For,
+  JSX,
+  Suspense,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+} from 'solid-js';
 import { Navigator, useNavigate } from '@solidjs/router';
+import { Chart, Filler, Title, Tooltip } from 'chart.js';
 
 import { Loading, Main } from '../pages';
 import { action, prompt, icon } from '../components';
 import { type EnrichedPlayer, type User } from '../types';
 import { useStore } from '../store';
+import * as consts from '../consts';
 
 import './leaderboard.css';
+import { Bar } from 'solid-chartjs';
 
 // TODO: Make this more responsive
-// TODO: Graph pie charts for players
 export const Leaderboard = () => {
   const store = useStore();
   const players = store.useEnrichedPlayers();
@@ -90,30 +101,154 @@ export const Leaderboard = () => {
         <action.Game action={() => setPromptVisible(true)} />
       </action.Actions>
       <Main>
-        <table class='clickable'>
-          <thead class='routes-leaderboard-table-header'>
-            <tr>
-              <th />
-              {header('#', 'position')}
-              {header('Player', 'name')}
-              {header('Rating', 'rating')}
-              {header('Games', 'games')}
-              {header('Wins', 'wins')}
-              {header('Losses', 'losses')}
-              {header('Challenges won', 'challengesWon')}
-              {header('Challenges lost', 'challengesLost')}
-              {header('Points won', 'pointsWon')}
-              {header('Points lost', 'pointsLost')}
-            </tr>
-          </thead>
-          <tbody>
-            <For each={sortedPlayers()}>
-              {p => playerRow(p, navigate, getIcon(p.position, players().length), self())}
-            </For>
-          </tbody>
-        </table>
+        <div class='routes-leaderboard'>
+          <div class='routes-leaderboard-table'>
+            <table class='clickable'>
+              <thead class='routes-leaderboard-table-header'>
+                <tr>
+                  <th />
+                  {header('#', 'position')}
+                  {header('Player', 'name')}
+                  {header('Rating', 'rating')}
+                  {header('Games', 'games')}
+                  {header('Wins', 'wins')}
+                  {header('Losses', 'losses')}
+                  {header('Challenges won', 'challengesWon')}
+                  {header('Challenges lost', 'challengesLost')}
+                  {header('Points won', 'pointsWon')}
+                  {header('Points lost', 'pointsLost')}
+                </tr>
+              </thead>
+              <tbody>
+                <For each={sortedPlayers()}>
+                  {p => playerRow(p, navigate, getIcon(p.position, players().length), self())}
+                </For>
+              </tbody>
+            </table>
+          </div>
+          <Charts players={players} pivot={sortPivot} />
+        </div>
       </Main>
     </Suspense>
+  );
+};
+
+const Charts = (props: { players: Accessor<EnrichedPlayer[]>; pivot: Accessor<Pivot> }) => {
+  const [responsive, setResponsive] = createSignal(false);
+
+  onMount(() => {
+    Chart.register(Title, Tooltip, Filler);
+
+    // ChartJS was trying to get the size of the parent component, but SolidJS
+    // only constructs the elements and not necessarily add it to the DOM.
+    //
+    // Since there is no lifecycle hook for being added to the DOM, this
+    // timeout hack does the trick
+    const schedule = () => {
+      setTimeout(() => {
+        if (document.getElementById('routes-leaderboard-chart')) {
+          setResponsive(true);
+        } else {
+          schedule();
+        }
+      }, 0);
+    };
+    schedule();
+  });
+
+  onCleanup(() => {
+    Chart.unregister(Title, Tooltip, Filler);
+  });
+
+  const pivot = createMemo(() => {
+    switch (props.pivot()) {
+      case 'challengesWon':
+      case 'challengesLost':
+        return 'Challenges';
+      case 'pointsWon':
+      case 'pointsLost':
+        return 'Points';
+      default:
+        return 'Games';
+    }
+  });
+
+  const players = createMemo(
+    () =>
+      props
+        .players()
+        .map(p => {
+          switch (pivot()) {
+            case 'Challenges':
+              return {
+                name: p.name,
+                good: p.challengesWon,
+                bad: p.challengesLost,
+              };
+            case 'Points':
+              return {
+                name: p.name,
+                good: p.pointsWon,
+                bad: p.pointsLost,
+              };
+            default:
+              return {
+                name: p.name,
+                good: p.wins,
+                bad: p.losses,
+              };
+          }
+        })
+        .sort((a, b) => b.good + b.bad - a.good - a.bad),
+    [],
+    { equals: false },
+  );
+
+  return (
+    <>
+      <div id='routes-leaderboard-chart'>
+        <Bar
+          height={300}
+          data={{
+            labels: players().map(p => p.name),
+            datasets: [
+              {
+                label: 'Wins',
+                data: players().map(p => p.good),
+                backgroundColor: consts.colors.greenSemiTransparent,
+                borderColor: consts.colors.green,
+              },
+              {
+                label: 'Losses',
+                data: players().map(p => p.bad),
+                backgroundColor: consts.colors.redSemiTransparent,
+                borderColor: consts.colors.red,
+              },
+            ],
+          }}
+          options={{
+            responsive: responsive(),
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            scales: {
+              x: {
+                stacked: true,
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: pivot(),
+                },
+                stacked: true,
+              },
+            },
+          }}
+        />
+      </div>
+    </>
   );
 };
 

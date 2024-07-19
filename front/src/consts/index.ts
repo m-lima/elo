@@ -15,4 +15,8 @@ export const host = {
 export const colors = {
   accent: '#ffa500',
   accentSemiTransparent: '#ffa50080',
+  red: '#a03030',
+  redSemiTransparent: '#a0303080',
+  green: '#30a030',
+  greenSemiTransparent: '#30a03080',
 };

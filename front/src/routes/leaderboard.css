@@ -1,39 +1,49 @@
-.routes-leaderboard-self {
-  color: var(--color-accent);
-}
+.routes-leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 
-.routes-leaderboard-badge {
-  padding-left: 10px;
-  padding-right: 10px;
-  text-align: center;
+  & > .routes-leaderboard-table {
+    overflow-x: auto;
 
-  & .routes-leaderboard-first {
-    color: gold;
-    & > svg {
-      filter: drop-shadow(0 0 4px);
+    & .routes-leaderboard-self {
+      color: var(--color-accent);
     }
-  }
 
-  & .routes-leaderboard-second {
-    color: white;
-    & > svg {
-      filter: drop-shadow(0 0 4px);
+    & .routes-leaderboard-badge {
+      padding-left: 10px;
+      padding-right: 10px;
+      text-align: center;
+
+      & .routes-leaderboard-first {
+        color: gold;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
+
+      & .routes-leaderboard-second {
+        color: white;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
+
+      & .routes-leaderboard-third {
+        color: burlywood;
+        & > svg {
+          filter: drop-shadow(0 0 4px);
+        }
+      }
     }
-  }
 
-  & .routes-leaderboard-third {
-    color: burlywood;
-    & > svg {
-      filter: drop-shadow(0 0 4px);
+    & .routes-leaderboard-table-header {
+      cursor: pointer;
+
+      & .routes-leaderboard-sort {
+        margin-left: 5px;
+        color: var(--color-accent);
+      }
     }
-  }
-}
-
-.routes-leaderboard-table-header {
-  cursor: pointer;
-
-  & .routes-leaderboard-sort {
-    margin-left: 5px;
-    color: var(--color-accent);
   }
 }

@@ -337,11 +337,112 @@ async fn register_bad_score(pool: sqlx::sqlite::SqlitePool) {
     }
 }
 
-#[ignore]
 #[sqlx::test]
 async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
-    // TODO: Test this once we can set dates and remove test from store::store::games::tests
-    panic!("{pool:?}")
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let millis = 1_704_070_861_000_i64; // 2024-01-01 01:01:01
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: false,
+            millis: types::Millis::from(millis + 1),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    handler
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis + 1),
+        }))
+        .await
+        .err(model::Error::Store(store::Error::InvalidValue(
+            "Players cannot challenge each other more than once a day",
+        )))
+        .unwrap();
+
+    let millis = 1_704_153_599_999_i64; // 2024-01-01 23:59:59.999
+
+    handler
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis),
+        }))
+        .await
+        .err(model::Error::Store(store::Error::InvalidValue(
+            "Players cannot challenge each other more than once a day",
+        )))
+        .unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis + 1),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
 }
 
 #[sqlx::test]

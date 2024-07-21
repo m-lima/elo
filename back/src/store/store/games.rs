@@ -38,31 +38,7 @@ impl Games<'_> {
         let mut tx = self.pool.begin().await?;
 
         if challenge {
-            let challenged_today = sqlx::query!(
-                r#"
-                SELECT
-                    id
-                FROM
-                    games
-                WHERE
-                    challenge
-                    AND NOT deleted
-                    AND player_one IN ($1, $2)
-                    AND player_two IN ($1, $2)
-                    AND STRFTIME('%Y%m%d', 'now') = STRFTIME('%Y%m%d', created_ms / 1000, 'unixepoch')
-                "#,
-                player_one,
-                player_two,
-            )
-            .fetch_optional(tx.as_mut())
-            .await?
-            .is_some();
-
-            if challenged_today {
-                return Err(Error::InvalidValue(
-                    "Players cannot challenge each other more than once a day",
-                ));
-            }
+            validate_challenge(player_one, player_two, millis, None, tx.as_mut()).await?;
         }
 
         let game = sqlx::query_as!(
@@ -305,4 +281,71 @@ fn validate_game(
     } else {
         Ok(())
     }
+}
+
+async fn validate_challenge<'c, 'e, E>(
+    player_one: types::Id,
+    player_two: types::Id,
+    millis: types::Millis,
+    ignore: Option<types::Id>,
+    executor: E,
+) -> Result
+where
+    'c: 'e,
+    E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
+{
+    let millis = i64::from(millis);
+    let challenged_today = if let Some(ignore) = ignore {
+        sqlx::query!(
+            r#"
+            SELECT
+                id
+            FROM
+                games
+            WHERE
+                challenge
+                AND NOT deleted
+                AND player_one IN ($1, $2)
+                AND player_two IN ($1, $2)
+                AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+                AND id <> $4
+            "#,
+            player_one,
+            player_two,
+            ignore,
+            millis,
+        )
+        .fetch_optional(executor)
+        .await?
+        .is_some()
+    } else {
+        sqlx::query!(
+            r#"
+            SELECT
+                id
+            FROM
+                games
+            WHERE
+                challenge
+                AND NOT deleted
+                AND player_one IN ($1, $2)
+                AND player_two IN ($1, $2)
+                AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+            "#,
+            player_one,
+            player_two,
+            millis,
+        )
+        .fetch_optional(executor)
+        .await?
+        .is_some()
+    };
+
+    if challenged_today {
+        return Err(Error::InvalidValue(
+            "Players cannot challenge each other more than once a day",
+        ));
+    }
+
+    Ok(())
 }

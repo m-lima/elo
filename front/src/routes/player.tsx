@@ -254,7 +254,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
             pointsWon: g.scoreOne,
             pointsLost: g.scoreTwo,
             challenge: g.challenge,
-            createdMs: g.createdMs,
+            millis: g.millis,
           };
         }),
     [],
@@ -267,7 +267,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            labels: games().map(g => dateToString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Rating',
@@ -304,7 +304,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.createdMs))),
+            labels: games().map(g => dateToString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Balance',

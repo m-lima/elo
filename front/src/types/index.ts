@@ -33,6 +33,8 @@ export type Game = {
   readonly ratingTwo: number;
   readonly ratingDelta: number;
   readonly challenge: boolean;
+  readonly deleted: boolean;
+  readonly millis: number;
   readonly createdMs: number;
 };
 
@@ -46,6 +48,8 @@ export type GameTuple = [
   number,
   number,
   boolean,
+  boolean,
+  number,
   number,
 ];
 
@@ -59,6 +63,8 @@ export const gameFromTuple = ([
   ratingTwo,
   ratingDelta,
   challenge,
+  deleted,
+  millis,
   createdMs,
 ]: GameTuple): Game => {
   return {
@@ -71,6 +77,8 @@ export const gameFromTuple = ([
     ratingTwo,
     ratingDelta,
     challenge,
+    deleted,
+    millis,
     createdMs,
   };
 };

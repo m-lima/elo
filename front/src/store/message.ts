@@ -11,7 +11,7 @@ export type Ided = {
   id: number;
 };
 
-export type Request = Ided & { do: RequestPlayer | RequestGame | RequestInvite };
+export type Request = Ided & { do: 'version' | RequestPlayer | RequestGame | RequestInvite };
 export type RequestPlayer = { player: 'id' | 'list' | { rename: string } };
 export type RequestGame = {
   game:
@@ -42,6 +42,7 @@ export type MessagePush = { push: Push };
 export type Ok = 'done' | OkResponse;
 
 export type OkResponse = {
+  version: number,
   user: User;
   players: PlayerTuple[];
   games: GameTuple[];

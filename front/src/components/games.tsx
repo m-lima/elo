@@ -49,7 +49,7 @@ const gameRow = (game: EnrichedGame) => {
       <td class='components-games-tail'>
         {playerRating(game.ratingDelta)}
         <span class='components-games-align-right components-games-date'>
-          {dateToString(new Date(game.createdMs))}
+          {dateToString(new Date(game.millis))}
         </span>
       </td>
     </tr>

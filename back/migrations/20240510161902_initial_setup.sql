@@ -59,6 +59,7 @@ CREATE TABLE games (
 
 CREATE INDEX games_player_one_idx ON games(player_one);
 CREATE INDEX games_player_two_idx ON games(player_two);
+CREATE INDEX games_millis_idx ON games(millis);
 
 CREATE TABLE challenges (
   id         INTEGER NOT NULL PRIMARY KEY,

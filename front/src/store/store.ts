@@ -20,6 +20,7 @@ import {
 } from '../types';
 import { type Message, type Request, type Ided, type PushPlayer, type PushGame } from './message';
 import { newRequestId, ResponseError, validateDone, validateMessage } from './request';
+import * as consts from '../consts';
 
 export class Store {
   private readonly socket: Socket<Request, Message>;
@@ -89,6 +90,17 @@ export class Store {
         validateMessage(id, 'invites', message)?.invites.map(inviteFromTuple),
       );
     });
+  }
+
+  public checkVersion() {
+    const id = newRequestId();
+    const [version, _] = createResource(() =>
+      this.socket.request(
+        { id, do: 'version' },
+        message => validateMessage(id, 'version', message)?.version === consts.version,
+      ),
+    );
+    return version;
   }
 
   public useSelf() {

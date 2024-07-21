@@ -24,7 +24,7 @@ export const Games = () => {
         <action.Game action={() => setPromptVisible(true)} />
       </action.Actions>
       <Main>
-        <Show when={games().length > 0} fallback=<error.NotGames inline />>
+        <Show when={games().length > 0} fallback=<error.NoGames inline />>
           <GameTable games={games} />
         </Show>
       </Main>

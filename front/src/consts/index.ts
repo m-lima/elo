@@ -1,5 +1,7 @@
 export const name = 'EloPong';
 
+export const version = 1;
+
 export const host = {
   ws:
     import.meta.env.VITE_HOST_WS === undefined

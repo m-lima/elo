@@ -372,7 +372,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
 
 const NoGames = () => (
   <div class='routes-player-no-games'>
-    <error.NotGames inline />
+    <error.NoGames inline />
   </div>
 );
 

@@ -1,4 +1,5 @@
 import { icon } from '../components';
+import * as consts from '../consts';
 
 import './error.css';
 
@@ -30,9 +31,20 @@ export const NotFound = (props: { inline?: boolean }) => (
   </div>
 );
 
-export const NotGames = (props: { inline?: boolean }) => (
+export const NoGames = (props: { inline?: boolean }) => (
   <div class='pages-error' id={props.inline === false ? undefined : 'main'}>
     <icon.Wink />
     <h1>No games yet</h1>
+  </div>
+);
+
+export const Version = (props: { inline?: boolean }) => (
+  <div class='pages-error' id={props.inline === false ? undefined : 'main'}>
+    <icon.Version />
+    <h1>Version mismatch</h1>
+    <h2>
+      The server is running a newer version of <b>{consts.name}</b>
+    </h2>
+    <p>Please reload the page</p>
   </div>
 );

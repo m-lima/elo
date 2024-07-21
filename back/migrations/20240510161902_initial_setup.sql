@@ -48,6 +48,8 @@ CREATE TABLE games (
   rating_two   REAL    NOT NULL,
   rating_delta REAL    NOT NULL,
   challenge    BOOLEAN NOT NULL,
+  deleted      BOOLEAN NOT NULL DEFAULT FALSE,
+  millis       INTEGER NOT NULL,
   created_ms   INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 
@@ -70,5 +72,5 @@ CREATE TABLE challenges (
 
   FOREIGN KEY(player_one) REFERENCES players(id) ON DELETE CASCADE,
   FOREIGN KEY(player_two) REFERENCES players(id) ON DELETE CASCADE,
-  FOREIGN KEY(game)      REFERENCES games(id) ON DELETE SET NULL
+  FOREIGN KEY(game)       REFERENCES games(id) ON DELETE SET NULL
 );

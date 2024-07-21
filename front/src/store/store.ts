@@ -143,8 +143,25 @@ export class Store {
     return this.request({ invite: rsvp ? 'accept' : 'reject' });
   }
 
-  public registerGame(opponent: number, score: number, opponentScore: number, challenge: boolean) {
-    return this.request({ game: { register: { opponent, score, opponentScore, challenge } } });
+  public registerGame(
+    player: number,
+    opponent: number,
+    score: number,
+    opponentScore: number,
+    challenge: boolean,
+  ) {
+    return this.request({
+      game: {
+        register: {
+          player,
+          opponent,
+          score,
+          opponentScore,
+          challenge,
+          millis: new Date().getTime(),
+        },
+      },
+    });
   }
 
   public subscribe(subscriber: Subscriber): Subscriber {

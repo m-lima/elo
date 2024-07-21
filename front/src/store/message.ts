@@ -18,10 +18,12 @@ export type RequestGame = {
     | 'list'
     | {
         register: {
+          player: number,
           opponent: number;
           score: number;
           opponentScore: number;
           challenge: boolean;
+          millis: number;
         };
       };
 };

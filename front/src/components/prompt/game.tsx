@@ -65,16 +65,23 @@ export const Game = (
     <Prompt
       visible={props.visible}
       ok={() => {
+        const playerInner = props.self()?.id;
+        if (playerInner === undefined) {
+          return;
+        }
+
         const opponentInner = opponent();
         if (opponentInner === undefined) {
           return;
         }
 
-        props.store.registerGame(opponentInner, score(), opponentScore(), challenge()).then(r => {
-          if (r) {
-            props.hide();
-          }
-        });
+        props.store
+          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge())
+          .then(r => {
+            if (r) {
+              props.hide();
+            }
+          });
       }}
       cancel={() => {
         props.hide();

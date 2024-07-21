@@ -4,6 +4,7 @@ use crate::types;
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Request {
+    Version,
     Player(Player),
     Invite(Invite),
     Game(Game),
@@ -12,6 +13,7 @@ pub enum Request {
 impl std::fmt::Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Version => f.write_str("Version"),
             Self::Player(resource) => match resource {
                 Player::Id => f.write_str("Player::Id"),
                 Player::List => f.write_str("Player::List"),
@@ -27,6 +29,7 @@ impl std::fmt::Display for Request {
             Self::Game(resource) => match resource {
                 Game::List => f.write_str("Game::List"),
                 Game::Register { .. } => f.write_str("Game::Register"),
+                Game::Update(_) => f.write_str("Game::Update"),
             },
         }
     }
@@ -56,10 +59,13 @@ pub enum Game {
     List,
     #[serde(rename_all = "camelCase")]
     Register {
+        player: types::Id,
         opponent: types::Id,
         score: u8,
         opponent_score: u8,
         challenge: bool,
         millis: types::Millis,
     },
+    #[serde(rename_all = "camelCase")]
+    Update(types::Game),
 }

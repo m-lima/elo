@@ -19,7 +19,6 @@ impl Games<'_> {
         Self::list_games(self.pool).await
     }
 
-    // TODO: Apply same checks when editing. So maybe combine `validate_game` with challenge check
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,
@@ -74,6 +73,71 @@ impl Games<'_> {
             score_two,
             challenge,
             millis,
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map(|r| r.id)?;
+
+        let updates = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
+
+        tx.commit().await?;
+
+        Ok((game, updates))
+    }
+
+    #[tracing::instrument(skip(self, rating_updater))]
+    pub async fn update<F>(
+        &self,
+        game: &types::Game,
+        default_rating: f64,
+        rating_updater: F,
+    ) -> Result<(types::Id, Vec<types::Game>)>
+    where
+        F: Copy + Fn(f64, f64, bool, bool) -> f64,
+    {
+        validate_game(
+            game.player_one,
+            game.player_two,
+            game.score_one,
+            game.score_two,
+        )?;
+
+        let mut tx = self.pool.begin().await?;
+
+        if game.challenge {
+            validate_challenge(
+                game.player_one,
+                game.player_two,
+                game.millis,
+                Some(game.id),
+                tx.as_mut(),
+            )
+            .await?;
+        }
+
+        let game = sqlx::query_as!(
+            super::Id,
+            r#"
+            UPDATE games
+            SET
+                player_one = $2,
+                player_two = $3,
+                score_one = $4,
+                score_two = $5,
+                challenge = $6,
+                millis = $7
+            WHERE
+                id = $1
+            RETURNING
+                id AS "id!: _"
+            "#,
+            game.id,
+            game.player_one,
+            game.player_two,
+            game.score_one,
+            game.score_two,
+            game.challenge,
+            game.millis,
         )
         .fetch_one(tx.as_mut())
         .await
@@ -265,9 +329,11 @@ fn build_update_query(
 fn validate_game(
     player_one: types::Id,
     player_two: types::Id,
-    score_one: u8,
-    score_two: u8,
+    score_one: impl Into<i64>,
+    score_two: impl Into<i64>,
 ) -> Result {
+    let score_one = score_one.into();
+    let score_two = score_two.into();
     if player_one == player_two {
         Err(Error::InvalidValue("Players cannot be equal"))
     } else if score_one == score_two {

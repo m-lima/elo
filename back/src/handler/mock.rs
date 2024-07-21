@@ -206,6 +206,7 @@ async fn populate_games(
 
         match handler
             .call(model::Request::Game(model::request::Game::Register {
+                player: user.0,
                 opponent: opponent.0,
                 score: user_score,
                 opponent_score,
@@ -221,6 +222,7 @@ async fn populate_games(
             ))) if challenge => {
                 let model::Response::Done = handler
                     .call(model::Request::Game(model::request::Game::Register {
+                        player: user.0,
                         opponent: opponent.0,
                         score: user_score,
                         opponent_score,

@@ -18,6 +18,7 @@ impl std::fmt::Display for Push {
             },
             Self::Game(resource) => match resource {
                 Game::Registered { .. } => f.write_str("Game::Registered"),
+                Game::Updated { .. } => f.write_str("Game::Updated"),
             },
         }
     }
@@ -40,6 +41,10 @@ pub enum Player {
 #[serde(rename_all = "camelCase")]
 pub enum Game {
     Registered {
+        game: types::Id,
+        updates: Vec<types::GameTuple>,
+    },
+    Updated {
         game: types::Id,
         updates: Vec<types::GameTuple>,
     },

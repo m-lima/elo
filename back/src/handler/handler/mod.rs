@@ -5,6 +5,8 @@ mod player;
 use super::{access, broadcaster, model};
 use crate::{smtp, store, ws};
 
+const VERSION: u32 = 1;
+
 pub trait Access: access::Access + Sized {
     fn handle<S>(
         handler: &mut Handler<Self, S>,
@@ -25,6 +27,7 @@ macro_rules! impl_access {
                 S: smtp::Smtp,
             {
                 match request {
+                    model::Request::Version => Ok(model::Response::Version(VERSION)),
                     model::Request::Player(request) => {
                         player::Player::new(handler).handle(request).await
                     }

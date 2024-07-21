@@ -22,6 +22,7 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
 
     let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -64,6 +65,7 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
 
     let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -133,6 +135,91 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
+async fn register_to_other_players(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted_one = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let accepted_two = handler
+        .invite_full(&player, &store, INVITED_NAME, INVITED_EMAIL)
+        .await
+        .unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: accepted_one.id,
+            opponent: accepted_two.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: false,
+            millis: super::now(),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    let game = {
+        let game = updates.into_iter().next().unwrap();
+        types::Game {
+            id: game.0,
+            player_one: game.1,
+            player_two: game.2,
+            score_one: game.3,
+            score_two: game.4,
+            rating_one: game.5,
+            rating_two: game.6,
+            rating_delta: game.7,
+            challenge: game.8,
+            deleted: game.9,
+            millis: game.10,
+            created_ms: game.11,
+        }
+    };
+
+    let rating_delta = skillratings::elo::elo(
+        &skillratings::elo::EloRating::new(),
+        &skillratings::elo::EloRating::new(),
+        &skillratings::Outcomes::WIN,
+        &skillratings::elo::EloConfig::new(),
+    )
+    .0
+    .rating
+        - skillratings::elo::EloRating::new().rating;
+
+    assert_eq!(game.player_one, accepted_one.id);
+    assert_eq!(game.player_two, accepted_two.id);
+    assert_eq!(game.score_one, 11);
+    assert_eq!(game.score_two, 0);
+    assert!((game.rating_one - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
+    assert!((game.rating_two - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
+    assert!((game.rating_delta - rating_delta).abs() <= f64::EPSILON);
+    assert!(!game.challenge);
+
+    handler
+        .call(model::Request::Game(model::request::Game::List))
+        .await
+        .ok(model::Response::Games(vec![types::GameTuple::from(game)]))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn register_many(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
 
@@ -145,6 +232,7 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
     for _ in 0..3 {
         if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
             .call(model::Request::Game(model::request::Game::Register {
+                player: player.id,
                 opponent: accepted.id,
                 score: 11,
                 opponent_score: 0,
@@ -184,6 +272,7 @@ async fn register_not_found(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: 15,
             opponent: 27,
             score: 11,
             opponent_score: 0,
@@ -201,6 +290,7 @@ async fn register_same_player(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: player.id,
             score: 11,
             opponent_score: 0,
@@ -226,6 +316,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
     for score in 0..=10 {
         handler
             .call(model::Request::Game(model::request::Game::Register {
+                player: player.id,
                 opponent: accepted.id,
                 score: 11,
                 opponent_score: score,
@@ -242,6 +333,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
 
         handler
             .call(model::Request::Game(model::request::Game::Register {
+                player: player.id,
                 opponent: accepted.id,
                 score,
                 opponent_score: 11,
@@ -259,6 +351,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 12,
             opponent_score: 10,
@@ -275,6 +368,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 10,
             opponent_score: 12,
@@ -313,6 +407,7 @@ async fn register_bad_score(pool: sqlx::sqlite::SqlitePool) {
     {
         handler
             .call(model::Request::Game(model::request::Game::Register {
+                player: player.id,
                 opponent: accepted.id,
                 score,
                 opponent_score,
@@ -350,6 +445,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -372,6 +468,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -394,6 +491,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -410,6 +508,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -424,6 +523,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
             opponent: accepted.id,
             score: 11,
             opponent_score: 0,
@@ -462,6 +562,7 @@ async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
 
     handler
         .call(model::Request::Game(model::request::Game::Register {
+            player: 0,
             opponent: 0,
             score: 0,
             opponent_score: 0,

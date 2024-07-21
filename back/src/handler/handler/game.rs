@@ -37,6 +37,7 @@ where
                 .map_err(model::Error::Store)
                 .map(|r| model::Response::Games(r.into_iter().map(Into::into).collect())),
             model::request::Game::Register {
+                player,
                 opponent,
                 score,
                 opponent_score,
@@ -45,7 +46,7 @@ where
             } => {
                 let (game, updates) = games
                     .register(
-                        (self.handler.user.id(), opponent),
+                        (player, opponent),
                         (score, opponent_score),
                         challenge,
                         millis,
@@ -58,6 +59,25 @@ where
                 self.handler
                     .broadcaster
                     .send(model::Push::Game(model::push::Game::Registered {
+                        game,
+                        updates: updates.into_iter().map(Into::into).collect(),
+                    }));
+
+                Ok(model::Response::Done)
+            }
+            model::request::Game::Update(game) => {
+                let (game, updates) = games
+                    .update(
+                        &game,
+                        skillratings::elo::EloRating::new().rating,
+                        super::rating_updater,
+                    )
+                    .await
+                    .map_err(model::Error::Store)?;
+
+                self.handler
+                    .broadcaster
+                    .send(model::Push::Game(model::push::Game::Updated {
                         game,
                         updates: updates.into_iter().map(Into::into).collect(),
                     }));

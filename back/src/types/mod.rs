@@ -70,6 +70,8 @@ pub(crate) struct Game {
     pub rating_two: f64,
     pub rating_delta: f64,
     pub challenge: bool,
+    pub deleted: bool,
+    pub millis: Millis,
     pub created_ms: Millis,
 }
 
@@ -84,6 +86,8 @@ pub(crate) struct GameTuple(
     pub f64,
     pub f64,
     pub bool,
+    pub bool,
+    pub Millis,
     pub Millis,
 );
 
@@ -99,6 +103,8 @@ impl From<Game> for GameTuple {
             value.rating_two,
             value.rating_delta,
             value.challenge,
+            value.deleted,
+            value.millis,
             value.created_ms,
         )
     }
@@ -120,3 +126,15 @@ impl From<Game> for GameTuple {
 #[repr(transparent)]
 #[sqlx(transparent)]
 pub(crate) struct Millis(i64);
+
+impl From<i64> for Millis {
+    fn from(value: i64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Millis> for i64 {
+    fn from(value: Millis) -> Self {
+        value.0
+    }
+}

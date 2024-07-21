@@ -41,12 +41,14 @@ where
                 score,
                 opponent_score,
                 challenge,
+                millis,
             } => {
                 let (game, updates) = games
                     .register(
                         (self.handler.user.id(), opponent),
                         (score, opponent_score),
                         challenge,
+                        millis,
                         skillratings::elo::EloRating::new().rating,
                         super::rating_updater,
                     )

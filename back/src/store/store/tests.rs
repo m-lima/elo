@@ -148,7 +148,8 @@ mod constraints {
                 rating_one,
                 rating_two,
                 rating_delta,
-                challenge
+                challenge,
+                millis
             ) VALUES (
                 $1,
                 $1,
@@ -157,7 +158,8 @@ mod constraints {
                 0,
                 0,
                 0,
-                false
+                false,
+                0
             ) RETURNING
                 id,
                 player_one,
@@ -168,6 +170,8 @@ mod constraints {
                 rating_two,
                 rating_delta,
                 challenge,
+                deleted,
+                millis AS "millis: types::Millis",
                 created_ms AS "created_ms: types::Millis"
             "#,
             player.id
@@ -205,7 +209,8 @@ mod constraints {
                         rating_one,
                         rating_two,
                         rating_delta,
-                        challenge
+                        challenge,
+                        millis
                     ) VALUES (
                         $1,
                         $2,
@@ -214,7 +219,8 @@ mod constraints {
                         0,
                         0,
                         0,
-                        false
+                        false,
+                        0
                     ) RETURNING
                         id,
                         player_one,
@@ -225,6 +231,8 @@ mod constraints {
                         rating_two,
                         rating_delta,
                         challenge,
+                        deleted,
+                        millis AS "millis: types::Millis",
                         created_ms AS "created_ms: types::Millis"
                     "#,
                     player_one.id,

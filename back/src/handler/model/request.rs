@@ -59,5 +59,6 @@ pub enum Game {
         score: u8,
         opponent_score: u8,
         challenge: bool,
+        millis: types::Millis,
     },
 }

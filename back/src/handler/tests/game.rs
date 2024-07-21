@@ -26,6 +26,7 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
             score: 11,
             opponent_score: 0,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .done()
@@ -67,6 +68,7 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
             score: 11,
             opponent_score: 0,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .done()
@@ -94,7 +96,9 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
             rating_two: game.6,
             rating_delta: game.7,
             challenge: game.8,
-            created_ms: game.9,
+            deleted: game.9,
+            millis: game.10,
+            created_ms: game.10,
         }
     };
 
@@ -145,6 +149,7 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
+                millis: super::now(),
             }))
             .await
             .done()
@@ -183,6 +188,7 @@ async fn register_not_found(pool: sqlx::sqlite::SqlitePool) {
             score: 11,
             opponent_score: 0,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .err(model::Error::Store(store::Error::NotFound))
@@ -199,6 +205,7 @@ async fn register_same_player(pool: sqlx::sqlite::SqlitePool) {
             score: 11,
             opponent_score: 0,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .err(model::Error::Store(store::Error::InvalidValue(
@@ -223,6 +230,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
                 score: 11,
                 opponent_score: score,
                 challenge: false,
+                millis: super::now(),
             }))
             .await
             .done()
@@ -238,6 +246,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
                 score,
                 opponent_score: 11,
                 challenge: false,
+                millis: super::now(),
             }))
             .await
             .done()
@@ -254,6 +263,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
             score: 12,
             opponent_score: 10,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .done()
@@ -269,6 +279,7 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
             score: 10,
             opponent_score: 12,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .done()
@@ -306,6 +317,7 @@ async fn register_bad_score(pool: sqlx::sqlite::SqlitePool) {
                 score,
                 opponent_score,
                 challenge,
+                millis: super::now(),
             }))
             .await
             .err(model::Error::Store(store::Error::InvalidValue(
@@ -353,6 +365,7 @@ async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
             score: 0,
             opponent_score: 0,
             challenge: false,
+            millis: super::now(),
         }))
         .await
         .err(model::Error::Forbidden)

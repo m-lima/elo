@@ -3,11 +3,6 @@ use crate::types;
 
 type Result<T = ()> = std::result::Result<T, Error>;
 
-// TODO: Whenever `games` is modified (created, accepted, deleted), recalculate all ratings
-// TODO: The rating on the game should be the incoming rating
-// TODO: We get the rating for a match by getting the latest match and applying the rating
-// calculator; falling back to a default value if a previous match does not exist
-
 pub struct Games<'a> {
     pool: &'a sqlx::sqlite::SqlitePool,
 }
@@ -24,12 +19,14 @@ impl Games<'_> {
         Self::list_games(self.pool).await
     }
 
+    // TODO: Apply same checks when editing. So maybe combine `validate_game` with challenge check
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn register<F>(
         &self,
         (player_one, player_two): (types::Id, types::Id),
         (score_one, score_two): (u8, u8),
         challenge: bool,
+        millis: types::Millis,
         default_rating: f64,
         rating_updater: F,
     ) -> Result<(types::Id, Vec<types::Game>)>
@@ -49,6 +46,7 @@ impl Games<'_> {
                     games
                 WHERE
                     challenge
+                    AND NOT deleted
                     AND player_one IN ($1, $2)
                     AND player_two IN ($1, $2)
                     AND STRFTIME('%Y%m%d', 'now') = STRFTIME('%Y%m%d', created_ms / 1000, 'unixepoch')
@@ -78,7 +76,8 @@ impl Games<'_> {
                 challenge,
                 rating_one,
                 rating_two,
-                rating_delta
+                rating_delta,
+                millis
             ) VALUES (
                 $1,
                 $2,
@@ -87,7 +86,8 @@ impl Games<'_> {
                 $5,
                 0,
                 0,
-                0
+                0,
+                $6
             )
             RETURNING
                 id
@@ -97,6 +97,7 @@ impl Games<'_> {
             score_one,
             score_two,
             challenge,
+            millis,
         )
         .fetch_one(tx.as_mut())
         .await
@@ -127,6 +128,8 @@ impl Games<'_> {
                 rating_two,
                 rating_delta,
                 challenge,
+                deleted,
+                millis AS "millis: types::Millis",
                 created_ms AS "created_ms: types::Millis"
             FROM
                 games
@@ -300,5 +303,39 @@ fn validate_game(
         Err(Error::InvalidValue("There can only be one winner"))
     } else {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[sqlx::test]
+    async fn list(pool: sqlx::sqlite::SqlitePool) {
+        sqlx::query_as!(
+            types::Game,
+            r#"
+            SELECT
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                rating_one,
+                rating_two,
+                rating_delta,
+                challenge,
+                deleted,
+                millis AS "millis: types::Millis",
+                created_ms AS "created_ms: types::Millis"
+            FROM
+                games
+            ORDER BY
+                created_ms ASC
+            "#
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
     }
 }

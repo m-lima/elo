@@ -54,3 +54,13 @@ async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> sqlx::Result<types::P
     .fetch_one(pool)
     .await
 }
+
+fn now() -> types::Millis {
+    // allow(clippy::cast_possible_truncation): This is just a test
+    #[allow(clippy::cast_possible_truncation)]
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    types::Millis::from(millis)
+}

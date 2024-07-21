@@ -15,27 +15,28 @@ export const Game = (
     opponent?: Getter<Player>;
   },
 ) => {
+  const [maybePlayer, setPlayer] = createSignal(props.self()?.id);
+  const [maybeOpponent, setOpponent] = createSignal(props.opponent?.()?.id);
+
   const [score, setScore] = createSignal(11);
-  const [maybeOpponent, setOpponent] = createSignal<number | undefined>();
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
 
-  const selfName = createMemo(() => props.players()?.find(p => p.id === props.self()?.id)?.name);
-
-  const opponents = createMemo(() => {
-    const playersInner = props.players();
-    if (playersInner === undefined) {
-      return [];
-    }
-    return playersInner
-      .map(p => {
+  const players = createMemo(() =>
+    props
+      .players()
+      ?.map(p => {
         return { id: p.id, name: p.name };
       })
-      .filter(p => p.id !== props.self()?.id)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  });
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  );
 
-  const invalidScore = createMemo(() => {
+  const player = createMemo(() => maybePlayer() ?? props.self()?.id);
+  const opponent = createMemo(() => maybeOpponent() ?? props.opponent?.()?.id);
+
+  const invalidPlayers = createMemo(() => player() === opponent());
+
+  const invalidScores = createMemo(() => {
     if (score() === opponentScore()) {
       return true;
     }
@@ -59,13 +60,11 @@ export const Game = (
     return true;
   });
 
-  const opponent = createMemo(() => maybeOpponent() ?? props.opponent?.()?.id);
-
   return (
     <Prompt
       visible={props.visible}
       ok={() => {
-        const playerInner = props.self()?.id;
+        const playerInner = player();
         if (playerInner === undefined) {
           return;
         }
@@ -86,15 +85,13 @@ export const Game = (
       cancel={() => {
         props.hide();
       }}
-      disabled={() => invalidScore() || opponent() === undefined}
+      disabled={() => invalidPlayers() || invalidScores()}
     >
       <div class='components-prompt-game'>
-        <div class='components-prompt-game-self'>{selfName()}</div>
-        <Score getter={score} setter={setScore} invalid={invalidScore} />
-        <select value={opponent()} onInput={e => setOpponent(Number(e.currentTarget.value))}>
-          <For each={opponents()}>{o => <option value={o.id}>{o.name}</option>}</For>
-        </select>
-        <Score getter={opponentScore} setter={setOpponentScore} invalid={invalidScore} />
+        <PlayerList get={player} set={setPlayer} players={players} invalid={invalidPlayers} />
+        <Score get={score} set={setScore} invalid={invalidScores} />
+        <PlayerList get={opponent} set={setOpponent} players={players} invalid={invalidPlayers} />
+        <Score get={opponentScore} set={setOpponentScore} invalid={invalidScores} />
         <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
           Challenge
         </label>
@@ -109,15 +106,30 @@ export const Game = (
   );
 };
 
-const Score = (props: {
-  getter: Accessor<number>;
-  setter: Setter<number>;
+const PlayerList = (props: {
+  get: Getter<number>;
+  set: Setter<number | undefined>;
+  players: Getter<SimplePlayer[]>;
   invalid: Accessor<boolean>;
 }) => (
   <select
     class={props.invalid() ? 'invalid' : undefined}
-    value={props.getter()}
-    onInput={e => props.setter(e.target.selectedIndex)}
+    value={props.get()}
+    onInput={e => props.set(Number(e.currentTarget.value))}
+  >
+    <For each={props.players()}>{o => <option value={o.id}>{o.name}</option>}</For>
+  </select>
+);
+
+const Score = (props: {
+  get: Accessor<number>;
+  set: Setter<number>;
+  invalid: Accessor<boolean>;
+}) => (
+  <select
+    class={props.invalid() ? 'invalid' : undefined}
+    value={props.get()}
+    onInput={e => props.set(e.target.selectedIndex)}
   >
     <option value={0}>0</option>
     <option value={1}>1</option>
@@ -134,3 +146,8 @@ const Score = (props: {
     <option value={12}>12</option>
   </select>
 );
+
+type SimplePlayer = {
+  readonly id: number;
+  readonly name: string;
+};

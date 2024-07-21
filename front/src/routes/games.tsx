@@ -17,8 +17,8 @@ export const Games = () => {
         visible={promptVisible}
         hide={() => setPromptVisible(false)}
         store={store}
-        self={() => players()?.find(p => p.id === self()?.id)}
         players={players}
+        self={() => players()?.find(p => p.id === self()?.id)}
       />
       <action.Actions>
         <action.Game action={() => setPromptVisible(true)} />

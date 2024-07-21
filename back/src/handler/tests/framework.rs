@@ -294,6 +294,11 @@ impl Equal {
         if value == expected {
             Ok(())
         } else {
+            eprintln!(
+                r#"Values differ
+{value}
+{expected}"#
+            );
             Err(Error::NotEqual(format!(
                 r#"Values differ
 {value}

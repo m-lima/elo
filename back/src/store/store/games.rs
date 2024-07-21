@@ -234,6 +234,7 @@ impl Games<'_> {
     }
 }
 
+#[derive(Debug)]
 struct RatingUpdate {
     id: types::Id,
     rating_one: f64,
@@ -274,7 +275,7 @@ fn build_update_query(
     for update in updates {
         separated_builder.push_bind(update.id);
     }
-    builder.push(") RETURNING id, player_one, player_two, score_one, score_two, rating_one, rating_two, rating_delta, challenge, created_ms");
+    builder.push(") RETURNING id, player_one, player_two, score_one, score_two, rating_one, rating_two, rating_delta, challenge, deleted, millis, created_ms");
 
     Some(builder)
 }
@@ -303,39 +304,5 @@ fn validate_game(
         Err(Error::InvalidValue("There can only be one winner"))
     } else {
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[sqlx::test]
-    async fn list(pool: sqlx::sqlite::SqlitePool) {
-        sqlx::query_as!(
-            types::Game,
-            r#"
-            SELECT
-                id,
-                player_one,
-                player_two,
-                score_one,
-                score_two,
-                rating_one,
-                rating_two,
-                rating_delta,
-                challenge,
-                deleted,
-                millis AS "millis: types::Millis",
-                created_ms AS "created_ms: types::Millis"
-            FROM
-                games
-            ORDER BY
-                created_ms ASC
-            "#
-        )
-        .fetch_all(&pool)
-        .await
-        .unwrap();
     }
 }

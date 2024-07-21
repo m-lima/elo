@@ -98,7 +98,7 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
             challenge: game.8,
             deleted: game.9,
             millis: game.10,
-            created_ms: game.10,
+            created_ms: game.11,
         }
     };
 

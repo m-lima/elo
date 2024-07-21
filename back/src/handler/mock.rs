@@ -1,5 +1,5 @@
 use super::{access, handler, model};
-use crate::{consts, server, smtp, store, ws};
+use crate::{consts, server, smtp, store, types, ws};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -19,39 +19,13 @@ pub enum Error {
     Distribution(#[from] rand::distributions::WeightedError),
     #[error("Could not receive push: {0:?}")]
     Push(#[from] tokio::sync::broadcast::error::RecvError),
-    #[error("Could not fetch data to adjust dates: {0:?}")]
-    FetchAdjustDates(sqlx::Error),
-    #[error("Could not update data to adjust dates: {0:?}")]
-    UpdateAdjustDates(sqlx::Error),
-}
-
-#[derive(sqlx::FromRow)]
-struct Created {
-    created_ms: i64,
 }
 
 pub async fn initialize(store: &store::Store, count: u16) -> Result<(), Error> {
     let auth = access::Auth::new(store.clone());
 
-    let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
-
-    populate(store, &auth, &mut rand, count).await?;
-    adjust_dates(store, &mut rand).await?;
-
-    Ok(())
-}
-
-async fn populate<R>(
-    store: &store::Store,
-    auth: &access::Auth,
-    rand: &mut R,
-    count: u16,
-) -> Result<(), Error>
-where
-    R: rand::Rng,
-{
-    populate_users(store, auth).await?;
-    populate_games(store, auth, rand, count).await
+    populate_users(store, &auth).await?;
+    populate_games(store, &auth, count).await
 }
 
 async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(), Error> {
@@ -151,16 +125,15 @@ async fn populate_users(store: &store::Store, auth: &access::Auth) -> Result<(),
     Ok(())
 }
 
-async fn populate_games<R>(
+async fn populate_games(
     store: &store::Store,
     auth: &access::Auth,
-    rand: &mut R,
     count: u16,
-) -> Result<(), Error>
-where
-    R: rand::Rng,
-{
+) -> Result<(), Error> {
+    use rand::Rng;
     use ws::Service;
+
+    let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(8855);
 
     let players = {
         let user = get_registered_user(auth, consts::mock::USER_EMAIL).await?;
@@ -183,7 +156,19 @@ where
     let distribution =
         rand::distributions::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
 
-    for _ in 0..players.len() * usize::from(count) {
+    let millis = {
+        let initial = 1_706_702_400_000_i64; // 2024-01-31 12:00:00
+        let mut millis = (0..players.len() * usize::from(count))
+            .scan(initial, |acc, _| {
+                *acc -= rand.gen_range((2 * 60 * 1000)..(2 * 60 * 60 * 1000));
+                Some(*acc)
+            })
+            .collect::<Vec<_>>();
+        millis.reverse();
+        millis
+    };
+
+    for millis in millis {
         let (user, opponent) = {
             let one = rand.sample(&distribution);
             let two = {
@@ -219,181 +204,36 @@ where
             smtp::Sender::empty(),
         );
 
-        let model::Response::Done = handler
+        match handler
             .call(model::Request::Game(model::request::Game::Register {
                 opponent: opponent.0,
                 score: user_score,
                 opponent_score,
                 challenge,
+                millis: types::Millis::from(millis),
             }))
-            .await?
-        else {
-            unreachable!("Unexpected response")
-        };
-    }
-
-    Ok(())
-}
-
-async fn adjust_dates<R>(store: &store::Store, rand: &mut R) -> Result<(), Error>
-where
-    R: rand::Rng,
-{
-    let pool = store.raw_pool();
-
-    let initial_date = 1_696_118_400_000;
-    let initial_date = adjust_player_dates(pool, initial_date, rand).await?;
-    adjust_game_dates(pool, initial_date, rand).await
-}
-
-async fn adjust_player_dates<R>(
-    pool: &sqlx::SqlitePool,
-    mut initial_date: i64,
-    rand: &mut R,
-) -> Result<i64, Error>
-where
-    R: rand::Rng,
-{
-    use crate::types;
-
-    #[derive(sqlx::FromRow)]
-    struct Player {
-        id: types::Id,
-        pending: bool,
-    }
-
-    let players = sqlx::query_as!(
-        Player,
-        r#"
-        SELECT
-            id,
-            pending AS "pending: _"
-        FROM
-            (
-                SELECT
-                    id,
-                    created_ms,
-                    FALSE AS pending
-                FROM
-                    players
-                UNION
-                SELECT
-                    id,
-                    created_ms,
-                    TRUE AS pending
-                FROM
-                    invites
-            )
-        ORDER BY
-            created_ms ASC
-        "#
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(Error::FetchAdjustDates)?;
-
-    for player in players {
-        let created_ms = initial_date + rand.gen_range((2 * 60 * 1000)..(5 * 24 * 60 * 60 * 1000));
-
-        let created = if player.pending {
-            sqlx::query_as!(
-                Created,
-                r#"
-                UPDATE
-                    invites
-                SET
-                    created_ms = $2
-                WHERE
-                    id = $1
-                RETURNING
-                    created_ms AS "created_ms!: _"
-                "#,
-                player.id,
-                created_ms
-            )
-            .fetch_one(pool)
             .await
-            .map_err(Error::UpdateAdjustDates)?
-        } else {
-            sqlx::query_as!(
-                Created,
-                r#"
-                UPDATE
-                    players
-                SET
-                    created_ms = $2
-                WHERE
-                    id = $1
-                RETURNING
-                    created_ms AS "created_ms!: _"
-                "#,
-                player.id,
-                created_ms
-            )
-            .fetch_one(pool)
-            .await
-            .map_err(Error::UpdateAdjustDates)?
+        {
+            Ok(model::Response::Done) => {}
+            Ok(_) => unreachable!("Unexpected response"),
+            Err(model::Error::Store(store::Error::InvalidValue(
+                "Players cannot challenge each other more than once a day",
+            ))) if challenge => {
+                let model::Response::Done = handler
+                    .call(model::Request::Game(model::request::Game::Register {
+                        opponent: opponent.0,
+                        score: user_score,
+                        opponent_score,
+                        challenge: false,
+                        millis: types::Millis::from(millis),
+                    }))
+                    .await?
+                else {
+                    unreachable!("Unexpected response");
+                };
+            }
+            Err(err) => return Err(err.into()),
         };
-
-        initial_date = created.created_ms;
-    }
-
-    Ok(initial_date)
-}
-
-async fn adjust_game_dates<R>(
-    pool: &sqlx::SqlitePool,
-    mut initial_date: i64,
-    rand: &mut R,
-) -> Result<(), Error>
-where
-    R: rand::Rng,
-{
-    use crate::types;
-
-    #[derive(sqlx::FromRow)]
-    struct Game {
-        id: types::Id,
-    }
-
-    let games = sqlx::query_as!(
-        Game,
-        r#"
-        SELECT
-            id
-        FROM
-            games
-        ORDER BY
-            created_ms ASC
-        "#
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(Error::FetchAdjustDates)?;
-
-    for game in games {
-        let created_ms = initial_date + rand.gen_range((2 * 60 * 1000)..(60 * 60 * 1000));
-
-        let created = sqlx::query_as!(
-            Created,
-            r#"
-            UPDATE
-                games
-            SET
-                created_ms = $2
-            WHERE
-                id = $1
-            RETURNING
-                created_ms AS "created_ms!: _"
-            "#,
-            game.id,
-            created_ms
-        )
-        .fetch_one(pool)
-        .await
-        .map_err(Error::UpdateAdjustDates)?;
-
-        initial_date = created.created_ms;
     }
 
     Ok(())

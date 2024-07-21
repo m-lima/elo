@@ -49,12 +49,6 @@ impl Store {
     pub fn players(&self) -> players::Players<'_> {
         players::Players::from(self)
     }
-
-    #[must_use]
-    #[cfg(feature = "local")]
-    pub fn raw_pool(&self) -> &sqlx::SqlitePool {
-        &self.pool
-    }
 }
 
 impl From<sqlx::SqlitePool> for Store {

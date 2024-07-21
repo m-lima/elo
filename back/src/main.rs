@@ -17,8 +17,6 @@ compile_error!("Cannot enable feature `local` on a production build");
 const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
 
 /* TODO:
-* Players should no longer have ratings
-* Games should have rating_delta
 * Games should have penalty_one penalty_two
 * Protocol tuples should have smaller sized fields (f32, i16, etc)
 * There should be a daily clean-up job, that recalculates the scores and applies penalties.

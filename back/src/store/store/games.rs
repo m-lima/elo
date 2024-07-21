@@ -155,6 +155,12 @@ impl Games<'_> {
         }
     }
 
+    // TODO: Dont load the whole table. Get the latest rating for each player prior to edit,
+    // defauting to `default_rating`, and rebuild from there:
+    // with ratings as (select player_one,  player_two, rating_one, rating_two, max(millis) as millis from games group by player_one, player_two), unified as (select player_one as player, rating_one as rating, millis from ratings union select player_two as player, rating_two as rating, millis from ratings) select player, rating, max(millis) from unified group by player;
+    // TODO: This would allow the front end to not have to fetch all games
+    // TODO: This would also mean moving the EnrichedPlayer to the backend, so not all games need
+    // to be loaded
     async fn build_updates<'c, 'e, E, F>(
         default_rating: f64,
         rating_updater: F,

@@ -258,12 +258,16 @@ impl Games<'_> {
                     .copied()
                     .unwrap_or(default_rating);
 
-                let rating_delta = rating_updater(
-                    rating_one,
-                    rating_two,
-                    game.score_one > game.score_two,
-                    game.challenge,
-                );
+                let rating_delta = if game.deleted {
+                    0.0
+                } else {
+                    rating_updater(
+                        rating_one,
+                        rating_two,
+                        game.score_one > game.score_two,
+                        game.challenge,
+                    )
+                };
 
                 last_ratings.insert(game.player_one, rating_one + rating_delta);
                 last_ratings.insert(game.player_two, rating_two - rating_delta);

@@ -22,9 +22,9 @@ export const Invite = (props: { action: () => void }) => (
   </div>
 );
 
-export const Rename = (props: { action: () => void }) => (
+export const Edit = (props: { text: string; action: () => void }) => (
   <div class='components-action-content' onClick={props.action}>
     <icon.Edit />
-    <span class='components-action-text'>Rename</span>
+    <span class='components-action-text'>{props.text}</span>
   </div>
 );

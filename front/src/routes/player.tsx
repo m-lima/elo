@@ -122,7 +122,7 @@ export const Player = () => {
         <action.Actions>
           <Switch>
             <Match when={id() === self()?.id}>
-              <action.Rename action={() => setVisiblePrompt(Prompt.Rename)} />
+              <action.Edit text='Rename' action={() => setVisiblePrompt(Prompt.Rename)} />
             </Match>
             <Match when={id() !== self()?.id}>
               <action.Game action={() => setVisiblePrompt(Prompt.Game)} />

@@ -125,7 +125,8 @@ impl Games<'_> {
                 score_one = $4,
                 score_two = $5,
                 challenge = $6,
-                millis = $7
+                deleted = $7,
+                millis = $8
             WHERE
                 id = $1
             RETURNING
@@ -137,6 +138,7 @@ impl Games<'_> {
             game.score_one,
             game.score_two,
             game.challenge,
+            game.deleted,
             game.millis,
         )
         .fetch_one(tx.as_mut())

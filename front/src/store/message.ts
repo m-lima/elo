@@ -1,10 +1,11 @@
 import {
-  type InviteTuple,
+  type Game,
   type GameTuple,
-  type PlayerTuple,
-  type Player,
-  type User,
   type Invite,
+  type InviteTuple,
+  type Player,
+  type PlayerTuple,
+  type User,
 } from '../types';
 
 export type Ided = {
@@ -18,13 +19,16 @@ export type RequestGame = {
     | 'list'
     | {
         register: {
-          player: number,
+          player: number;
           opponent: number;
           score: number;
           opponentScore: number;
           challenge: boolean;
           millis: number;
         };
+      }
+    | {
+        update: Game;
       };
 };
 export type RequestInvite = {
@@ -44,7 +48,7 @@ export type MessagePush = { push: Push };
 export type Ok = 'done' | OkResponse;
 
 export type OkResponse = {
-  version: number,
+  version: number;
   user: User;
   players: PlayerTuple[];
   games: GameTuple[];
@@ -62,9 +66,8 @@ export type PushPlayer =
   | { invited: Invite }
   | { uninvited: Invite }
   | { joined: Player };
-export type PushGame = {
-  registered: {
-    game: number;
-    updates: GameTuple[];
-  };
+export type PushGame = { registered: PushGamePayload } | { updated: PushGamePayload };
+export type PushGamePayload = {
+  game: number;
+  updates: GameTuple[];
 };

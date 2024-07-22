@@ -111,6 +111,10 @@ export class Store {
     return this.players.get();
   }
 
+  public useGames() {
+    return this.games.get();
+  }
+
   public useInvites() {
     return this.invites.get();
   }
@@ -129,6 +133,10 @@ export class Store {
 
   public renamePlayer(name: string) {
     return this.request({ player: { rename: name } });
+  }
+
+  public editGame(game: Game) {
+    return this.request({ game: { update: game } });
   }
 
   public invitePlayer(name: string, email: string) {
@@ -230,7 +238,7 @@ export class Store {
   private handlePushGame(message: PushGame) {
     if ('registered' in message) {
       const registered = message.registered;
-      const game = registered.updates.reduce<Game | undefined>((acc, curr) => {
+      const game = message.registered.updates.reduce<Game | undefined>((acc, curr) => {
         const game = gameFromTuple(curr);
         this.games.set(games => upsert(games, game));
         if (game.id === registered.game) {
@@ -269,6 +277,10 @@ export class Store {
           false,
         );
       }
+    } else if ('updated' in message) {
+      message.updated.updates.map(gameFromTuple).forEach(game => {
+        this.games.set(games => upsert(games, game));
+      });
     }
   }
 }

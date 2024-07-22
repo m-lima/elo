@@ -28,3 +28,17 @@ export const Edit = (props: { text: string; action: () => void }) => (
     <span class='components-action-text'>{props.text}</span>
   </div>
 );
+
+export const Delete = (props: { action: () => void }) => (
+  <div class='components-action-content' onClick={props.action}>
+    <icon.Trash />
+    <span class='components-action-text'>Delete</span>
+  </div>
+);
+
+export const Restore = (props: { action: () => void }) => (
+  <div class='components-action-content' onClick={props.action}>
+    <icon.Restore />
+    <span class='components-action-text'>Restore</span>
+  </div>
+);

@@ -12,7 +12,7 @@ export const Game = (
     store: Store;
     players: Getter<Player[]>;
     self: Getter<User>;
-    opponent?: Getter<Player>;
+    opponent?: Getter<User>;
   },
 ) => {
   const [maybePlayer, setPlayer] = createSignal(props.self()?.id);

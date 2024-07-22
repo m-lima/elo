@@ -15,7 +15,9 @@ export const Prompt = (
   <Show when={props.visible()}>
     <div class='components-prompt'>
       <div class='components-prompt-content'>
-        <div class='components-prompt-form'>{props.children}</div>
+        <Show when={props.children !== undefined}>
+          <div class='components-prompt-form'>{props.children}</div>
+        </Show>
         <div class='components-prompt-buttons'>
           <div
             classList={{

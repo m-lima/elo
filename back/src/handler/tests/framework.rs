@@ -179,6 +179,10 @@ impl<'a> ResponseVerifier<'a> {
                 .and_then(PushVerifier::none),
         }
     }
+
+    pub fn raw(self) -> std::result::Result<model::Response, model::Error> {
+        self.response
+    }
 }
 
 pub struct EmailVerifier<'a> {

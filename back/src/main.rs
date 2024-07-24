@@ -16,20 +16,7 @@ compile_error!("Cannot enable feature `local` on a production build");
 #[allow(clippy::declare_interior_mutable_const)]
 const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
 
-/* TODO:
-* Games should have penalty_one penalty_two
-* Protocol tuples should have smaller sized fields (f32, i16, etc)
-* There should be a daily clean-up job, that recalculates the scores and applies penalties.
-* Penalty could be -25 for each week with no games
-* The cleanup job should run on every game edit
-* The cleanup job should load all games into memory, regenerate all, for the ones that are
-* different, update the games table with a `where id case` clause
-*
-* The data can be migrated without sqlx by moving players and invites over, then replaying the
-* games in the correct dates
-*/
-
-// TODO: Test game update
+// TODO: Rating change for not playing for a week and for playing every day of the week
 fn setup_tracing(
     verbosity: args::Verbosity,
 ) -> Result<(), tracing::subscriber::SetGlobalDefaultError> {

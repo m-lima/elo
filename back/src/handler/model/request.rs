@@ -1,6 +1,5 @@
 use crate::types;
 
-// TODO: Add version check
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Request {

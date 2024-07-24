@@ -32,6 +32,18 @@ impl From<Player> for PlayerTuple {
     }
 }
 
+impl From<PlayerTuple> for Player {
+    fn from(value: PlayerTuple) -> Self {
+        Self {
+            id: value.0,
+            name: value.1,
+            email: value.2,
+            inviter: value.3,
+            created_ms: value.4,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Invite {
@@ -55,6 +67,18 @@ impl From<Invite> for InviteTuple {
             value.email,
             value.created_ms,
         )
+    }
+}
+
+impl From<InviteTuple> for Invite {
+    fn from(value: InviteTuple) -> Self {
+        Self {
+            id: value.0,
+            inviter: value.1,
+            name: value.2,
+            email: value.3,
+            created_ms: value.4,
+        }
     }
 }
 
@@ -107,6 +131,25 @@ impl From<Game> for GameTuple {
             value.millis,
             value.created_ms,
         )
+    }
+}
+
+impl From<GameTuple> for Game {
+    fn from(value: GameTuple) -> Self {
+        Self {
+            id: value.0,
+            player_one: value.1,
+            player_two: value.2,
+            score_one: value.3,
+            score_two: value.4,
+            rating_one: value.5,
+            rating_two: value.6,
+            rating_delta: value.7,
+            challenge: value.8,
+            deleted: value.9,
+            millis: value.10,
+            created_ms: value.11,
+        }
     }
 }
 

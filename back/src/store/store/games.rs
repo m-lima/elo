@@ -176,7 +176,7 @@ impl Games<'_> {
             FROM
                 games
             ORDER BY
-                created_ms ASC
+                millis ASC
             "#
         )
         .fetch_all(executor)

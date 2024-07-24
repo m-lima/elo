@@ -29,6 +29,7 @@ const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static
 * games in the correct dates
 */
 
+// TODO: Test game update
 fn setup_tracing(
     verbosity: args::Verbosity,
 ) -> Result<(), tracing::subscriber::SetGlobalDefaultError> {

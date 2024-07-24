@@ -18,6 +18,10 @@ socket.registerStateListener(setSocketState);
 
 const store = new Store(socket);
 
+// TODO: Chart page
+// TODO: Date picker
+// TODO: Deleted games
+// TODO: Update notification
 const App = (props: ParentProps) => (
   <>
     <Side />

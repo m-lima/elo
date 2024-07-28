@@ -85,7 +85,9 @@ export const Game = (
       cancel={() => {
         props.hide();
       }}
-      disabled={() => invalidPlayers() || invalidScores()}
+      disabled={() =>
+        invalidPlayers() || invalidScores() || player() === undefined || opponent() === undefined
+      }
     >
       <div class='components-prompt-game'>
         <PlayerList get={player} set={setPlayer} players={players} invalid={invalidPlayers} />

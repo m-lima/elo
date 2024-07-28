@@ -6,8 +6,8 @@ CREATE TABLE history (
   score_one  INTEGER NOT NULL,
   score_two  INTEGER NOT NULL,
   challenge  BOOLEAN NOT NULL,
-  millis     INTEGER NOT NULL,
   deleted    BOOLEAN NOT NULL,
+  millis     INTEGER NOT NULL,
   created_ms INTEGER NOT NULL
     DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), 4)),
 

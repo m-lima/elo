@@ -742,27 +742,32 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
         };
     }
 
-    let model::Response::Games(response) = handler
+    // Check that the output matches the one created without edits
+    handler
         .call(model::Request::Game(model::request::Game::List))
         .await
-        .raw()
+        .map_ok(
+            |r| {
+                let model::Response::Games(response) = r else {
+                    panic!()
+                };
+                response
+                    .into_iter()
+                    .map(|g| types::Game {
+                        id: 0,
+                        created_ms: types::Millis::from(0),
+                        ..types::Game::from(g)
+                    })
+                    .filter(|g| !g.deleted)
+                    .collect()
+            },
+            expected,
+        )
         .unwrap()
-    else {
-        panic!()
-    };
-
-    // Check that the output matches the one created without edits
-    let response = response
-        .into_iter()
-        .map(|g| types::Game {
-            id: 0,
-            created_ms: types::Millis::from(0),
-            ..types::Game::from(g)
-        })
-        .filter(|g| !g.deleted)
-        .collect::<Vec<_>>();
-
-    assert_eq!(response, expected);
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
 }
 
 #[sqlx::test]
@@ -1078,6 +1083,226 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
         .collect::<Vec<_>>();
 
     assert_eq!(response, expected);
+}
+
+#[sqlx::test]
+async fn history(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: now(),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+    let original_game = updates.into_iter().next().map(types::Game::from).unwrap();
+
+    let model::Push::Game(model::push::Game::Updated { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Update(
+            types::Game {
+                score_one: 7,
+                score_two: 11,
+                ..original_game.clone()
+            },
+        )))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    handler
+        .call(model::Request::Game(model::request::Game::List))
+        .await
+        .ok(model::Response::Games(updates))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    handler
+        .call(model::Request::Game(model::request::Game::History(
+            original_game.id,
+        )))
+        .await
+        .map_ok(
+            |r| {
+                let model::Response::History(response) = r else {
+                    panic!()
+                };
+                response
+                    .into_iter()
+                    .map(types::History::from)
+                    .map(|h| types::History {
+                        id: 0,
+                        created_ms: types::Millis::from(0),
+                        ..h
+                    })
+                    .collect()
+            },
+            vec![types::History {
+                id: 0,
+                game: original_game.id,
+                player_one: original_game.player_one,
+                player_two: original_game.player_two,
+                score_one: original_game.score_one,
+                score_two: original_game.score_two,
+                challenge: original_game.challenge,
+                deleted: original_game.deleted,
+                millis: original_game.millis,
+                created_ms: types::Millis::from(0),
+            }],
+        )
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
+
+#[sqlx::test]
+async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: now(),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+    let first_game = updates.into_iter().next().map(types::Game::from).unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: false,
+            millis: now(),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+    let second_game = updates.into_iter().next().map(types::Game::from).unwrap();
+    let second_game_id = second_game.id;
+
+    let model::Push::Game(model::push::Game::Updated { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Update(
+            types::Game {
+                deleted: true,
+                ..first_game.clone()
+            },
+        )))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(updates.len(), 2);
+    assert_eq!(updates[0].0, game);
+    let modified_second_game = updates.into_iter().nth(1).map(types::Game::from).unwrap();
+
+    assert_ne!(second_game, modified_second_game);
+
+    let first_game = types::Game {
+        rating_delta: 0.0,
+        deleted: true,
+        ..first_game
+    };
+
+    handler
+        .call(model::Request::Game(model::request::Game::List))
+        .await
+        .ok(model::Response::Games(
+            [first_game, modified_second_game]
+                .map(types::GameTuple::from)
+                .into_iter()
+                .collect(),
+        ))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    handler
+        .call(model::Request::Game(model::request::Game::History(
+            second_game_id,
+        )))
+        .await
+        .ok(model::Response::History(Vec::new()))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
 }
 
 #[sqlx::test]

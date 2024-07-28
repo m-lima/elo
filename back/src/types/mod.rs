@@ -153,6 +153,69 @@ impl From<GameTuple> for Game {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct History {
+    pub id: Id,
+    pub game: Id,
+    pub player_one: Id,
+    pub player_two: Id,
+    pub score_one: i64,
+    pub score_two: i64,
+    pub challenge: bool,
+    pub deleted: bool,
+    pub millis: Millis,
+    pub created_ms: Millis,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct HistoryTuple(
+    pub Id,
+    pub Id,
+    pub Id,
+    pub Id,
+    pub i64,
+    pub i64,
+    pub bool,
+    pub bool,
+    pub Millis,
+    pub Millis,
+);
+
+impl From<History> for HistoryTuple {
+    fn from(value: History) -> Self {
+        Self(
+            value.id,
+            value.game,
+            value.player_one,
+            value.player_two,
+            value.score_one,
+            value.score_two,
+            value.challenge,
+            value.deleted,
+            value.millis,
+            value.created_ms,
+        )
+    }
+}
+
+impl From<HistoryTuple> for History {
+    fn from(value: HistoryTuple) -> Self {
+        Self {
+            id: value.0,
+            game: value.1,
+            player_one: value.2,
+            player_two: value.3,
+            score_one: value.4,
+            score_two: value.5,
+            challenge: value.6,
+            deleted: value.7,
+            millis: value.8,
+            created_ms: value.9,
+        }
+    }
+}
+
 #[derive(
     Debug,
     Copy,

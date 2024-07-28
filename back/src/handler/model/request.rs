@@ -29,6 +29,7 @@ impl std::fmt::Display for Request {
                 Game::List => f.write_str("Game::List"),
                 Game::Register { .. } => f.write_str("Game::Register"),
                 Game::Update(_) => f.write_str("Game::Update"),
+                Game::History(_) => f.write_str("Game::History"),
             },
         }
     }
@@ -67,4 +68,5 @@ pub enum Game {
     },
     #[serde(rename_all = "camelCase")]
     Update(types::Game),
+    History(types::Id),
 }

@@ -84,6 +84,11 @@ where
 
                 Ok(model::Response::Done)
             }
+            model::request::Game::History(game) => games
+                .history(game)
+                .await
+                .map_err(model::Error::Store)
+                .map(|r| model::Response::History(r.into_iter().map(Into::into).collect())),
         }
     }
 }

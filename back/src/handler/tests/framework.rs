@@ -170,6 +170,17 @@ impl<'a> ResponseVerifier<'a> {
         }
     }
 
+    pub fn map_ok<F, T>(self, mapper: F, expected: T) -> Result<EmailVerifier<'a>>
+    where
+        F: Fn(model::Response) -> T,
+        T: std::fmt::Debug,
+    {
+        match self.response {
+            Ok(r) => Equal::assert(mapper(r), expected).map(|()| self.next),
+            Err(e) => Err(Error::ResponseError(e)),
+        }
+    }
+
     pub fn err(self, expected: model::Error) -> Result {
         match self.response {
             Ok(r) => Err(Error::UnexpectedResponse(r)),

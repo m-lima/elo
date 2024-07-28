@@ -152,6 +152,36 @@ impl Games<'_> {
         Ok((game, updates))
     }
 
+    #[tracing::instrument(skip(self))]
+    pub async fn history(&self, game: types::Id) -> Result<Vec<types::History>> {
+        sqlx::query_as!(
+            types::History,
+            r#"
+            SELECT
+                id,
+                game,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                challenge,
+                deleted,
+                millis AS "millis: types::Millis",
+                created_ms AS "created_ms: types::Millis"
+            FROM
+                history
+            WHERE
+                game = $1
+            ORDER BY
+                created_ms DESC
+            "#,
+            game,
+        )
+        .fetch_all(self.pool)
+        .await
+        .map_err(Error::from)
+    }
+
     async fn list_games<'c, 'e, E>(executor: E) -> Result<Vec<types::Game>>
     where
         'c: 'e,

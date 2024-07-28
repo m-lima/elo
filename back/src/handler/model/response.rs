@@ -11,6 +11,7 @@ pub enum Response {
     },
     Players(Vec<types::PlayerTuple>),
     Games(Vec<types::GameTuple>),
+    History(Vec<types::HistoryTuple>),
     Invites(Vec<types::InviteTuple>),
     Done,
 }

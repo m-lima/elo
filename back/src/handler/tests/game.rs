@@ -514,6 +514,120 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
+async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
+    let (player, store, mut handler) = init!(pool);
+
+    let accepted_one = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let accepted_two = handler
+        .invite_full(&player, &store, INVITED_NAME, INVITED_EMAIL)
+        .await
+        .unwrap();
+
+    let millis = 1_704_070_861_000_i64; // 2024-01-01 01:01:01
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted_one.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+    let game_one = updates.into_iter().next().map(types::Game::from).unwrap();
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted_two.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: true,
+            millis: types::Millis::from(millis + 1),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+
+    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        .call(model::Request::Game(model::request::Game::Register {
+            player: player.id,
+            opponent: accepted_one.id,
+            score: 11,
+            opponent_score: 0,
+            challenge: false,
+            millis: types::Millis::from(millis + 2),
+        }))
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, game);
+    let game_two = updates.into_iter().next().map(types::Game::from).unwrap();
+
+    handler
+        .call(model::Request::Game(model::request::Game::Update(
+            types::Game {
+                challenge: true,
+                ..game_two.clone()
+            },
+        )))
+        .await
+        .err(model::Error::Store(store::Error::InvalidValue(
+            "Players cannot challenge each other more than once a day",
+        )))
+        .unwrap();
+
+    handler
+        .call(model::Request::Game(model::request::Game::Update(
+            types::Game {
+                player_two: accepted_two.id,
+                ..game_one.clone()
+            },
+        )))
+        .await
+        .err(model::Error::Store(store::Error::InvalidValue(
+            "Players cannot challenge each other more than once a day",
+        )))
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
     // Prepare players
     let (player, store, mut handler) = init!(pool);

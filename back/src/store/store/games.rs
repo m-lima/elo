@@ -390,8 +390,8 @@ where
             "#,
             player_one,
             player_two,
-            ignore,
             millis,
+            ignore,
         )
         .fetch_optional(executor)
         .await?

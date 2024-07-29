@@ -24,6 +24,7 @@ export const Leaderboard = () => {
       const descending = sortDescending();
 
       return players()
+        .filter(p => p.games > 0)
         .map(p => {
           return {
             id: p.id,

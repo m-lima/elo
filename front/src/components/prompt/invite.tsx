@@ -10,6 +10,7 @@ import './invite.css';
 export const Invite = (
   props: Props & { store: Store; players: Getter<Player[]>; invites: Getter<InviteType[]> },
 ) => {
+  const [busy, setBusy] = createSignal<boolean | undefined>();
   const [name, setName] = createSignal('');
   const [email, setEmail] = createSignal('');
 
@@ -30,13 +31,20 @@ export const Invite = (
       return;
     }
 
-    props.store.invitePlayer(name().trim(), cleanEmail(email())).then(r => {
-      if (r) {
-        props.hide();
-        setName('');
-        setEmail('');
-      }
-    });
+    setTimeout(() => setBusy(busy => busy ?? true), 200);
+    props.store
+      .invitePlayer(name().trim(), cleanEmail(email()))
+      .then(r => {
+        if (r) {
+          props.hide();
+          setName('');
+          setEmail('');
+        }
+      })
+      .finally(() => {
+        setBusy(false);
+        setTimeout(setBusy, 500);
+      });
   };
 
   return (
@@ -45,6 +53,7 @@ export const Invite = (
       ok={commit}
       cancel={props.hide}
       disabled={() => invalidName() !== CheckResult.Ok || invalidEmail() !== CheckResult.Ok}
+      busy={busy}
     >
       <div class='components-prompt-invite'>
         <b>Name</b>

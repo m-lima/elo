@@ -1,6 +1,7 @@
 import { ParentProps, Show } from 'solid-js';
 import { icon } from '..';
 import { type Getter, type Invite, type Player } from '../../types';
+import { Loading } from '../../pages';
 
 import './prompt.css';
 
@@ -9,35 +10,40 @@ export const Prompt = (
     visible: () => boolean;
     ok: () => void;
     cancel: () => void;
-    disabled?: () => boolean;
+    disabled: () => boolean;
+    busy: () => boolean | undefined;
   },
 ) => (
   <Show when={props.visible()}>
     <div class='components-prompt'>
-      <div class='components-prompt-content'>
-        <Show when={props.children !== undefined}>
-          <div class='components-prompt-form'>{props.children}</div>
-        </Show>
-        <div class='components-prompt-buttons'>
-          <div
-            classList={{
-              'components-prompt-button': true,
-              'ok': true,
-              'disabled': props.disabled?.() === true,
-            }}
-            onClick={() => {
-              if (props.disabled?.() !== true) {
-                props.ok();
-              }
-            }}
-          >
-            <icon.Ok />
-          </div>
-          <div class='components-prompt-button cancel' onClick={props.cancel}>
-            <icon.Cancel />
+      <Show when={props.busy() !== true} fallback=<Loading />>
+        <div class='components-prompt-grid'>
+          <div class='components-prompt-content'>
+            <Show when={props.children !== undefined}>
+              <div class='components-prompt-form'>{props.children}</div>
+            </Show>
+            <div class='components-prompt-buttons'>
+              <div
+                classList={{
+                  'components-prompt-button': true,
+                  'ok': true,
+                  'disabled': props.disabled(),
+                }}
+                onClick={() => {
+                  if (!props.disabled()) {
+                    props.ok();
+                  }
+                }}
+              >
+                <icon.Ok />
+              </div>
+              <div class='components-prompt-button cancel' onClick={props.cancel}>
+                <icon.Cancel />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </Show>
     </div>
   </Show>
 );

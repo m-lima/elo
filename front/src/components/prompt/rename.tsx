@@ -15,6 +15,7 @@ export const Rename = (
     invites: Getter<Invite[]>;
   },
 ) => {
+  const [busy, setBusy] = createSignal<boolean | undefined>();
   const [name, setName] = createSignal('');
 
   const invalid = createMemo(() => checkString(name(), 'name', props.players, props.invites));
@@ -24,12 +25,19 @@ export const Rename = (
       return;
     }
 
-    props.store.renamePlayer(name().trim()).then(r => {
-      if (r) {
-        props.hide();
-        setName('');
-      }
-    });
+    setTimeout(() => setBusy(busy => busy ?? true), 200);
+    props.store
+      .renamePlayer(name().trim())
+      .then(r => {
+        if (r) {
+          props.hide();
+          setName('');
+        }
+      })
+      .finally(() => {
+        setBusy(false);
+        setTimeout(setBusy, 500);
+      });
   };
 
   return (
@@ -38,6 +46,7 @@ export const Rename = (
       ok={commit}
       cancel={props.hide}
       disabled={() => invalid() !== CheckResult.Ok}
+      busy={busy}
     >
       <div class='components-prompt-rename'>
         <b>Name</b>

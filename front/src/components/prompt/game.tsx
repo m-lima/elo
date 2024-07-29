@@ -15,6 +15,8 @@ export const Game = (
     opponent?: Getter<User>;
   },
 ) => {
+  const [busy, setBusy] = createSignal<boolean | undefined>();
+
   const [maybePlayer, setPlayer] = createSignal(props.self()?.id);
   const [maybeOpponent, setOpponent] = createSignal(props.opponent?.()?.id);
 
@@ -74,12 +76,17 @@ export const Game = (
           return;
         }
 
+        setTimeout(() => setBusy(busy => busy ?? true), 200);
         props.store
           .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge())
           .then(r => {
             if (r) {
               props.hide();
             }
+          })
+          .finally(() => {
+            setBusy(false);
+            setTimeout(setBusy, 500);
           });
       }}
       cancel={() => {
@@ -88,6 +95,7 @@ export const Game = (
       disabled={() =>
         invalidPlayers() || invalidScores() || player() === undefined || opponent() === undefined
       }
+      busy={busy}
     >
       <div class='components-prompt-game'>
         <PlayerList get={player} set={setPlayer} players={players} invalid={invalidPlayers} />

@@ -65,4 +65,9 @@
       background-color: var(--color-background-dark);
     }
   }
+
+  .components-games-deleted * {
+    filter: saturate(0);
+    opacity: 0.5;
+  }
 }

@@ -32,7 +32,7 @@ export const Games = (props: { games: Getter<EnrichedGame[]> }) => {
 
 const gameRow = (game: EnrichedGame) => {
   return (
-    <tr>
+    <tr class={game.deleted ? 'components-games-deleted' : undefined}>
       <td class='components-games-align-right'>{playerName(game.playerOne, game.playerOneName)}</td>
       <td class='components-games-align-right'>{game.scoreOne}</td>
       {game.challenge ? (

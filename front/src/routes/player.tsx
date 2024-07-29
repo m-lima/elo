@@ -93,6 +93,8 @@ export const Player = () => {
       }),
   );
 
+  const chartGames = createMemo(() => playerGames().filter(g => !g.deleted));
+
   return (
     <Suspense fallback=<Loading />>
       <Show when={player() !== undefined} fallback=<error.NotFound />>
@@ -135,7 +137,9 @@ export const Player = () => {
             <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
             <Show when={playerGames().length > 0} fallback=<NoGames />>
-              <Charts games={playerGames} />
+              <Show when={chartGames().length > 0}>
+                <Charts games={chartGames} />
+              </Show>
               <Games games={playerGames} />
             </Show>
           </div>

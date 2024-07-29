@@ -384,7 +384,7 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
     ]),
   );
 
-  for (const game of games) {
+  for (const game of games.filter(g => !g.deleted)) {
     const playerOne = enrichedPlayers.get(game.playerOne);
     if (playerOne !== undefined) {
       playerOne.rating = game.ratingOne + game.ratingDelta;

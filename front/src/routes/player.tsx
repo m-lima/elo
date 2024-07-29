@@ -137,7 +137,7 @@ export const Player = () => {
             <PlayerHeader player={player} playerCount={players().length ?? 0} />
             <PlayerStats player={player} />
             <Show when={playerGames().length > 0} fallback=<NoGames />>
-              <Show when={chartGames().length > 0}>
+              <Show when={chartGames().length > 1}>
                 <Charts games={chartGames} />
               </Show>
               <Games games={playerGames} />

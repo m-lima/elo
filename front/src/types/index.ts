@@ -103,6 +103,58 @@ export const inviteFromTuple = ([id, inviter, name, email, createdMs]: InviteTup
   };
 };
 
+export type History = {
+  readonly id: number;
+  readonly game: number;
+  readonly playerOne: number;
+  readonly playerTwo: number;
+  readonly scoreOne: number;
+  readonly scoreTwo: number;
+  readonly challenge: boolean;
+  readonly deleted: boolean;
+  readonly millis: number;
+  readonly createdMs: number;
+};
+
+export type HistoryTuple = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  boolean,
+  boolean,
+  number,
+  number,
+];
+
+export const historyFromTuple = ([
+  id,
+  game,
+  playerOne,
+  playerTwo,
+  scoreOne,
+  scoreTwo,
+  challenge,
+  deleted,
+  millis,
+  createdMs,
+]: HistoryTuple): History => {
+  return {
+    id,
+    game,
+    playerOne,
+    playerTwo,
+    scoreOne,
+    scoreTwo,
+    challenge,
+    deleted,
+    millis,
+    createdMs,
+  };
+};
+
 export type EnrichedPlayer = Player & {
   readonly position: number;
   readonly rating: number;

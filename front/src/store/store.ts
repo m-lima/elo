@@ -8,15 +8,16 @@ import {
 
 import { Socket, state } from '../socket';
 import {
-  type Player,
+  gameFromTuple,
+  historyFromTuple,
+  inviteFromTuple,
+  playerFromTuple,
+  type EnrichedGame,
+  type EnrichedPlayer,
   type Game,
   type Invite,
+  type Player,
   type User,
-  type EnrichedPlayer,
-  type EnrichedGame,
-  playerFromTuple,
-  gameFromTuple,
-  inviteFromTuple,
 } from '../types';
 import { type Message, type Request, type Ided, type PushPlayer, type PushGame } from './message';
 import { newRequestId, ResponseError, validateDone, validateMessage } from './request';
@@ -129,6 +130,15 @@ export class Store {
     const players = this.players.get();
     const games = this.games.get();
     return createMemo(() => enrichGames(games(), players()));
+  }
+
+  public getGameHistory(game: number) {
+    return createResource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { game: { history: game } } }, message =>
+        validateMessage(id, 'history', message)?.history.map(historyFromTuple),
+      );
+    })[0];
   }
 
   public renamePlayer(name: string) {

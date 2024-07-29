@@ -1,6 +1,7 @@
 import {
   type Game,
   type GameTuple,
+  type HistoryTuple,
   type Invite,
   type InviteTuple,
   type Player,
@@ -27,9 +28,8 @@ export type RequestGame = {
           millis: number;
         };
       }
-    | {
-        update: Game;
-      };
+    | { update: Game }
+    | { history: number };
 };
 export type RequestInvite = {
   invite:
@@ -53,6 +53,7 @@ export type OkResponse = {
   players: PlayerTuple[];
   games: GameTuple[];
   invites: InviteTuple[];
+  history: HistoryTuple[];
 };
 
 export type Error = {

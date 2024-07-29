@@ -66,7 +66,7 @@ where
                 Ok(model::Response::Done)
             }
             model::request::Game::Update(game) => {
-                let (game, updates) = games
+                let updates = games
                     .update(
                         &game,
                         skillratings::elo::EloRating::new().rating,
@@ -78,7 +78,7 @@ where
                 self.handler
                     .broadcaster
                     .send(model::Push::Game(model::push::Game::Updated {
-                        game,
+                        game: game.id,
                         updates: updates.into_iter().map(Into::into).collect(),
                     }));
 

@@ -1057,7 +1057,7 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
             .unwrap()
         {
             assert_eq!(updates.len(), usize::from(i));
-            assert_eq!(updates.last().unwrap().0, game);
+            assert_eq!(updates.iter().filter(|g| g.0 == game).count(), 1);
         } else {
             panic!()
         }

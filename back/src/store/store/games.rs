@@ -14,6 +14,9 @@ impl<'a> From<&'a super::Store> for Games<'a> {
 }
 
 impl Games<'_> {
+    // TODO: This would allow the front end to not have to fetch all games
+    // TODO: This would also mean moving the EnrichedPlayer to the backend, so not all games need
+    // to be loaded
     #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::Game>> {
         Self::list_games(self.pool).await
@@ -37,7 +40,7 @@ impl Games<'_> {
         let mut tx = self.pool.begin().await?;
 
         if challenge {
-            validate_challenge(player_one, player_two, millis, None, tx.as_mut()).await?;
+            Self::validate_challenge(player_one, player_two, millis, None, tx.as_mut()).await?;
         }
 
         let game = sqlx::query_as!(
@@ -78,7 +81,8 @@ impl Games<'_> {
         .await
         .map(|r| r.id)?;
 
-        let updates = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
+        let updates =
+            Self::execute_refresh(Some(millis), default_rating, rating_updater, &mut tx).await?;
 
         tx.commit().await?;
 
@@ -91,7 +95,7 @@ impl Games<'_> {
         game: &types::Game,
         default_rating: f64,
         rating_updater: F,
-    ) -> Result<(types::Id, Vec<types::Game>)>
+    ) -> Result<Vec<types::Game>>
     where
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
@@ -105,7 +109,7 @@ impl Games<'_> {
         let mut tx = self.pool.begin().await?;
 
         if game.challenge {
-            validate_challenge(
+            Self::validate_challenge(
                 game.player_one,
                 game.player_two,
                 game.millis,
@@ -115,8 +119,21 @@ impl Games<'_> {
             .await?;
         }
 
-        let game = sqlx::query_as!(
-            super::Id,
+        let old_millis = sqlx::query_scalar!(
+            r#"
+            SELECT
+                millis AS "millis: types::Millis"
+            FROM
+                games
+            WHERE
+                id = $1
+            "#,
+            game.id,
+        )
+        .fetch_one(tx.as_mut())
+        .await?;
+
+        let new_millis = sqlx::query_scalar!(
             r#"
             UPDATE games
             SET
@@ -130,7 +147,7 @@ impl Games<'_> {
             WHERE
                 id = $1
             RETURNING
-                id AS "id!: _"
+                millis AS "millis!: types::Millis"
             "#,
             game.id,
             game.player_one,
@@ -142,14 +159,19 @@ impl Games<'_> {
             game.millis,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map(|r| r.id)?;
+        .await?;
 
-        let updates = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
+        let updates = Self::execute_refresh(
+            Some(old_millis.min(new_millis)),
+            default_rating,
+            rating_updater,
+            &mut tx,
+        )
+        .await?;
 
         tx.commit().await?;
 
-        Ok((game, updates))
+        Ok(updates)
     }
 
     #[tracing::instrument(skip(self))]
@@ -224,13 +246,16 @@ impl Games<'_> {
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
         let mut tx = self.pool.begin().await?;
-        let games = Self::execute_refresh(default_rating, rating_updater, &mut tx).await?;
+        let games = Self::execute_refresh(None, default_rating, rating_updater, &mut tx).await?;
         tx.commit().await?;
 
         Ok(games)
     }
+}
 
+impl Games<'_> {
     async fn execute_refresh<F>(
+        from: Option<types::Millis>,
         default_rating: f64,
         rating_updater: F,
         tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
@@ -238,11 +263,12 @@ impl Games<'_> {
     where
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
-        let updates = Self::build_updates(default_rating, rating_updater, tx.as_mut()).await?;
+        let updates = Self::build_updates(from, default_rating, rating_updater, tx).await?;
 
         if let Some(mut query) = build_update_query(&updates) {
             query
                 .build_query_as()
+                .persistent(false)
                 .fetch_all(tx.as_mut())
                 .await
                 .map_err(Into::into)
@@ -251,20 +277,13 @@ impl Games<'_> {
         }
     }
 
-    // TODO: Dont load the whole table. Get the latest rating for each player prior to edit,
-    // defauting to `default_rating`, and rebuild from there:
-    // with ratings as (select player_one,  player_two, rating_one, rating_two, max(millis) as millis from games group by player_one, player_two), unified as (select player_one as player, rating_one as rating, millis from ratings union select player_two as player, rating_two as rating, millis from ratings) select player, rating, max(millis) from unified group by player;
-    // TODO: This would allow the front end to not have to fetch all games
-    // TODO: This would also mean moving the EnrichedPlayer to the backend, so not all games need
-    // to be loaded
-    async fn build_updates<'c, 'e, E, F>(
+    async fn build_updates<F>(
+        from: Option<types::Millis>,
         default_rating: f64,
         rating_updater: F,
-        executor: E,
+        tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
     ) -> Result<Vec<RatingUpdate>>
     where
-        'c: 'e,
-        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
         macro_rules! f64_ne {
@@ -273,59 +292,7 @@ impl Games<'_> {
             };
         }
 
-        // struct Rating {
-        //     player: types::Id,
-        //     rating: f64,
-        //     millis: types::Millis,
-        // }
-        //
-        // sqlx::query_as!(
-        //     Rating,
-        //     r#"
-        //     WITH
-        //         ratings AS (
-        //             SELECT
-        //                 player_one,
-        //                 player_two,
-        //                 rating_one,
-        //                 rating_two,
-        //                 MAX(millis) AS millis
-        //             FROM
-        //                 games
-        //             WHERE
-        //                 millis < $1
-        //             GROUP BY
-        //                 player_one,
-        //                 player_two
-        //         ),
-        //         unified AS (
-        //             SELECT
-        //                 player_one AS player,
-        //                 rating_one AS rating,
-        //                 millis
-        //             FROM
-        //                 ratings
-        //             UNION
-        //                 SELECT
-        //                     player_two AS player,
-        //                     rating_two AS rating,
-        //                     millis
-        //                 FROM
-        //                     ratings
-        //         )
-        //     SELECT
-        //         player AS "player!: types::Id",
-        //         rating AS "rating!: f64",
-        //         MAX(millis) AS "millis!: types::Millis"
-        //     FROM
-        //         unified
-        //     GROUP BY
-        //         player
-        //     "#,
-        //     1
-        // );
-        let updates = Self::list_games(executor).await?;
-        let mut last_ratings = std::collections::HashMap::<types::Id, f64>::new();
+        let (updates, mut last_ratings) = Self::prepare_updates(from, tx).await?;
 
         Ok(updates
             .into_iter()
@@ -364,6 +331,165 @@ impl Games<'_> {
                 })
             })
             .collect())
+    }
+
+    async fn prepare_updates(
+        from: Option<types::Millis>,
+        tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
+    ) -> Result<(Vec<types::Game>, std::collections::HashMap<types::Id, f64>)> {
+        if let Some(from) = from {
+            let updates = sqlx::query_as!(
+                types::Game,
+                r#"
+                SELECT
+                    id,
+                    player_one,
+                    player_two,
+                    score_one,
+                    score_two,
+                    rating_one,
+                    rating_two,
+                    rating_delta,
+                    challenge,
+                    deleted,
+                    millis AS "millis: types::Millis",
+                    created_ms AS "created_ms: types::Millis"
+                FROM
+                    games
+                WHERE
+                    millis >= $1
+                ORDER BY
+                    millis ASC
+                "#,
+                from,
+            )
+            .fetch_all(tx.as_mut())
+            .await?;
+
+            let last_ratings = sqlx::query!(
+                r#"
+                WITH
+                    ratings AS (
+                        SELECT
+                            player_one,
+                            player_two,
+                            rating_one + rating_delta AS rating_one,
+                            rating_two - rating_delta AS rating_two,
+                            MAX(millis) AS millis
+                        FROM
+                            games
+                        WHERE
+                            millis < $1
+                            AND NOT deleted
+                        GROUP BY
+                            player_one,
+                            player_two
+                    ),
+                    unified AS (
+                        SELECT
+                            player_one AS player,
+                            rating_one AS rating,
+                            millis
+                        FROM
+                            ratings
+                        UNION
+                            SELECT
+                                player_two AS player,
+                                rating_two AS rating,
+                                millis
+                            FROM
+                                ratings
+                    )
+                SELECT
+                    player AS "player!: types::Id",
+                    rating AS "rating!: f64",
+                    MAX(millis) AS "millis!: types::Millis"
+                FROM
+                    unified
+                GROUP BY
+                    player
+                "#,
+                from,
+            )
+            .map(|r| (r.player, r.rating))
+            .fetch_all(tx.as_mut())
+            .await?
+            .into_iter()
+            .collect();
+
+            Ok((updates, last_ratings))
+        } else {
+            Self::list_games(tx.as_mut())
+                .await
+                .map(|games| (games, std::collections::HashMap::default()))
+        }
+    }
+
+    async fn validate_challenge<'c, 'e, E>(
+        player_one: types::Id,
+        player_two: types::Id,
+        millis: types::Millis,
+        ignore: Option<types::Id>,
+        executor: E,
+    ) -> Result
+    where
+        'c: 'e,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
+    {
+        let millis = i64::from(millis);
+        let challenged_today = if let Some(ignore) = ignore {
+            sqlx::query!(
+                r#"
+                SELECT
+                    id
+                FROM
+                    games
+                WHERE
+                    challenge
+                    AND NOT deleted
+                    AND player_one IN ($1, $2)
+                    AND player_two IN ($1, $2)
+                    AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+                    AND id <> $4
+                "#,
+                player_one,
+                player_two,
+                millis,
+                ignore,
+            )
+            .fetch_optional(executor)
+            .await?
+            .is_some()
+        } else {
+            sqlx::query!(
+                r#"
+                SELECT
+                    id
+                FROM
+                    games
+                WHERE
+                    challenge
+                    AND NOT deleted
+                    AND player_one IN ($1, $2)
+                    AND player_two IN ($1, $2)
+                    AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+                "#,
+                player_one,
+                player_two,
+                millis,
+            )
+            .fetch_optional(executor)
+            .await?
+            .is_some()
+        };
+
+        if challenged_today {
+            return Err(Error::InvalidValue(
+                "Players cannot challenge each other more than once a day",
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -440,71 +566,4 @@ fn validate_game(
     } else {
         Ok(())
     }
-}
-
-async fn validate_challenge<'c, 'e, E>(
-    player_one: types::Id,
-    player_two: types::Id,
-    millis: types::Millis,
-    ignore: Option<types::Id>,
-    executor: E,
-) -> Result
-where
-    'c: 'e,
-    E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
-{
-    let millis = i64::from(millis);
-    let challenged_today = if let Some(ignore) = ignore {
-        sqlx::query!(
-            r#"
-            SELECT
-                id
-            FROM
-                games
-            WHERE
-                challenge
-                AND NOT deleted
-                AND player_one IN ($1, $2)
-                AND player_two IN ($1, $2)
-                AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
-                AND id <> $4
-            "#,
-            player_one,
-            player_two,
-            millis,
-            ignore,
-        )
-        .fetch_optional(executor)
-        .await?
-        .is_some()
-    } else {
-        sqlx::query!(
-            r#"
-            SELECT
-                id
-            FROM
-                games
-            WHERE
-                challenge
-                AND NOT deleted
-                AND player_one IN ($1, $2)
-                AND player_two IN ($1, $2)
-                AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
-            "#,
-            player_one,
-            player_two,
-            millis,
-        )
-        .fetch_optional(executor)
-        .await?
-        .is_some()
-    };
-
-    if challenged_today {
-        return Err(Error::InvalidValue(
-            "Players cannot challenge each other more than once a day",
-        ));
-    }
-
-    Ok(())
 }

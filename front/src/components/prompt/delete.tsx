@@ -1,19 +1,23 @@
 import { createSignal } from 'solid-js';
 
-import { Game } from '../../types';
+import { Game, Getter } from '../../types';
 import { Prompt, type Props } from './prompt';
 import { Store } from '../../store';
 
 export const Delete = (
   props: Props & {
     store: Store;
-    game: () => Game;
+    game: Getter<Game>;
   },
 ) => {
   const [busy, setBusy] = createSignal<boolean | undefined>();
 
   const commit = () => {
     const game = props.game();
+
+    if (game === undefined) {
+      return;
+    }
 
     setTimeout(() => setBusy(busy => busy ?? true), 200);
     props.store
@@ -34,7 +38,7 @@ export const Delete = (
       visible={props.visible}
       ok={commit}
       cancel={props.hide}
-      disabled={() => false}
+      disabled={() => props.game() === undefined}
       busy={busy}
     />
   );

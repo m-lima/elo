@@ -782,10 +782,10 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
         millis: types::Millis,
     }
 
-    fn make_games(ids: [types::Id; 3]) -> Vec<ModifiableGame> {
+    fn make_games(ids: [types::Id; 3], seed: u64) -> Vec<ModifiableGame> {
         use rand::Rng;
 
-        let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(27);
+        let mut rand: rand::rngs::StdRng = rand::SeedableRng::seed_from_u64(seed);
 
         (0..50)
             .map(|_| {
@@ -831,6 +831,9 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
             .collect()
     }
 
+    let seed = rand::random();
+    println!("Using seed: {seed}");
+
     // Prepare players
     let (player_one, store, mut handler) = init!(pool);
 
@@ -845,7 +848,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
         .unwrap();
 
     // Create expected output from simply creating
-    let games = make_games([player_one.id, player_two.id, player_three.id]);
+    let games = make_games([player_one.id, player_two.id, player_three.id], seed);
     for game in games {
         if game.deleted {
             continue;
@@ -899,7 +902,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(store.games().list().await.unwrap().len(), 0);
 
     // Create all games
-    let targets = make_games([player_one.id, player_two.id, player_three.id]);
+    let targets = make_games([player_one.id, player_two.id, player_three.id], seed);
     let mut games = Vec::with_capacity(targets.len());
     for _ in 0..targets.len() {
         if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler

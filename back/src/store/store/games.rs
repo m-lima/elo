@@ -273,6 +273,57 @@ impl Games<'_> {
             };
         }
 
+        // struct Rating {
+        //     player: types::Id,
+        //     rating: f64,
+        //     millis: types::Millis,
+        // }
+        //
+        // sqlx::query_as!(
+        //     Rating,
+        //     r#"
+        //     WITH
+        //         ratings AS (
+        //             SELECT
+        //                 player_one,
+        //                 player_two,
+        //                 rating_one,
+        //                 rating_two,
+        //                 MAX(millis) AS millis
+        //             FROM
+        //                 games
+        //             WHERE
+        //                 millis < $1
+        //             GROUP BY
+        //                 player_one,
+        //                 player_two
+        //         ),
+        //         unified AS (
+        //             SELECT
+        //                 player_one AS player,
+        //                 rating_one AS rating,
+        //                 millis
+        //             FROM
+        //                 ratings
+        //             UNION
+        //                 SELECT
+        //                     player_two AS player,
+        //                     rating_two AS rating,
+        //                     millis
+        //                 FROM
+        //                     ratings
+        //         )
+        //     SELECT
+        //         player AS "player!: types::Id",
+        //         rating AS "rating!: f64",
+        //         MAX(millis) AS "millis!: types::Millis"
+        //     FROM
+        //         unified
+        //     GROUP BY
+        //         player
+        //     "#,
+        //     1
+        // );
         let updates = Self::list_games(executor).await?;
         let mut last_ratings = std::collections::HashMap::<types::Id, f64>::new();
 

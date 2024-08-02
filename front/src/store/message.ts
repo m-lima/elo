@@ -48,7 +48,7 @@ export type MessagePush = { push: Push };
 export type Ok = 'done' | OkResponse;
 
 export type OkResponse = {
-  version: number;
+  version: { server: number; data: number };
   user: User;
   players: PlayerTuple[];
   games: GameTuple[];

@@ -33,6 +33,8 @@ export class Store {
   private readonly games: Resource<Game[]>;
   private readonly invites: Resource<Invite[]>;
 
+  private dataVersion?: number;
+
   public static makeSocket(
     url: string | URL,
     checkUrl?: string | URL,
@@ -96,10 +98,28 @@ export class Store {
   public checkVersion() {
     const id = newRequestId();
     const [version, _] = createResource(() =>
-      this.socket.request(
-        { id, do: 'version' },
-        message => validateMessage(id, 'version', message)?.version === consts.version,
-      ),
+      this.socket.request({ id, do: 'version' }, message => {
+        const version = validateMessage(id, 'version', message)?.version;
+
+        if (version === undefined) {
+          return;
+        }
+
+        console.debug(version);
+        if (version.server !== consts.version) {
+          return false;
+        }
+
+        if (this.dataVersion === undefined) {
+          this.dataVersion = version.data;
+        } else {
+          if (version.data !== this.dataVersion) {
+            this.refresh();
+          }
+        }
+
+        return true;
+      }),
     );
     return version;
   }

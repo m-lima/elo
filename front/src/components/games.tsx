@@ -3,7 +3,7 @@ import { A } from '@solidjs/router';
 
 import { icon } from '.';
 import { type Getter, type EnrichedGame } from '../types';
-import { monthToString } from '../util';
+import * as util from '../util';
 import * as consts from '../consts';
 
 import './games.css';
@@ -50,7 +50,7 @@ const gameRow = (game: EnrichedGame) => {
       <td class='components-games-tail'>
         {playerRating(game.ratingDelta)}
         <span class='components-games-align-right components-games-date'>
-          {dateToString(new Date(game.millis))}
+          {util.date.toString(new Date(game.millis))}
         </span>
       </td>
     </tr>
@@ -78,6 +78,3 @@ const playerRating = (rating?: number) => {
     return <></>;
   }
 };
-
-const dateToString = (date: Date) =>
-  `${String(date.getDate()).padStart(2, '0')}-${monthToString(date.getMonth())} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;

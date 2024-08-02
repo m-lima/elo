@@ -17,7 +17,7 @@ import { error, Loading, Main } from '../pages';
 import { action, Games, icon, prompt } from '../components';
 import { type Getter, type EnrichedPlayer, type EnrichedGame } from '../types';
 import { useStore } from '../store';
-import { monthToString } from '../util';
+import * as util from '../util';
 import * as consts from '../consts';
 
 import './player.css';
@@ -271,7 +271,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.millis))),
+            labels: games().map(g => util.date.toShortString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Rating',
@@ -308,7 +308,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => dateToString(new Date(g.millis))),
+            labels: games().map(g => util.date.toShortString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Balance',
@@ -379,6 +379,3 @@ const NoGames = () => (
     <error.NoGames inline />
   </div>
 );
-
-const dateToString = (date: Date) =>
-  `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `;

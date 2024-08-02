@@ -5,9 +5,9 @@ import { Loading, Main } from '../pages';
 import { action, icon, prompt } from '../components';
 import { type Invite, type Player as PlayerType } from '../types';
 import { useStore } from '../store';
+import * as util from '../util';
 
 import './invites.css';
-import { monthToString } from '../util';
 
 type User = {
   readonly id?: number;
@@ -112,16 +112,13 @@ const Player = (props: { root?: boolean; user: User }) => (
           <span>{props.user.name}</span>
         </>
       )}
-      {printDate(props.user.created)}
+      {util.date.toShortString(props.user.created)}
     </div>
     <div class='routes-invites'>
       <For each={props.user.children}>{u => <Player user={u} />}</For>
     </div>
   </div>
 );
-
-const printDate = (date: Date) =>
-  `${date.getDate()}/${String(monthToString(date.getMonth())).padStart(2, '0')}/${date.getFullYear() % 1000}`;
 
 const compareUsers = (a: User[], b: User[]) => {
   if (a.length !== b.length) {

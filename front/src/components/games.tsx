@@ -4,11 +4,12 @@ import { A } from '@solidjs/router';
 import { icon } from '.';
 import { type Getter, type EnrichedGame } from '../types';
 import { monthToString } from '../util';
+import * as consts from '../consts';
 
 import './games.css';
 
 export const Games = (props: { games: Getter<EnrichedGame[]> }) => {
-  const [limit, setLimit] = createSignal(100);
+  const [limit, setLimit] = createSignal(consts.limit.gameList);
 
   const filteredGames = createMemo(() => props.games()?.filter((_, i) => i < limit()), [], {
     equals: false,
@@ -22,7 +23,7 @@ export const Games = (props: { games: Getter<EnrichedGame[]> }) => {
         </tbody>
       </table>
       <Show when={Number(props.games()?.length) > limit()}>
-        <div class='components-games-more' onClick={() => setLimit(l => l + 100)}>
+        <div class='components-games-more' onClick={() => setLimit(l => l + consts.limit.gameList)}>
           <icon.DoubleDown />
         </div>
       </Show>

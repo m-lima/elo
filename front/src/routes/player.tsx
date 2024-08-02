@@ -218,7 +218,7 @@ const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number 
 
 const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
   const [responsive, setResponsive] = createSignal(false);
-  const [limit, setLimit] = createSignal(100);
+  const [limit, setLimit] = createSignal(consts.limit.chart);
 
   onMount(() => {
     Chart.register(Title, Tooltip, Filler);
@@ -366,7 +366,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         />
       </div>
       <Show when={props.games().length > limit()}>
-        <button onClick={() => setLimit(l => l + 100)}>
+        <button onClick={() => setLimit(l => l + consts.limit.chart)}>
           <icon.DoubleLeft /> Plot more
         </button>
       </Show>

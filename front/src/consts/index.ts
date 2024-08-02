@@ -22,3 +22,8 @@ export const colors = {
   green: '#30a030',
   greenSemiTransparent: '#30a03080',
 };
+
+export const limit = {
+  gameList: 100,
+  chart: 50,
+};

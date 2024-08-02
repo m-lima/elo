@@ -25,8 +25,10 @@ macro_rules! impl_access {
                 S: smtp::Smtp,
             {
                 match request {
-                    // TODO: Return date of last modification
-                    model::Request::Version => Ok(model::Response::Version(super::VERSION)),
+                    model::Request::Version => Ok(model::Response::Version {
+                        server: super::VERSION,
+                        data: handler.store.version(),
+                    }),
                     model::Request::Player(request) => {
                         player::Player::new(handler).handle(request).await
                     }

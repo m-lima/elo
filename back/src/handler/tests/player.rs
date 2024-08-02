@@ -5,7 +5,7 @@ async fn id(pool: sqlx::sqlite::SqlitePool) {
     let (player, store, mut handler) = init!(pool);
 
     handler
-        .call(model::Request::Player(model::request::Player::Id))
+        .call(model::Request::Player(model::request::Player::Id), false)
         .await
         .ok(model::Response::User {
             id: player.id,
@@ -23,7 +23,7 @@ async fn id(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
     handler
-        .call(model::Request::Player(model::request::Player::Id))
+        .call(model::Request::Player(model::request::Player::Id), false)
         .await
         .ok(model::Response::User {
             id: invited.id,
@@ -46,7 +46,7 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::List))
+        .call(model::Request::Player(model::request::Player::List), false)
         .await
         .ok(model::Response::Players(
             [player.clone(), accepted.clone()]
@@ -74,9 +74,10 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
         old,
         new,
     }) = handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::from("new"),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::from("new"))),
+            true,
+        )
         .await
         .done()
         .unwrap()
@@ -93,7 +94,7 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(new, "new");
 
     handler
-        .call(model::Request::Player(model::request::Player::List))
+        .call(model::Request::Player(model::request::Player::List), false)
         .await
         .ok(model::Response::Players(
             [
@@ -118,9 +119,10 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
         old,
         new,
     }) = handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::from(TESTER_NAME),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::from(TESTER_NAME))),
+            true,
+        )
         .await
         .done()
         .unwrap()
@@ -137,7 +139,7 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(new, TESTER_NAME);
 
     handler
-        .call(model::Request::Player(model::request::Player::List))
+        .call(model::Request::Player(model::request::Player::List), false)
         .await
         .ok(model::Response::Players(
             [
@@ -163,17 +165,19 @@ async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
     let mut handler = init!(pool).2;
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::new(),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::new())),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::BlankValue("name")))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::from(WHITE_SPACE),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::from(WHITE_SPACE))),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::BlankValue("name")))
         .unwrap();
@@ -189,49 +193,63 @@ async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            player.name.clone(),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(player.name.clone())),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::from(INVITED_NAME),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::from(INVITED_NAME))),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            accepted.name.clone(),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(accepted.name.clone())),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            format!("{WHITE_SPACE}{}{WHITE_SPACE}", player.name),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(format!(
+                "{WHITE_SPACE}{}{WHITE_SPACE}",
+                player.name
+            ))),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            format!("{WHITE_SPACE}{INVITED_NAME}{WHITE_SPACE}"),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(format!(
+                "{WHITE_SPACE}{INVITED_NAME}{WHITE_SPACE}"
+            ))),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            format!("{WHITE_SPACE}{}{WHITE_SPACE}", accepted.name),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(format!(
+                "{WHITE_SPACE}{}{WHITE_SPACE}",
+                accepted.name
+            ))),
+            false,
+        )
         .await
         .err(model::Error::Store(store::Error::AlreadyExists))
         .unwrap();
@@ -247,15 +265,16 @@ async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::List))
+        .call(model::Request::Player(model::request::Player::List), false)
         .await
         .err(model::Error::Forbidden)
         .unwrap();
 
     handler
-        .call(model::Request::Player(model::request::Player::Rename(
-            String::new(),
-        )))
+        .call(
+            model::Request::Player(model::request::Player::Rename(String::new())),
+            false,
+        )
         .await
         .err(model::Error::Forbidden)
         .unwrap();

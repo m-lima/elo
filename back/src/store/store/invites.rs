@@ -4,12 +4,12 @@ use crate::types;
 type Result<T = ()> = std::result::Result<T, Error>;
 
 pub struct Invites<'a> {
-    pool: &'a sqlx::sqlite::SqlitePool,
+    store: &'a super::Store,
 }
 
 impl<'a> From<&'a super::Store> for Invites<'a> {
-    fn from(value: &'a super::Store) -> Self {
-        Self { pool: &value.pool }
+    fn from(store: &'a super::Store) -> Self {
+        Self { store }
     }
 }
 
@@ -34,7 +34,7 @@ impl Invites<'_> {
             "#,
             email
         )
-        .fetch_optional(self.pool)
+        .fetch_optional(&self.store.pool)
         .await
         .map_err(Error::from)
     }
@@ -54,7 +54,7 @@ impl Invites<'_> {
                 invites
             "#
         )
-        .fetch_all(self.pool)
+        .fetch_all(&self.store.pool)
         .await
         .map_err(Error::from)
     }
@@ -76,7 +76,7 @@ impl Invites<'_> {
             return Err(Error::BlankValue("email"));
         }
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         if sqlx::query_as!(
             super::Id,
@@ -126,6 +126,8 @@ impl Invites<'_> {
 
         tx.commit().await?;
 
+        self.store.update_version();
+
         Ok(invite)
     }
 
@@ -149,14 +151,15 @@ impl Invites<'_> {
             id,
             inviter
         )
-        .fetch_one(self.pool)
+        .fetch_one(&self.store.pool)
         .await
+        .inspect(|_| self.store.update_version())
         .map_err(Error::from)
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn accept(&self, id: types::Id) -> Result<(types::Player, types::User)> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         let invite = sqlx::query_as!(
             types::Invite,
@@ -221,12 +224,14 @@ impl Invites<'_> {
 
         tx.commit().await?;
 
+        self.store.update_version();
+
         Ok((player, inviter))
     }
 
     #[tracing::instrument(skip(self))]
     pub async fn reject(&self, id: types::Id) -> Result<(types::Invite, types::User)> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         let invite = sqlx::query_as!(
             types::Invite,
@@ -265,6 +270,8 @@ impl Invites<'_> {
         .await?;
 
         tx.commit().await?;
+
+        self.store.update_version();
 
         Ok((invite, inviter))
     }

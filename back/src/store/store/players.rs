@@ -4,12 +4,12 @@ use crate::types;
 type Result<T = ()> = std::result::Result<T, Error>;
 
 pub struct Players<'a> {
-    pool: &'a sqlx::sqlite::SqlitePool,
+    store: &'a super::Store,
 }
 
 impl<'a> From<&'a super::Store> for Players<'a> {
-    fn from(value: &'a super::Store) -> Self {
-        Self { pool: &value.pool }
+    fn from(store: &'a super::Store) -> Self {
+        Self { store }
     }
 }
 
@@ -35,7 +35,7 @@ impl Players<'_> {
             "#,
             email
         )
-        .fetch_optional(self.pool)
+        .fetch_optional(&self.store.pool)
         .await
         .map_err(Error::from)
     }
@@ -57,7 +57,7 @@ impl Players<'_> {
                 created_ms ASC
             "#
         )
-        .fetch_all(self.pool)
+        .fetch_all(&self.store.pool)
         .await
         .map_err(Error::from)
     }
@@ -69,7 +69,7 @@ impl Players<'_> {
             return Err(Error::BlankValue("name"));
         }
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         if sqlx::query_as!(
             super::Id,
@@ -121,6 +121,8 @@ impl Players<'_> {
         .map_err(Error::from)?;
 
         tx.commit().await?;
+
+        self.store.update_version();
 
         Ok(player)
     }

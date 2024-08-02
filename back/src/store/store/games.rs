@@ -4,12 +4,12 @@ use crate::types;
 type Result<T = ()> = std::result::Result<T, Error>;
 
 pub struct Games<'a> {
-    pool: &'a sqlx::sqlite::SqlitePool,
+    store: &'a super::Store,
 }
 
 impl<'a> From<&'a super::Store> for Games<'a> {
-    fn from(value: &'a super::Store) -> Self {
-        Self { pool: &value.pool }
+    fn from(store: &'a super::Store) -> Self {
+        Self { store }
     }
 }
 
@@ -19,7 +19,7 @@ impl Games<'_> {
     // to be loaded
     #[tracing::instrument(skip(self))]
     pub async fn list(&self) -> Result<Vec<types::Game>> {
-        Self::list_games(self.pool).await
+        Self::list_games(&self.store.pool).await
     }
 
     #[tracing::instrument(skip(self, rating_updater))]
@@ -37,7 +37,7 @@ impl Games<'_> {
     {
         validate_game(player_one, player_two, score_one, score_two)?;
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         if challenge {
             Self::validate_challenge(player_one, player_two, millis, None, tx.as_mut()).await?;
@@ -86,6 +86,8 @@ impl Games<'_> {
 
         tx.commit().await?;
 
+        self.store.update_version();
+
         Ok((game, updates))
     }
 
@@ -106,7 +108,7 @@ impl Games<'_> {
             game.score_two,
         )?;
 
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
 
         if game.challenge {
             Self::validate_challenge(
@@ -171,6 +173,8 @@ impl Games<'_> {
 
         tx.commit().await?;
 
+        self.store.update_version();
+
         Ok(updates)
     }
 
@@ -199,7 +203,7 @@ impl Games<'_> {
             "#,
             game,
         )
-        .fetch_all(self.pool)
+        .fetch_all(&self.store.pool)
         .await
         .map_err(Error::from)
     }
@@ -245,9 +249,13 @@ impl Games<'_> {
     where
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.store.pool.begin().await?;
         let games = Self::execute_refresh(None, default_rating, rating_updater, &mut tx).await?;
         tx.commit().await?;
+
+        if !games.is_empty() {
+            self.store.update_version();
+        }
 
         Ok(games)
     }

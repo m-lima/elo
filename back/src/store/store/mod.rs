@@ -11,6 +11,7 @@ mod tests;
 #[derive(Debug, Clone)]
 pub struct Store {
     pool: sqlx::sqlite::SqlitePool,
+    version: std::sync::Arc<std::sync::atomic::AtomicU32>,
 }
 
 impl Store {
@@ -28,11 +29,18 @@ impl Store {
             .connect_with(options)
             .await?;
 
-        Ok(Self { pool })
+        let version = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(rand::random()));
+
+        Ok(Self { pool, version })
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::migrate::MigrateError> {
         sqlx::migrate!().run(&self.pool).await
+    }
+
+    #[must_use]
+    pub fn version(&self) -> u32 {
+        self.version.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     #[must_use]
@@ -49,11 +57,18 @@ impl Store {
     pub fn players(&self) -> players::Players<'_> {
         players::Players::from(self)
     }
+
+    fn update_version(&self) {
+        self.version
+            .store(rand::random(), std::sync::atomic::Ordering::Relaxed);
+    }
 }
 
+#[cfg(test)]
 impl From<sqlx::SqlitePool> for Store {
     fn from(pool: sqlx::SqlitePool) -> Self {
-        Self { pool }
+        let version = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(rand::random()));
+        Self { pool, version }
     }
 }
 

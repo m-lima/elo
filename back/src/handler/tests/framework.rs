@@ -68,10 +68,13 @@ impl Handler<access::Pending> {
 impl Handler<access::Regular> {
     pub async fn invite(&mut self, name: &str, email: &str) -> Result<types::Invite> {
         match self
-            .call(model::Request::Invite(model::request::Invite::Player {
-                name: String::from(name),
-                email: String::from(email),
-            }))
+            .call(
+                model::Request::Invite(model::request::Invite::Player {
+                    name: String::from(name),
+                    email: String::from(email),
+                }),
+                true,
+            )
             .await
             .done()?
             .some(smtp::Payload::Invite(
@@ -96,7 +99,7 @@ impl Handler<access::Regular> {
 
         match Handler::pending(&accepted.email, store)
             .await?
-            .call(model::Request::Invite(model::request::Invite::Accept))
+            .call(model::Request::Invite(model::request::Invite::Accept), true)
             .await
             .done()?
             .some(smtp::Payload::InviteOutcome {
@@ -123,12 +126,34 @@ where
     A: handler::Access,
 {
     #[must_use]
-    pub async fn call(&mut self, request: model::Request) -> ResponseVerifier<'_> {
-        ResponseVerifier::new(
+    pub async fn call(&mut self, request: model::Request, mutable: bool) -> ResponseVerifier<'_> {
+        let Ok(model::Response::Version {
+            data: old_version, ..
+        }) = ws::Service::call(&mut self.inner, model::Request::Version).await
+        else {
+            panic!()
+        };
+
+        let verifier = ResponseVerifier::new(
             ws::Service::call(&mut self.inner, request).await,
             &mut self.email,
             &mut self.push,
-        )
+        );
+
+        let Ok(model::Response::Version {
+            data: new_version, ..
+        }) = ws::Service::call(&mut self.inner, model::Request::Version).await
+        else {
+            panic!()
+        };
+
+        if mutable {
+            assert_ne!(new_version, old_version);
+        } else {
+            assert_eq!(new_version, old_version);
+        }
+
+        verifier
     }
 }
 

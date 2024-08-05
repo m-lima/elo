@@ -110,7 +110,7 @@ export const Leaderboard = () => {
               </thead>
               <tbody>
                 <For each={sortedPlayers()}>
-                  {p => playerRow(p, navigate, getIcon(p.position, players().length), self())}
+                  {p => playerRow(p, navigate, getIcon(p.position, sortedPlayers().length), self())}
                 </For>
               </tbody>
             </table>

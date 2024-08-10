@@ -135,7 +135,7 @@ export const SadFace = () => (
 );
 
 export const Swords = () => (
-  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='-11 0 534 512'>
+  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 534 512'>
     <path d='M96 290l51 -50l-51 50l51 -50l86 86v0l-50 51v0l20 21v0q10 11 0 22l-16 16v0q-8 8 -17 4l-62 -28v0l-57 56v0q-11 10 -22 0l-24 -24v0q-10 -11 0 -22l56 -57v0l-28 -62v0q-3 -9 4 -17l16 -16v0q11 -10 22 0l21 20v0zM485 75l-120 119l120 -119l-120 119l-86 -86v0 l119 -119v0q10 -11 24 -14l71 -14v0q8 -1 14 5t5 14l-14 71v0q-3 14 -13 24v0zM5 -34q6 -6 14 -5l71 14v0q14 3 24 14l279 279v0l-86 86v0l-279 -279v0q-11 -10 -14 -24l-14 -71v0q-1 -8 5 -14v0zM459 270l16 16l-16 -16l16 16q8 8 4 18l-28 62v0l56 56v0q10 11 0 22l-24 24 v0q-11 10 -22 0l-56 -56v0l-62 28v0q-10 4 -18 -4l-16 -16v0q-10 -11 0 -22l128 -128v0q11 -10 22 0v0z' />
   </svg>
 );
@@ -207,13 +207,13 @@ export const Hidden = () => (
 );
 
 export const Down = () => (
-  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='-10 0 394 512'>
+  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 394 512'>
     <path d='M320 377q14 0 23 -9v0v0q9 -9 9 -23v-224v0q0 -14 -9 -23t-23 -9t-23 9t-9 23v147v0l-201 -202v0q-10 -9 -23 -9t-23 9q-9 10 -9 23t9 23l202 201v0h-147v0q-14 0 -23 9t-9 23t9 23t23 9h224v0z' />
   </svg>
 );
 
 export const Up = () => (
-  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='-10 0 394 512'>
+  <svg class='components-icon' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 394 512'>
     <path d='M352 89q0 -14 -9 -23v0v0q-9 -9 -23 -9h-224v0q-14 0 -23 9t-9 23t9 23t23 9h147v0l-202 201v0q-9 10 -9 23t9 23q10 9 23 9t23 -9l201 -202v0v147v0q0 14 9 23t23 9t23 -9t9 -23v-224v0z' />
   </svg>
 );

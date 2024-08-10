@@ -70,16 +70,16 @@
             border: 2px solid var(--color-accent);
           }
 
+          &.invalid {
+            color: red;
+            background: pink;
+          }
+
           &:disabled {
             color: var(--color-background-bright);
             background: var(--color-foreground);
             border-color: var(--color-foreground-dark);
             cursor: unset;
-          }
-
-          &.invalid {
-            color: red;
-            background: pink;
           }
         }
 

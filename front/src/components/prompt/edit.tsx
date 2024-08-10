@@ -95,7 +95,7 @@ export const Edit = (
       cancel={() => {
         props.hide();
       }}
-      disabled={() => invalidPlayers() || invalidScores()}
+      disabled={() => !deleted() && (invalidPlayers() || invalidScores())}
       busy={busy}
     >
       <div class='components-prompt-edit'>

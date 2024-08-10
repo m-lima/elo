@@ -134,7 +134,7 @@ export const Player = () => {
         </action.Actions>
         <Main>
           <div class='routes-player' id='main'>
-            <PlayerHeader player={player} playerCount={players().length ?? 0} />
+            <PlayerHeader player={player} playerCount={players().filter(p => p.games > 0).length} />
             <PlayerStats player={player} />
             <Show when={playerGames().length > 0} fallback=<NoGames />>
               <Show when={chartGames().length > 1}>

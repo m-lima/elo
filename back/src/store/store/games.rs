@@ -110,7 +110,7 @@ impl Games<'_> {
 
         let mut tx = self.store.pool.begin().await?;
 
-        if game.challenge {
+        if game.challenge && !game.deleted {
             Self::validate_challenge(
                 game.player_one,
                 game.player_two,

@@ -65,16 +65,23 @@ export const Edit = (
       visible={props.visible}
       ok={() => {
         setTimeout(() => setBusy(busy => busy ?? true), 200);
-        props.store
-          .editGame({
+        const change = deleted()
+          ? {
+            ...props.game,
+            deleted: true,
+          }
+          : {
             ...props.game,
             playerOne: player(),
             playerTwo: opponent(),
             scoreOne: score(),
             scoreTwo: opponentScore(),
             challenge: challenge(),
-            deleted: deleted(),
-          })
+            deleted: false,
+          };
+
+        props.store
+          .editGame(change)
           .then(r => {
             if (r) {
               props.hide();

@@ -14,18 +14,11 @@ import { Maybe, date } from '../util';
 
 import './game.css';
 
-enum Prompt {
-  Edit,
-  Delete,
-}
-
 export const Game = () => {
   const params = useParams<{ id: string }>();
   const store = useStore();
   const players = store.usePlayers();
   const games = store.useGames();
-
-  const [visiblePrompt, setVisiblePrompt] = createSignal<Prompt | undefined>();
 
   const game = createMemo(
     () => {
@@ -100,9 +93,9 @@ export const Game = () => {
       scoreOne: gameTemplate.scoreOne,
       scoreTwo: gameTemplate.scoreTwo,
       challenge: gameTemplate.challenge,
+      deleted: gameTemplate.deleted,
       millis: gameTemplate.millis,
     });
-    setVisiblePrompt(Prompt.Edit);
   };
 
   return (
@@ -117,12 +110,6 @@ export const Game = () => {
             game={g}
           />
         ))}
-        <prompt.Delete
-          visible={() => visiblePrompt() === Prompt.Delete}
-          hide={setVisiblePrompt}
-          store={store}
-          game={game}
-        />
         <action.Actions>
           <action.Edit
             text='Edit'
@@ -130,12 +117,6 @@ export const Game = () => {
               editGame(game());
             }}
           />
-          <Show
-            when={game()?.deleted === false}
-            fallback=<action.Restore action={() => setVisiblePrompt(Prompt.Delete)} />
-          >
-            <action.Delete action={() => setVisiblePrompt(Prompt.Delete)} />
-          </Show>
         </action.Actions>
         <Main>
           <div class='routes-game'>
@@ -244,5 +225,5 @@ type Player = {
 
 type GameTemplate = Pick<
   GameType,
-  'playerOne' | 'playerTwo' | 'scoreOne' | 'scoreTwo' | 'challenge' | 'millis'
+  'playerOne' | 'playerTwo' | 'scoreOne' | 'scoreTwo' | 'challenge' | 'deleted' | 'millis'
 >;

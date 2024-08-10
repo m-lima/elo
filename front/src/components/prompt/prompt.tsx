@@ -7,7 +7,6 @@ import './prompt.css';
 
 export const Prompt = (
   props: ParentProps & {
-    title: string;
     visible: () => boolean;
     ok: () => void;
     cancel: () => void;
@@ -20,7 +19,6 @@ export const Prompt = (
       <Show when={props.busy() !== true} fallback=<Loading />>
         <div class='components-prompt-grid'>
           <div class='components-prompt-content'>
-            <div class='components-prompt-title'>{props.title}</div>
             <Show when={props.children !== undefined}>
               <div class='components-prompt-form'>{props.children}</div>
             </Show>

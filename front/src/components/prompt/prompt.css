@@ -30,18 +30,6 @@
 
       font-size: 1.5em;
 
-      & > .components-prompt-title {
-        font-size: 2rem;
-        color: var(--color-accent);
-        font-weight: bold;
-
-        text-align: center;
-
-        background-color: var(--color-background-dark);
-
-        padding: 12px 20px;
-      }
-
       & > .components-prompt-form {
         padding: 24px;
 
@@ -49,6 +37,11 @@
           text-align: right;
           font-weight: 700;
           cursor: pointer;
+
+          &.disabled {
+            color: var(--color-foreground-dark);
+            cursor: unset;
+          }
         }
 
         & input,
@@ -75,6 +68,13 @@
 
           &:focus {
             border: 2px solid var(--color-accent);
+          }
+
+          &:disabled {
+            color: var(--color-background-bright);
+            background: var(--color-foreground);
+            border-color: var(--color-foreground-dark);
+            cursor: unset;
           }
 
           &.invalid {
@@ -110,6 +110,12 @@
 
           &:active {
             background: var(--color-accent-brighter);
+          }
+
+          &:disabled {
+            background: var(--color-foreground);
+            border-color: var(--color-foreground-dark);
+            cursor: unset;
           }
         }
       }

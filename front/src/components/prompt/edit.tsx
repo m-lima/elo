@@ -2,6 +2,7 @@ import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
 
 import { Store } from '../../store';
 import { type Game, type Getter, type Player } from '../../types';
+import { icon } from '..';
 
 import { Prompt, type Props } from './prompt';
 
@@ -22,6 +23,7 @@ export const Edit = (
   const [score, setScore] = createSignal(props.game.scoreOne);
   const [opponentScore, setOpponentScore] = createSignal(props.game.scoreTwo);
   const [challenge, setChallenge] = createSignal(props.game.challenge);
+  const [deleted, setDeleted] = createSignal(props.game.deleted);
 
   const players = createMemo(() =>
     props
@@ -60,7 +62,6 @@ export const Edit = (
 
   return (
     <Prompt
-      title='New game'
       visible={props.visible}
       ok={() => {
         setTimeout(() => setBusy(busy => busy ?? true), 200);
@@ -72,6 +73,7 @@ export const Edit = (
             scoreOne: score(),
             scoreTwo: opponentScore(),
             challenge: challenge(),
+            deleted: deleted(),
           })
           .then(r => {
             if (r) {
@@ -90,11 +92,39 @@ export const Edit = (
       busy={busy}
     >
       <div class='components-prompt-edit'>
-        <PlayerList get={player} set={setPlayer} players={players} invalid={invalidPlayers} />
-        <Score get={score} set={setScore} invalid={invalidScores} />
-        <PlayerList get={opponent} set={setOpponent} players={players} invalid={invalidPlayers} />
-        <Score get={opponentScore} set={setOpponentScore} invalid={invalidScores} />
-        <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
+        <PlayerList
+          get={player}
+          set={setPlayer}
+          players={players}
+          invalid={invalidPlayers}
+          deleted={deleted}
+        />
+        <Score get={score} set={setScore} invalid={invalidScores} deleted={deleted} />
+        <PlayerList
+          get={opponent}
+          set={setOpponent}
+          players={players}
+          invalid={invalidPlayers}
+          deleted={deleted}
+        />
+        <Score
+          get={opponentScore}
+          set={setOpponentScore}
+          invalid={invalidScores}
+          deleted={deleted}
+        />
+        <label
+          for='challenge'
+          classList={{
+            'checkbox-label': true,
+            'disabled': deleted(),
+          }}
+          onClick={() => {
+            if (!deleted()) {
+              setChallenge(c => !c);
+            }
+          }}
+        >
           Challenge
         </label>
         <input
@@ -102,7 +132,19 @@ export const Edit = (
           checked={challenge()}
           onChange={e => setChallenge(e.currentTarget.checked)}
           name='challenge'
+          disabled={deleted()}
         />
+        <button
+          classList={{
+            'components-prompt-edit-delete': true,
+            'toggle': true,
+            'active': deleted(),
+          }}
+          onClick={() => setDeleted(d => !d)}
+        >
+          <icon.Trash />
+          <span> Delete</span>
+        </button>
       </div>
     </Prompt>
   );
@@ -113,11 +155,13 @@ const PlayerList = (props: {
   set: Setter<number>;
   players: Getter<SimplePlayer[]>;
   invalid: Accessor<boolean>;
+  deleted: Accessor<boolean>;
 }) => (
   <select
     class={props.invalid() ? 'invalid' : undefined}
     value={props.get()}
     onInput={e => props.set(Number(e.currentTarget.value))}
+    disabled={props.deleted()}
   >
     <For each={props.players()}>{o => <option value={o.id}>{o.name}</option>}</For>
   </select>
@@ -127,11 +171,13 @@ const Score = (props: {
   get: Accessor<number>;
   set: Setter<number>;
   invalid: Accessor<boolean>;
+  deleted: Accessor<boolean>;
 }) => (
   <select
     class={props.invalid() ? 'invalid' : undefined}
     value={props.get()}
     onInput={e => props.set(e.target.selectedIndex)}
+    disabled={props.deleted()}
   >
     <option value={0}>0</option>
     <option value={1}>1</option>

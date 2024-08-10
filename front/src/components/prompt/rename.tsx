@@ -42,7 +42,6 @@ export const Rename = (
 
   return (
     <Prompt
-      title='Rename'
       visible={props.visible}
       ok={commit}
       cancel={props.hide}

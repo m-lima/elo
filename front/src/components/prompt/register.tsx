@@ -64,7 +64,6 @@ export const Register = (
 
   return (
     <Prompt
-      title='New game'
       visible={props.visible}
       ok={() => {
         const playerInner = player();

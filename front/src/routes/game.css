@@ -1,14 +1,32 @@
 .routes-game {
-  display: flex;
+  display: grid;
 
-  flex-direction: column;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 12px;
 
   align-items: center;
+  justify-items: center;
 
-  & .routes-game-name {
+  & .routes-game-player {
+    font-size: 2.5em;
+  }
+
+  & .routes-game-score {
+    font-size: 2em;
+    font-weight: bold;
   }
 
   & .routes-game-unknown {
     color: var(--color-foreground-dark);
+  }
+
+  & .routes-game-center {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
+
+  & .routes-game-marker {
+    &.active {
+    }
   }
 }

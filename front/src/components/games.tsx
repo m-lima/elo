@@ -39,7 +39,12 @@ const gameRow = (game: EnrichedGame, navigate: Navigator) => (
       navigate(`/game/${game.id}`);
     }}
   >
-    <td class='components-games-align-right'>{playerName(game.playerOne, game.playerOneName)}</td>
+    <td class='components-games-align-right'>
+      {playerName(evt => {
+        evt.stopPropagation();
+        navigate(`/game/${game.id}`);
+      }, game.playerOneName)}
+    </td>
     <td class='components-games-align-right'>{game.scoreOne}</td>
     {game.challenge ? (
       <td class='components-games-align-challenge'>
@@ -51,7 +56,12 @@ const gameRow = (game: EnrichedGame, navigate: Navigator) => (
       </td>
     )}
     <td>{game.scoreTwo}</td>
-    <td>{playerName(game.playerTwo, game.playerTwoName)}</td>
+    <td>
+      {playerName(evt => {
+        evt.stopPropagation();
+        navigate(`/player/${game.playerTwo}`);
+      }, game.playerTwoName)}
+    </td>
     <td class='components-games-tail'>
       {playerRating(game.ratingDelta)}
       <span class='components-games-align-right components-games-date'>
@@ -61,9 +71,9 @@ const gameRow = (game: EnrichedGame, navigate: Navigator) => (
   </tr>
 );
 
-const playerName = (id: number, name?: string) => {
+const playerName = (navigate: (evt: MouseEvent) => void, name?: string) => {
   if (name !== undefined) {
-    return <A href={`/player/${id}`}>{name}</A>;
+    return <a onClick={navigate}>{name}</a>;
   } else {
     return <span class='components-games-unknown'>{'<unknown>'}</span>;
   }

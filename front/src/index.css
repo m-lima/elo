@@ -38,6 +38,7 @@ a {
   font-weight: 500;
   color: var(--color-accent);
   text-decoration: inherit;
+  cursor: pointer;
 
   &:hover {
     color: var(--color-accent-brighter);

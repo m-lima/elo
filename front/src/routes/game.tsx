@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Show, Suspense } from 'solid-js';
-import { A, useParams } from '@solidjs/router';
+import { Navigator, useNavigate, useParams } from '@solidjs/router';
 
 import { useStore } from '../store';
 import { Loading, Main, error } from '../pages';
@@ -16,6 +16,8 @@ import './game.css';
 
 export const Game = () => {
   const params = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
   const store = useStore();
   const players = store.usePlayers();
   const games = store.useGames();
@@ -120,19 +122,40 @@ export const Game = () => {
         </action.Actions>
         <Main>
           <div class='routes-game'>
+            <div class='routes-game-player'>{playerName(navigate, playerOne())}</div>
+            <div class='routes-game-player'>{playerName(navigate, playerTwo())}</div>
+            <div class='routes-game-score'>{game()?.scoreOne}</div>
+            <div class='routes-game-score'>{game()?.scoreTwo}</div>
             <div>
-              {playerName(playerOne())}
-              {playerName(playerTwo())}
+              {Maybe.from(game()).then(g => g.ratingOne.toFixed(2))}
+              {game()?.deleted === false ? (
+                <>
+                  {' '}
+                  <icon.Up />{' '}
+                  {Maybe.from(game()).then(g => (g.ratingOne + g.ratingDelta).toFixed(2))}
+                </>
+              ) : undefined}
             </div>
-            <div>{game()?.scoreOne}</div>
-            <div>{game()?.challenge === true ? <icon.Swords /> : <icon.Cancel />}</div>
-            <div>{game()?.scoreTwo}</div>
-            <div>{game()?.ratingOne}</div>
-            <div>{game()?.ratingTwo}</div>
-            <div>{Maybe.from(game()).then(g => g.ratingOne + g.ratingDelta)}</div>
-            <div>{Maybe.from(game()).then(g => g.ratingTwo - g.ratingDelta)}</div>
-            <div>{Maybe.from(game()).then(g => date.toString(new Date(g.millis)))}</div>
-            <History history={history()} game={game} players={players} editGame={editGame} />
+            <div>
+              {Maybe.from(game()).then(g => g.ratingTwo.toFixed(2))} <icon.Down />{' '}
+              {Maybe.from(game()).then(g => (g.ratingTwo - g.ratingDelta).toFixed(2))}
+            </div>
+            <div class='routes-game-center'>
+              {Maybe.from(game()).then(g => date.toLongString(new Date(g.millis)))}
+            </div>
+            <div classList={{ 'routes-game-marker': true, 'active': game()?.challenge === true }}>
+              <icon.Swords /> Challenge
+            </div>
+            <div classList={{ 'routes-game-marker': true, 'active': game()?.deleted === true }}>
+              <icon.Trash /> Deleted
+            </div>
+            <History
+              history={history()}
+              game={game}
+              players={players}
+              editGame={editGame}
+              navigate={navigate}
+            />
           </div>
         </Main>
       </Show>
@@ -145,6 +168,7 @@ const History = (props: {
   game: Getter<GameType>;
   players: Getter<PlayerType[]>;
   editGame: (game: GameTemplate) => void;
+  navigate: Navigator;
 }) => (
   <Suspense
     fallback=<span>
@@ -156,7 +180,7 @@ const History = (props: {
         .map(h => h.length > 0)
         .else(false)}
     >
-      <table class='routes-game-table clickable'>
+      <table class='routes-game-table clickable routes-game-center'>
         <thead>
           <tr>
             <th>Player</th>
@@ -168,7 +192,9 @@ const History = (props: {
           </tr>
         </thead>
         <tbody>
-          <For each={props.history()}>{g => gameRow(g, props.players, props.editGame)}</For>
+          <For each={props.history()}>
+            {g => gameRow(g, props.players, props.editGame, props.navigate)}
+          </For>
         </tbody>
       </table>
     </Show>
@@ -179,19 +205,30 @@ const gameRow = (
   game: HistoryType,
   players: Getter<PlayerType[]>,
   editGame: (game: GameTemplate) => void,
+  navigate: Navigator,
 ) => (
   <tr
     onClick={() => {
       editGame(game);
     }}
   >
-    <td>{playerName(players()?.find(p => p.id === game.playerOne))}</td>
+    <td>
+      {playerName(
+        navigate,
+        players()?.find(p => p.id === game.playerOne),
+      )}
+    </td>
     <td>
       {game.scoreOne}
       {game.challenge ? <icon.Swords /> : <icon.Cancel />}
       {game.scoreTwo}
     </td>
-    <td>{playerName(players()?.find(p => p.id === game.playerTwo))}</td>
+    <td>
+      {playerName(
+        navigate,
+        players()?.find(p => p.id === game.playerTwo),
+      )}
+    </td>
     <td>{game.deleted ? 'X' : ''}</td>
     <td>{date.toString(new Date(game.millis))}</td>
     <td>{date.toString(new Date(game.createdMs))}</td>
@@ -206,15 +243,20 @@ const findPlayer = (player: number, players?: PlayerType[]) => {
   return players.find(p => p.id === player);
 };
 
-const playerName = (player?: Player) => {
+const playerName = (navigate: Navigator, player?: Player) => {
   if (player !== undefined) {
     return (
-      <A href={`/player/${player.id}`}>
-        <span class='routes-game-player'>{player.name}</span>
-      </A>
+      <a
+        onClick={evt => {
+          evt.stopPropagation();
+          navigate(`/player/${player.id}`);
+        }}
+      >
+        {player.name}
+      </a>
     );
   } else {
-    return <span class='routes-game-player unknown'>{'<unknown>'}</span>;
+    return <span class='routes-game-unknown'>{'<unknown>'}</span>;
   }
 };
 

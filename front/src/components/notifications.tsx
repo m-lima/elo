@@ -49,9 +49,9 @@ export const Notifications = () => {
         {(n, i) => (
           <div
             classList={{
-              'components-notifications-message': true,
-              'error': n.error,
-              'fading': fades()[i()]?.fade,
+              message: true,
+              error: n.error,
+              fading: fades()[i()]?.fade,
             }}
           >
             {n.message}

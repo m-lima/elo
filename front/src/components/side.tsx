@@ -9,7 +9,7 @@ import './side.css';
 const Item = (props: { icon: JSXElement; text: string; visible: boolean }) => (
   <>
     {props.icon}
-    <span class='components-side-text' id={props.visible ? 'visible' : ''}>
+    <span class='text' id={props.visible ? 'visible' : ''}>
       {props.text}
     </span>
   </>

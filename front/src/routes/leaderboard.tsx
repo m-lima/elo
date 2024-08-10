@@ -73,7 +73,7 @@ export const Leaderboard = () => {
       }}
     >
       {name}
-      <span class='routes-leaderboard-sort'>{sortIcon(sortPivot(), field, sortDescending())}</span>
+      <span class='sort'>{sortIcon(sortPivot(), field, sortDescending())}</span>
     </th>
   );
 
@@ -91,9 +91,9 @@ export const Leaderboard = () => {
       </action.Actions>
       <Main>
         <div class='routes-leaderboard'>
-          <div class='routes-leaderboard-table'>
+          <div class='table'>
             <table class='clickable'>
-              <thead class='routes-leaderboard-table-header'>
+              <thead class='table-header'>
                 <tr>
                   <th />
                   {header('#', 'position')}
@@ -141,12 +141,12 @@ const playerRow = (
 ) => {
   return (
     <tr
-      class={self?.id === player.id ? 'routes-leaderboard-self' : undefined}
+      class={self?.id === player.id ? 'self' : undefined}
       onClick={() => {
         navigate(`/player/${player.id}`);
       }}
     >
-      <td class='routes-leaderboard-badge'>{badge}</td>
+      <td class='badge'>{badge}</td>
       <td>{player.position}</td>
       <td>{player.name}</td>
       <td>{player.rating.toFixed(2)}</td>
@@ -165,19 +165,19 @@ const getIcon = (position: number, length: number = NaN) => {
   switch (position) {
     case 1:
       return (
-        <span class='routes-leaderboard-first'>
+        <span class='first'>
           <icon.Crown />
         </span>
       );
     case 2:
       return (
-        <span class='routes-leaderboard-second'>
+        <span class='second'>
           <icon.Medal />
         </span>
       );
     case 3:
       return (
-        <span class='routes-leaderboard-third'>
+        <span class='third'>
           <icon.Certificate />
         </span>
       );

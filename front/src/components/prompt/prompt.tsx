@@ -17,17 +17,17 @@ export const Prompt = (
   <Show when={props.visible()}>
     <div class='components-prompt'>
       <Show when={props.busy() !== true} fallback=<Loading />>
-        <div class='components-prompt-grid'>
-          <div class='components-prompt-content'>
+        <div class='grid'>
+          <div class='content'>
             <Show when={props.children !== undefined}>
-              <div class='components-prompt-form'>{props.children}</div>
+              <div class='form'>{props.children}</div>
             </Show>
-            <div class='components-prompt-buttons'>
+            <div class='buttons'>
               <div
                 classList={{
-                  'components-prompt-button': true,
-                  'ok': true,
-                  'disabled': props.disabled(),
+                  button: true,
+                  ok: true,
+                  disabled: props.disabled(),
                 }}
                 onClick={() => {
                   if (!props.disabled()) {
@@ -37,7 +37,7 @@ export const Prompt = (
               >
                 <icon.Ok />
               </div>
-              <div class='components-prompt-button cancel' onClick={props.cancel}>
+              <div class='button cancel' onClick={props.cancel}>
                 <icon.Cancel />
               </div>
             </div>

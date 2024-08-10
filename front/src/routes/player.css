@@ -6,7 +6,7 @@
 
   height: 100%;
 
-  & > .routes-player-header {
+  & > .header {
     display: flex;
 
     @media (max-width: 400px) {
@@ -17,7 +17,7 @@
 
     border-radius: 16px;
 
-    & > .routes-player-header-badge {
+    & > .badge {
       padding-left: 16px;
       padding-right: 16px;
 
@@ -66,7 +66,7 @@
       }
     }
 
-    & > .routes-player-header-name-score {
+    & > .name-score {
       display: flex;
 
       flex-flow: row wrap;
@@ -74,7 +74,7 @@
       overflow-x: auto;
       width: 100%;
 
-      & > .routes-player-header-name {
+      & > .name {
         display: inline-block;
 
         align-content: center;
@@ -89,7 +89,7 @@
         margin-right: 32px;
       }
 
-      & > .routes-player-header-score {
+      & > .score {
         font-weight: bold;
         font-size: 2.5em;
 
@@ -101,7 +101,7 @@
     }
   }
 
-  & > .routes-player-stats {
+  & > .stats {
     display: grid;
 
     margin-left: 24px;
@@ -132,7 +132,7 @@
     }
   }
 
-  .routes-player-no-games {
+  .no-games {
     height: 100%;
   }
 }

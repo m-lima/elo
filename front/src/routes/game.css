@@ -7,44 +7,44 @@
   align-items: center;
   justify-items: center;
 
-  & .routes-game-player {
+  & .player {
     font-size: 2.5em;
   }
 
-  & .routes-game-score {
+  & .score {
     font-size: 2em;
     font-weight: bold;
   }
 
-  & .routes-game-unknown {
+  & .unknown {
     color: var(--color-foreground-dark);
   }
 
-  & .routes-game-center {
+  & .start {
+    justify-self: start;
+  }
+
+  & .end {
+    justify-self: end;
+  }
+
+  & .center {
     grid-column-start: 1;
     grid-column-end: 3;
   }
 
-  & .routes-game-positive {
+  & .positive {
     color: var(--color-positive);
   }
 
-  & .routes-game-negative {
+  & .negative {
     color: var(--color-negative);
   }
 
-  & .routes-game-marker {
+  & .marker {
     font-size: 1.5em;
 
     color: var(--color-background-brighter);
-
-    &.left {
-      justify-self: end;
-    }
-
-    &.right {
-      justify-self: start;
-    }
 
     &.active {
       color: white;

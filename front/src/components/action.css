@@ -5,7 +5,7 @@
   grid-auto-columns: 1fr;
   gap: 1px;
 
-  & > .components-action-content {
+  & > .content {
     display: flex;
 
     align-items: center;
@@ -31,7 +31,7 @@
       background-color: var(--color-accent-brighter);
     }
 
-    & .components-action-text {
+    & .text {
       margin-left: 1ch;
 
       vertical-align: middle;

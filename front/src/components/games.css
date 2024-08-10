@@ -1,11 +1,11 @@
 .components-games {
   white-space: wrap;
 
-  .components-games-align-right {
+  .right {
     text-align: right;
   }
 
-  .components-games-align-challenge {
+  .challenge {
     text-align: center;
     padding-left: 4px;
     padding-right: 4px;
@@ -13,40 +13,36 @@
     filter: drop-shadow(0 0 4px);
   }
 
-  .components-games-align-versus {
+  .versus {
     text-align: center;
     padding-left: 4px;
     padding-right: 4px;
   }
 
-  .components-games-align-center {
-    text-align: center;
-  }
-
-  .components-games-rating-positive {
+  .positive {
     color: var(--color-positive);
   }
 
-  .components-games-rating-negative {
+  .negative {
     color: var(--color-negative);
   }
 
-  .components-games-unknown {
+  .unknown {
     color: var(--color-foreground-dark);
   }
 
-  .components-games-tail {
+  .tail {
     display: flex;
     gap: 4px;
     flex-flow: row wrap;
   }
 
-  .components-games-date {
+  .date {
     color: var(--color-foreground-dark);
     margin-left: auto;
   }
 
-  .components-games-more {
+  .more {
     cursor: pointer;
 
     width: 100%;
@@ -66,7 +62,7 @@
     }
   }
 
-  .components-games-deleted * {
+  .deleted * {
     filter: saturate(0);
     opacity: 0.5;
   }

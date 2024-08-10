@@ -150,53 +150,53 @@ export const Player = () => {
 };
 
 const PlayerHeader = (props: { player: Getter<EnrichedPlayer>; playerCount: number }) => (
-  <div class='routes-player-header'>
+  <div class='header'>
     <Switch>
       <Match when={props.player()?.position === 1}>
-        <span class='routes-player-header-badge first'>
+        <span class='badge first'>
           <icon.Crown />
         </span>
       </Match>
       <Match when={props.player()?.position === 2}>
-        <span class='routes-player-header-badge second'>
+        <span class='badge second'>
           <icon.Medal />
         </span>
       </Match>
       <Match when={props.player()?.position === 3}>
-        <span class='routes-player-header-badge third'>
+        <span class='badge third'>
           <icon.Certificate />
         </span>
       </Match>
       <Match when={props.player()?.position === props.playerCount - 3}>
-        <span class='routes-player-header-badge'>
+        <span class='badge'>
           <icon.Mosquito />
         </span>
       </Match>
       <Match when={props.player()?.position === props.playerCount - 2}>
-        <span class='routes-player-header-badge'>
+        <span class='badge'>
           <icon.Poop />
         </span>
       </Match>
       <Match when={props.player()?.position === props.playerCount - 1}>
-        <span class='routes-player-header-badge'>
+        <span class='badge'>
           <icon.Worm />
         </span>
       </Match>
       <Match when={props.player()?.position === props.playerCount - 0}>
-        <span class='routes-player-header-badge'>
+        <span class='badge'>
           <icon.Skull />
         </span>
       </Match>
     </Switch>
-    <span class='routes-player-header-name-score'>
-      <span class='routes-player-header-name'>{props.player()?.name}</span>
-      <span class='routes-player-header-score'># {props.player()?.position}</span>
+    <span class='name-score'>
+      <span class='name'>{props.player()?.name}</span>
+      <span class='score'># {props.player()?.position}</span>
     </span>
   </div>
 );
 
 const PlayerStats = (props: { player: Getter<EnrichedPlayer & { invites: number }> }) => (
-  <div class='routes-player-stats'>
+  <div class='stats'>
     <b>Games</b>
     {props.player()?.games}
     <b>Rating</b>
@@ -230,10 +230,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
     // timeout hack does the trick
     const schedule = () => {
       setTimeout(() => {
-        if (
-          !!document.getElementById('routes-player-chart-rating') &&
-          !!document.getElementById('routes-player-chart-score')
-        ) {
+        if (!!document.getElementById('chart-rating') && !!document.getElementById('chart-score')) {
           setResponsive(true);
         } else {
           schedule();
@@ -267,7 +264,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
 
   return (
     <>
-      <div id='routes-player-chart-rating'>
+      <div id='chart-rating'>
         <Line
           height={300}
           data={{
@@ -304,7 +301,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
           }}
         />
       </div>
-      <div id='routes-player-chart-score'>
+      <div id='chart-score'>
         <Line
           height={300}
           data={{
@@ -375,7 +372,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
 };
 
 const NoGames = () => (
-  <div class='routes-player-no-games'>
+  <div class='no-games'>
     <error.NoGames inline />
   </div>
 );

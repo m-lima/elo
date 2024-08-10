@@ -10,7 +10,7 @@
   gap: 5px;
   align-items: flex-end;
 
-  .components-notifications-message {
+  & .message {
     background-color: #306010c0;
     opacity: 100%;
 

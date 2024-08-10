@@ -10,7 +10,7 @@
 
   display: grid;
 
-  & > .components-prompt-grid {
+  & > .grid {
     width: 100%;
     height: 100%;
 
@@ -25,12 +25,12 @@
       content: '';
     }
 
-    & > .components-prompt-content {
+    & > .content {
       background-color: var(--color-background);
 
       font-size: 1.5em;
 
-      & > .components-prompt-form {
+      & > .form {
         padding: 24px;
 
         & .checkbox-label {
@@ -120,14 +120,14 @@
         }
       }
 
-      & > .components-prompt-buttons {
+      & > .buttons {
         display: grid;
 
         grid-template-columns: 1fr 1fr;
         justify-items: stretch;
         align-items: stretch;
 
-        & > .components-prompt-button {
+        & > .button {
           color: var(--color-foreground-dark);
           font-size: 3em;
           text-align: center;

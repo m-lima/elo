@@ -9,36 +9,36 @@ export const Actions = (props: ParentProps) => (
 );
 
 export const Game = (props: { action: () => void }) => (
-  <div class='components-action-content' onClick={props.action}>
+  <div class='content' onClick={props.action}>
     <icon.Swords />
-    <span class='components-action-text'>New game</span>
+    <span class='text'>New game</span>
   </div>
 );
 
 export const Invite = (props: { action: () => void }) => (
-  <div class='components-action-content' onClick={props.action}>
+  <div class='content' onClick={props.action}>
     <icon.User />
-    <span class='components-action-text'>Invite</span>
+    <span class='text'>Invite</span>
   </div>
 );
 
 export const Edit = (props: { text: string; action: () => void }) => (
-  <div class='components-action-content' onClick={props.action}>
+  <div class='content' onClick={props.action}>
     <icon.Edit />
-    <span class='components-action-text'>{props.text}</span>
+    <span class='text'>{props.text}</span>
   </div>
 );
 
 export const Delete = (props: { action: () => void }) => (
-  <div class='components-action-content' onClick={props.action}>
+  <div class='content' onClick={props.action}>
     <icon.Trash />
-    <span class='components-action-text'>Delete</span>
+    <span class='text'>Delete</span>
   </div>
 );
 
 export const Restore = (props: { action: () => void }) => (
-  <div class='components-action-content' onClick={props.action}>
+  <div class='content' onClick={props.action}>
     <icon.Restore />
-    <span class='components-action-text'>Restore</span>
+    <span class='text'>Restore</span>
   </div>
 );

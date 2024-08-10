@@ -143,9 +143,9 @@ export const Edit = (
         />
         <button
           classList={{
-            'components-prompt-edit-delete': true,
-            'toggle': true,
-            'active': deleted(),
+            delete: true,
+            toggle: true,
+            active: deleted(),
           }}
           onClick={() => setDeleted(d => !d)}
         >

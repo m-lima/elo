@@ -21,7 +21,7 @@ export const Edit = (
 
   const [score, setScore] = createSignal(props.game.scoreOne);
   const [opponentScore, setOpponentScore] = createSignal(props.game.scoreTwo);
-  const [challenge, setChallenge] = createSignal(false);
+  const [challenge, setChallenge] = createSignal(props.game.challenge);
 
   const players = createMemo(() =>
     props

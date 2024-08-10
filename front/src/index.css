@@ -16,12 +16,15 @@
   --color-foreground-dark: #a0a0a0;
   --color-background: #242424;
   --color-background-bright: #303030;
+  --color-background-brighter: #444444;
   --color-background-dark: #1d1d1d;
   --color-accent: hsl(39, 100%, 50%); /* #ffa500 */
   --color-accent-brighter: hsl(39, 100%, 70%);
   --color-accent-bright: hsl(39, 100%, 60%);
   --color-accent-dark: hsl(39, 100%, 40%);
   --color-accent-darker: hsl(39, 100%, 30%);
+  --color-positive: #80cc80;
+  --color-negative: #cc8080;
   --duration-animation: 200ms;
 }
 

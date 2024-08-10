@@ -24,11 +24,11 @@
   }
 
   .components-games-rating-positive {
-    color: #80cc80;
+    color: var(--color-positive);
   }
 
   .components-games-rating-negative {
-    color: #cc8080;
+    color: var(--color-negative);
   }
 
   .components-games-unknown {

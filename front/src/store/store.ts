@@ -266,19 +266,12 @@ export class Store {
 
   private handlePushGame(message: PushGame) {
     if ('registered' in message) {
-      const registered = message.registered;
-      const game = message.registered.updates.reduce<Game | undefined>((acc, curr) => {
-        const game = gameFromTuple(curr);
-        this.games.set(games => upsert(games, game));
-        if (game.id === registered.game) {
-          acc = game;
-        }
-        return acc;
-      }, undefined);
+      const game = message.registered.game;
 
-      if (game === undefined) {
-        return;
-      }
+      this.games.set(games => upsert(games, game));
+      message.registered.updates.map(gameFromTuple).forEach(game => {
+        this.games.set(games => upsert(games, game));
+      });
 
       const players = this.players.raw()?.latest;
       if (players === undefined) {
@@ -307,6 +300,7 @@ export class Store {
         );
       }
     } else if ('updated' in message) {
+      this.games.set(games => upsert(games, message.updated.game));
       message.updated.updates.map(gameFromTuple).forEach(game => {
         this.games.set(games => upsert(games, game));
       });
@@ -374,10 +368,13 @@ class Resource<T> {
 }
 
 const upsert = <T extends Ided>(data: T[], datum: T) => {
+  console.debug('Upserting', datum);
   const idx = data.findIndex(d => d.id === datum.id);
   if (idx < 0) {
+    console.debug('Insert');
     data.push(datum);
   } else {
+    console.debug('Update');
     data[idx] = datum;
   }
   return data;

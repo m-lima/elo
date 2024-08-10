@@ -192,7 +192,7 @@ const gameRow = (
       {game.scoreTwo}
     </td>
     <td>{playerName(players()?.find(p => p.id === game.playerTwo))}</td>
-    <td>{game.deleted}</td>
+    <td>{game.deleted ? 'X' : ''}</td>
     <td>{date.toString(new Date(game.millis))}</td>
     <td>{date.toString(new Date(game.createdMs))}</td>
   </tr>

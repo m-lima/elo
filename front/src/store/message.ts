@@ -69,6 +69,6 @@ export type PushPlayer =
   | { joined: Player };
 export type PushGame = { registered: PushGamePayload } | { updated: PushGamePayload };
 export type PushGamePayload = {
-  game: number;
+  game: Game;
   updates: GameTuple[];
 };

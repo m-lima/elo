@@ -20,7 +20,7 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -43,13 +43,10 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
     handler
         .call(model::Request::Game(model::request::Game::List), false)
         .await
-        .ok(model::Response::Games(updates))
+        .ok(model::Response::Games(vec![game.into()]))
         .unwrap()
         .none()
         .unwrap()
@@ -89,10 +86,7 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
-    let game = updates.into_iter().next().map(types::Game::from).unwrap();
+    assert_eq!(updates.len(), 0);
 
     let rating_delta = skillratings::elo::elo(
         &skillratings::elo::EloRating::new(),
@@ -161,10 +155,7 @@ async fn register_to_other_players(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
-    let game = updates.into_iter().next().map(types::Game::from).unwrap();
+    assert_eq!(updates.len(), 0);
 
     let rating_delta = skillratings::elo::elo(
         &skillratings::elo::EloRating::new(),
@@ -207,7 +198,7 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
 
     let mut games = Vec::with_capacity(3);
     for _ in 0..3 {
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        if let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player.id,
@@ -227,9 +218,7 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(updates.len(), 1);
-            assert_eq!(updates[0].0, game);
-            games.push(updates.into_iter().next().unwrap());
+            games.push(game.into());
         } else {
             panic!()
         }
@@ -238,7 +227,7 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
     handler
         .call(model::Request::Game(model::request::Game::List), false)
         .await
-        .ok(model::Response::Games(games.clone()))
+        .ok(model::Response::Games(games))
         .unwrap()
         .none()
         .unwrap()
@@ -444,7 +433,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     let millis = 1_704_070_861_000_i64; // 2024-01-01 01:01:01
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -467,10 +456,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -492,9 +478,6 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
     else {
         panic!()
     };
-
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
 
     handler
         .call(
@@ -534,7 +517,7 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
         )))
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -556,9 +539,6 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
     else {
         panic!()
     };
-
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
 }
 
 #[sqlx::test]
@@ -577,7 +557,7 @@ async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 
     let millis = 1_704_070_861_000_i64; // 2024-01-01 01:01:01
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -600,11 +580,9 @@ async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-    let game_one = updates.into_iter().next().map(types::Game::from).unwrap();
+    let game_one = game;
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -627,10 +605,7 @@ async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -653,9 +628,7 @@ async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-    let game_two = updates.into_iter().next().map(types::Game::from).unwrap();
+    let game_two = game;
 
     handler
         .call(
@@ -697,12 +670,13 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
         .unwrap();
 
     // Create expected output from simply creating
-    let mut expected = Vec::with_capacity(3);
-    for i in 1..=5 {
+    let mut expected = Vec::with_capacity(5);
+    for i in 1..=10 {
         if i % 2 == 0 {
             continue;
         }
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+
+        if let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player.id,
@@ -722,20 +696,11 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(updates.len(), 1);
-            assert_eq!(updates[0].0, game);
-            expected.push(
-                updates
-                    .into_iter()
-                    .filter(|g| g.0 == game)
-                    .map(|g| types::Game {
-                        id: 0,
-                        created_ms: types::Millis::from(0),
-                        ..types::Game::from(g)
-                    })
-                    .next()
-                    .unwrap(),
-            );
+            expected.push(types::Game {
+                id: 0,
+                created_ms: types::Millis::from(0),
+                ..game
+            });
         } else {
             panic!()
         }
@@ -750,9 +715,9 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(store.games().list().await.unwrap().len(), 0);
 
     // Create all games
-    let mut games = Vec::with_capacity(5);
-    for i in 1..=5 {
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let mut games = Vec::with_capacity(10);
+    for i in 1..=10 {
+        if let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player.id,
@@ -772,9 +737,7 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(updates.len(), 1);
-            assert_eq!(updates[0].0, game);
-            games.push(updates.into_iter().map(types::Game::from).next().unwrap());
+            games.push(game);
         } else {
             panic!()
         }
@@ -786,7 +749,7 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
             continue;
         }
 
-        if let model::Push::Game(model::push::Game::Updated { game, .. }) = handler
+        let model::Push::Game(model::push::Game::Updated { .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Update(types::Game {
                     deleted: true,
@@ -801,9 +764,7 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
             .unwrap()
             .some()
             .unwrap()
-        {
-            assert_eq!(game, g.id);
-        } else {
+        else {
             panic!();
         };
     }
@@ -974,7 +935,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
     let targets = make_games([player_one.id, player_two.id, player_three.id], seed);
     let mut games = Vec::with_capacity(targets.len());
     for _ in 0..targets.len() {
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        if let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player_one.id,
@@ -994,14 +955,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            games.push(
-                updates
-                    .into_iter()
-                    .filter(|g| g.0 == game)
-                    .map(types::Game::from)
-                    .next()
-                    .unwrap(),
-            );
+            games.push(game);
         } else {
             panic!()
         }
@@ -1031,7 +985,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(game, exising.id);
+            assert_eq!(game.id, exising.id);
         } else {
             panic!();
         };
@@ -1091,20 +1045,12 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(updates.len(), 1);
-            assert_eq!(updates[0].0, game);
-            expected.push(
-                updates
-                    .into_iter()
-                    .filter(|g| g.0 == game)
-                    .map(|g| types::Game {
-                        id: 0,
-                        created_ms: types::Millis::from(0),
-                        ..types::Game::from(g)
-                    })
-                    .next()
-                    .unwrap(),
-            );
+            assert_eq!(updates.len(), 0);
+            expected.push(types::Game {
+                id: 0,
+                created_ms: types::Millis::from(0),
+                ..game
+            });
         } else {
             panic!()
         }
@@ -1118,7 +1064,7 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
     assert_eq!(store.games().list().await.unwrap().len(), 0);
 
     for i in 1..9 {
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        if let model::Push::Game(model::push::Game::Registered { updates, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player.id,
@@ -1138,8 +1084,7 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
             .some()
             .unwrap()
         {
-            assert_eq!(updates.len(), usize::from(i));
-            assert_eq!(updates.last().unwrap().0, game);
+            assert_eq!(updates.len(), usize::from(i - 1));
         } else {
             panic!()
         }
@@ -1176,7 +1121,7 @@ async fn history(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -1199,11 +1144,9 @@ async fn history(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-    let original_game = updates.into_iter().next().map(types::Game::from).unwrap();
+    let original_game = game;
 
-    let model::Push::Game(model::push::Game::Updated { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Updated { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Update(types::Game {
                 score_one: 7,
@@ -1223,13 +1166,10 @@ async fn history(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-
     handler
         .call(model::Request::Game(model::request::Game::List), false)
         .await
-        .ok(model::Response::Games(updates))
+        .ok(model::Response::Games(vec![game.into()]))
         .unwrap()
         .none()
         .unwrap()
@@ -1286,7 +1226,7 @@ async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -1309,11 +1249,9 @@ async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-    let first_game = updates.into_iter().next().map(types::Game::from).unwrap();
+    let first_game = game;
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Registered { game, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -1336,12 +1274,10 @@ async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
         panic!()
     };
 
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].0, game);
-    let second_game = updates.into_iter().next().map(types::Game::from).unwrap();
+    let second_game = game;
     let second_game_id = second_game.id;
 
-    let model::Push::Game(model::push::Game::Updated { game, updates }) = handler
+    let model::Push::Game(model::push::Game::Updated { updates, .. }) = handler
         .call(
             model::Request::Game(model::request::Game::Update(types::Game {
                 deleted: true,
@@ -1359,9 +1295,7 @@ async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
     else {
         panic!()
     };
-    assert_eq!(updates.len(), 2);
-    assert_eq!(updates[0].0, game);
-    let modified_second_game = updates.into_iter().nth(1).map(types::Game::from).unwrap();
+    let modified_second_game = updates.into_iter().next().map(types::Game::from).unwrap();
 
     assert_ne!(second_game, modified_second_game);
 

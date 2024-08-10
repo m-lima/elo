@@ -41,11 +41,11 @@ pub enum Player {
 #[serde(rename_all = "camelCase")]
 pub enum Game {
     Registered {
-        game: types::Id,
+        game: types::Game,
         updates: Vec<types::GameTuple>,
     },
     Updated {
-        game: types::Id,
+        game: types::Game,
         updates: Vec<types::GameTuple>,
     },
 }

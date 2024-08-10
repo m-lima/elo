@@ -7,7 +7,7 @@ pub use access::{Auth, Dynamic as UserAccess};
 pub use broadcaster::Broadcaster;
 pub use handler::{refresh, Handler};
 
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 
 #[cfg(feature = "local")]
 pub mod mock;

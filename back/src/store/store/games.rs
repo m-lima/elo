@@ -31,7 +31,7 @@ impl Games<'_> {
         millis: types::Millis,
         default_rating: f64,
         rating_updater: F,
-    ) -> Result<(types::Id, Vec<types::Game>)>
+    ) -> Result<(types::Game, Vec<types::Game>)>
     where
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
@@ -44,7 +44,7 @@ impl Games<'_> {
         }
 
         let game = sqlx::query_as!(
-            super::Id,
+            types::Game,
             r#"
             INSERT INTO games (
                 player_one,
@@ -68,7 +68,18 @@ impl Games<'_> {
                 $6
             )
             RETURNING
-                id
+                id,
+                player_one,
+                player_two,
+                score_one,
+                score_two,
+                rating_one,
+                rating_two,
+                rating_delta,
+                challenge,
+                deleted,
+                millis AS "millis: types::Millis",
+                created_ms AS "created_ms: types::Millis"
             "#,
             player_one,
             player_two,
@@ -78,11 +89,15 @@ impl Games<'_> {
             millis,
         )
         .fetch_one(tx.as_mut())
-        .await
-        .map(|r| r.id)?;
+        .await?;
 
-        let updates =
+        let mut updates =
             Self::execute_refresh(Some(millis), default_rating, rating_updater, &mut tx).await?;
+
+        let game = match updates.iter().position(|g| g.id == game.id) {
+            Some(idx) => updates.swap_remove(idx),
+            None => game,
+        };
 
         tx.commit().await?;
 
@@ -94,10 +109,10 @@ impl Games<'_> {
     #[tracing::instrument(skip(self, rating_updater))]
     pub async fn update<F>(
         &self,
-        game: &types::Game,
+        game: types::Game,
         default_rating: f64,
         rating_updater: F,
-    ) -> Result<Vec<types::Game>>
+    ) -> Result<(types::Game, Vec<types::Game>)>
     where
         F: Copy + Fn(f64, f64, bool, bool) -> f64,
     {
@@ -163,7 +178,7 @@ impl Games<'_> {
         .fetch_one(tx.as_mut())
         .await?;
 
-        let updates = Self::execute_refresh(
+        let mut updates = Self::execute_refresh(
             Some(old_millis.min(new_millis)),
             default_rating,
             rating_updater,
@@ -171,11 +186,16 @@ impl Games<'_> {
         )
         .await?;
 
+        let game = match updates.iter().position(|g| g.id == game.id) {
+            Some(idx) => updates.swap_remove(idx),
+            None => game,
+        };
+
         tx.commit().await?;
 
         self.store.update_version();
 
-        Ok(updates)
+        Ok((game, updates))
     }
 
     #[tracing::instrument(skip(self))]

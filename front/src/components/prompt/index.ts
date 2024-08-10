@@ -1,4 +1,5 @@
+export { Edit } from './edit';
 export { Delete } from './delete';
-export { Game } from './game';
 export { Invite } from './invite';
+export { Register } from './register';
 export { Rename } from './rename';

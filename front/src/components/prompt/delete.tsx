@@ -35,6 +35,7 @@ export const Delete = (
 
   return (
     <Prompt
+      title={props.game()?.deleted === true ? 'Restore game' : 'Delete game'}
       visible={props.visible}
       ok={commit}
       cancel={props.hide}

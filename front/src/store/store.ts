@@ -105,7 +105,6 @@ export class Store {
           return;
         }
 
-        console.debug(version);
         if (version.server !== consts.version) {
           return false;
         }

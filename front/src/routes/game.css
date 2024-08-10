@@ -1,0 +1,14 @@
+.routes-game {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  & .routes-game-name {
+  }
+
+  & .routes-game-unknown {
+    color: var(--color-foreground-dark);
+  }
+}

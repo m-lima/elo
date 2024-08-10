@@ -1,27 +1,26 @@
 import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
 
 import { Store } from '../../store';
-import { type Getter, type Player, type User } from '../../types';
+import { type Game, type Getter, type Player } from '../../types';
 
 import { Prompt, type Props } from './prompt';
 
-import './game.css';
+import './edit.css';
 
-export const Game = (
+export const Edit = (
   props: Props & {
     store: Store;
     players: Getter<Player[]>;
-    self: Getter<User>;
-    opponent?: Getter<User>;
+    game: Game;
   },
 ) => {
   const [busy, setBusy] = createSignal<boolean | undefined>();
 
-  const [maybePlayer, setPlayer] = createSignal(props.self()?.id);
-  const [maybeOpponent, setOpponent] = createSignal(props.opponent?.()?.id);
+  const [player, setPlayer] = createSignal(props.game.playerOne);
+  const [opponent, setOpponent] = createSignal(props.game.playerTwo);
 
-  const [score, setScore] = createSignal(11);
-  const [opponentScore, setOpponentScore] = createSignal(0);
+  const [score, setScore] = createSignal(props.game.scoreOne);
+  const [opponentScore, setOpponentScore] = createSignal(props.game.scoreTwo);
   const [challenge, setChallenge] = createSignal(false);
 
   const players = createMemo(() =>
@@ -32,9 +31,6 @@ export const Game = (
       })
       .sort((a, b) => a.name.localeCompare(b.name)),
   );
-
-  const player = createMemo(() => maybePlayer() ?? props.self()?.id);
-  const opponent = createMemo(() => maybeOpponent() ?? props.opponent?.()?.id);
 
   const invalidPlayers = createMemo(() => player() === opponent());
 
@@ -64,21 +60,19 @@ export const Game = (
 
   return (
     <Prompt
+      title='New game'
       visible={props.visible}
       ok={() => {
-        const playerInner = player();
-        if (playerInner === undefined) {
-          return;
-        }
-
-        const opponentInner = opponent();
-        if (opponentInner === undefined) {
-          return;
-        }
-
         setTimeout(() => setBusy(busy => busy ?? true), 200);
         props.store
-          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge())
+          .editGame({
+            ...props.game,
+            playerOne: player(),
+            playerTwo: opponent(),
+            scoreOne: score(),
+            scoreTwo: opponentScore(),
+            challenge: challenge(),
+          })
           .then(r => {
             if (r) {
               props.hide();
@@ -92,12 +86,10 @@ export const Game = (
       cancel={() => {
         props.hide();
       }}
-      disabled={() =>
-        invalidPlayers() || invalidScores() || player() === undefined || opponent() === undefined
-      }
+      disabled={() => invalidPlayers() || invalidScores()}
       busy={busy}
     >
-      <div class='components-prompt-game'>
+      <div class='components-prompt-edit'>
         <PlayerList get={player} set={setPlayer} players={players} invalid={invalidPlayers} />
         <Score get={score} set={setScore} invalid={invalidScores} />
         <PlayerList get={opponent} set={setOpponent} players={players} invalid={invalidPlayers} />
@@ -118,7 +110,7 @@ export const Game = (
 
 const PlayerList = (props: {
   get: Getter<number>;
-  set: Setter<number | undefined>;
+  set: Setter<number>;
   players: Getter<SimplePlayer[]>;
   invalid: Accessor<boolean>;
 }) => (

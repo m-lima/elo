@@ -17,7 +17,7 @@ import { error, Loading, Main } from '../pages';
 import { action, Games, icon, prompt } from '../components';
 import { type Getter, type EnrichedPlayer, type EnrichedGame } from '../types';
 import { useStore } from '../store';
-import * as util from '../util';
+import { date } from '../util';
 import * as consts from '../consts';
 
 import './player.css';
@@ -113,13 +113,13 @@ export const Player = () => {
           players={players}
           invites={invites}
         />
-        <prompt.Game
+        <prompt.Register
           visible={() => visiblePrompt() === Prompt.Game}
           hide={setVisiblePrompt}
           store={store}
           players={players}
-          self={self}
-          opponent={player}
+          self={() => self()?.id}
+          opponent={() => player()?.id}
         />
         <action.Actions>
           <Switch>
@@ -271,7 +271,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => util.date.toShortString(new Date(g.millis))),
+            labels: games().map(g => date.toShortString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Rating',
@@ -308,7 +308,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
         <Line
           height={300}
           data={{
-            labels: games().map(g => util.date.toShortString(new Date(g.millis))),
+            labels: games().map(g => date.toShortString(new Date(g.millis))),
             datasets: [
               {
                 label: 'Balance',

@@ -49,6 +49,7 @@ export const Invite = (
 
   return (
     <Prompt
+      title='Invite'
       visible={props.visible}
       ok={commit}
       cancel={props.hide}

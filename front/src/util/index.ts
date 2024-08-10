@@ -52,3 +52,39 @@ const monthToString = (month: number) => {
       return 'Dec';
   }
 };
+
+export class Maybe<T> {
+  private readonly value?: T;
+
+  constructor(value?: T) {
+    this.value = value;
+  }
+
+  static from<U>(value?: U) {
+    return new Maybe(value);
+  }
+
+  public map<R>(action: (value: T) => R | undefined) {
+    if (this.value === undefined) {
+      return new Maybe<R>();
+    }
+
+    return new Maybe(action(this.value));
+  }
+
+  public then<R>(action: (value: T) => R | undefined) {
+    if (this.value === undefined) {
+      return;
+    }
+
+    return action(this.value);
+  }
+
+  public else(value: T) {
+    if (this.value === undefined) {
+      return value;
+    } else {
+      return this.value;
+    }
+  }
+}

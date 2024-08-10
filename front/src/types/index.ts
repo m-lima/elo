@@ -155,6 +155,11 @@ export const historyFromTuple = ([
   };
 };
 
+export type GameTemplate = Pick<
+  Game,
+  'id' | 'playerOne' | 'playerTwo' | 'scoreOne' | 'scoreTwo' | 'millis'
+>;
+
 export type EnrichedPlayer = Player & {
   readonly position: number;
   readonly rating: number;

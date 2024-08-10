@@ -30,6 +30,18 @@
 
       font-size: 1.5em;
 
+      & > .components-prompt-title {
+        font-size: 2rem;
+        color: var(--color-accent);
+        font-weight: bold;
+
+        text-align: center;
+
+        background-color: var(--color-background-dark);
+
+        padding: 12px 20px;
+      }
+
       & > .components-prompt-form {
         padding: 24px;
 

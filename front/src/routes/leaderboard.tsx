@@ -79,12 +79,12 @@ export const Leaderboard = () => {
 
   return (
     <Suspense fallback=<Loading />>
-      <prompt.Game
+      <prompt.Register
         visible={promptVisible}
         hide={() => setPromptVisible(false)}
         store={store}
         players={players}
-        self={() => players().find(p => p.id === self()?.id)}
+        self={() => self()?.id}
       />
       <action.Actions>
         <action.Game action={() => setPromptVisible(true)} />

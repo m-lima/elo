@@ -122,30 +122,38 @@ export const Game = () => {
         </action.Actions>
         <Main>
           <div class='routes-game'>
-            <div class='player'>{playerName(navigate, playerOne())}</div>
-            <div class='player'>{playerName(navigate, playerTwo())}</div>
-            <div class='score'>{game()?.scoreOne}</div>
-            <div class='score'>{game()?.scoreTwo}</div>
-            <div>{Maybe.from(game()).then(g => rating(g.ratingOne, g.ratingDelta))}</div>
-            <div>{Maybe.from(game()).then(g => rating(g.ratingTwo, -g.ratingDelta))}</div>
-            <div class='center'>
-              {Maybe.from(game()).then(g => date.toLongString(new Date(g.millis)))}
-            </div>
-            <div
-              classList={{
-                marker: true,
-                active: game()?.challenge === true,
-              }}
-            >
-              <icon.Swords /> <span>Challenge</span>
-            </div>
-            <div
-              classList={{
-                marker: true,
-                active: game()?.deleted === true,
-              }}
-            >
-              <icon.Trash /> <span>Deleted</span>
+            <div class='current'>
+              <div class='player xlarge'>{playerName(navigate, playerOne())}</div>
+              <div class='player xlarge'>{playerName(navigate, playerTwo())}</div>
+              <div class='score large'>
+                <b>{game()?.scoreOne}</b>
+              </div>
+              <div class='score large'>
+                <b>{game()?.scoreTwo}</b>
+              </div>
+              <div>{Maybe.from(game()).then(g => rating(g.ratingOne, g.ratingDelta))}</div>
+              <div>{Maybe.from(game()).then(g => rating(g.ratingTwo, -g.ratingDelta))}</div>
+              <div class='full'>
+                {Maybe.from(game()).then(g => date.toLongString(new Date(g.millis)))}
+              </div>
+              <div
+                classList={{
+                  marker: true,
+                  medium: true,
+                  active: game()?.challenge === true,
+                }}
+              >
+                <icon.Swords /> <span>Challenge</span>
+              </div>
+              <div
+                classList={{
+                  marker: true,
+                  medium: true,
+                  active: game()?.deleted === true,
+                }}
+              >
+                <icon.Trash /> <span>Deleted</span>
+              </div>
             </div>
             <History
               history={history()}
@@ -186,42 +194,21 @@ const History = (props: {
   editGame: (game: GameTemplate) => void;
   navigate: Navigator;
 }) => (
-  // <Suspense
-  //   fallback=<span>
-  //     <icon.Spinner /> Loading
-  //   </span>
-  // >
-  //   <Show
-  //     when={Maybe.from(props.history())
-  //       .map(h => h.length > 0)
-  //       .else(false)}
-  //   >
-  //     <table class='table clickable center'>
-  //       <thead>
-  //         <tr>
-  //           <th>Player</th>
-  //           <th>Score</th>
-  //           <th>Opponent</th>
-  //           <th>Deleted</th>
-  //           <th>Date</th>
-  //           <th>Updated</th>
-  //         </tr>
-  //       </thead>
-  //       <tbody>
-  //         <For each={props.history()}>
-  //           {g => gameRow(g, props.players, props.editGame, props.navigate)}
-  //         </For>
-  //       </tbody>
-  //     </table>
-  //   </Show>
-  // </Suspense>
   <Suspense
     fallback=<span>
       <icon.Spinner /> Loading
     </span>
   >
     <For each={props.history()}>
-      {(h, i) => historyRow(h, (props.history()?.length ?? 0) - i(), props.players, props.navigate)}
+      {(h, i) =>
+        historyRow(
+          h,
+          (props.history()?.length ?? 0) - i(),
+          props.players,
+          props.editGame,
+          props.navigate,
+        )
+      }
     </For>
   </Suspense>
 );
@@ -230,89 +217,55 @@ const historyRow = (
   history: HistoryType,
   version: number,
   players: Getter<PlayerType[]>,
-  navigate: Navigator,
-) => {
-  const [expanded, setExpanded] = createSignal(false);
-
-  return (
-    <>
-      <div class='full end' onClick={() => setExpanded(e => !e)}>
-        <b>{expanded() ? '-' : '+'}</b> Version {version}
-      </div>
-      <div class='full start' onClick={() => setExpanded(e => !e)}>
-        {date.toLongString(new Date(history.createdMs))}
-      </div>
-      {expanded() ? (
-        <>
-          <div class='player'>
-            {playerName(
-              navigate,
-              players()?.find(p => p.id === history.playerOne),
-            )}
-          </div>
-          <div class='player'>
-            {playerName(
-              navigate,
-              players()?.find(p => p.id === history.playerTwo),
-            )}
-          </div>
-          <div class='score'>{history.scoreOne}</div>
-          <div class='score'>{history.scoreTwo}</div>
-          <div class='center'>{date.toLongString(new Date(history.millis))}</div>
-          <div
-            classList={{
-              marker: true,
-              active: history.challenge,
-            }}
-          >
-            <icon.Swords /> <span>Challenge</span>
-          </div>
-          <div
-            classList={{
-              marker: true,
-              active: history.deleted,
-            }}
-          >
-            <icon.Trash /> <span>Deleted</span>
-          </div>
-        </>
-      ) : undefined}
-    </>
-  );
-};
-
-const gameRow = (
-  game: HistoryType,
-  players: Getter<PlayerType[]>,
   editGame: (game: GameTemplate) => void,
   navigate: Navigator,
 ) => (
-  <tr
-    onClick={() => {
-      editGame(game);
-    }}
-  >
-    <td>
-      {playerName(
-        navigate,
-        players()?.find(p => p.id === game.playerOne),
-      )}
-    </td>
-    <td>
-      {game.scoreOne}
-      {game.challenge ? <icon.Swords /> : <icon.Cancel />}
-      {game.scoreTwo}
-    </td>
-    <td>
-      {playerName(
-        navigate,
-        players()?.find(p => p.id === game.playerTwo),
-      )}
-    </td>
-    <td>{game.deleted ? 'X' : ''}</td>
-    <td>{date.toString(new Date(game.millis))}</td>
-    <td>{date.toString(new Date(game.createdMs))}</td>
-  </tr>
+  <>
+    <div class='version'>
+      <div class='header'>
+        <b>Version {version}</b>
+        <span class='date wrap'>{date.toLongString(new Date(history.createdMs))}</span>
+        <span
+          classList={{
+            marker: true,
+            active: history.challenge,
+          }}
+        >
+          <icon.Swords />
+        </span>
+        <span
+          classList={{
+            marker: true,
+            active: history.deleted,
+          }}
+        >
+          <icon.Trash />
+        </span>
+      </div>
+      <div class='content'>
+        <div class='wrap'>
+          {playerName(
+            navigate,
+            players()?.find(p => p.id === history.playerOne),
+          )}{' '}
+          <b>{history.scoreOne}</b> <icon.Cancel /> <b>{history.scoreTwo}</b>{' '}
+          {playerName(
+            navigate,
+            players()?.find(p => p.id === history.playerTwo),
+          )}{' '}
+        </div>
+        <span class='wrap'>{date.toLongString(new Date(history.millis))}</span>{' '}
+        <button
+          class='restore'
+          onClick={() => {
+            editGame(history);
+          }}
+        >
+          <icon.Restore /> Restore
+        </button>
+      </div>
+    </div>
+  </>
 );
 
 const findPlayer = (player: number, players?: PlayerType[]) => {
@@ -327,6 +280,7 @@ const playerName = (navigate: Navigator, player?: Player) => {
   if (player !== undefined) {
     return (
       <a
+        class='wrap'
         onClick={evt => {
           evt.stopPropagation();
           navigate(`/player/${player.id}`);

@@ -1,49 +1,86 @@
 .routes-game {
-  display: grid;
 
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  & .wrap {
+    white-space: wrap;
+  }
 
-  align-items: center;
-  justify-items: center;
+  & .current {
+    display: grid;
 
-  & .player {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    align-items: center;
+    justify-items: center;
+
+    & .full {
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
+
+    & .positive {
+      color: var(--color-positive);
+    }
+
+    & .negative {
+      color: var(--color-negative);
+    }
+
+  }
+
+  & .version {
+    background-color: var(--color-background-dark);
+
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 16px;
+
+    & .header {
+      display: flex;
+
+      flex-direction: row;
+
+      gap: 12px;
+      margin-bottom: 12px;
+
+      & .date {
+        color: var(--color-foreground-dark);
+        margin-right: auto;
+      }
+    }
+
+    & .content {
+      display: flex;
+
+      flex-direction: row;
+      align-items: center;
+
+      gap: 8px;
+
+      & .restore {
+        margin-left: auto;
+        padding: 8px;
+      }
+    }
+  }
+
+  & .xlarge {
     font-size: 2.5em;
   }
 
-  & .score {
+  & .large {
     font-size: 2em;
-    font-weight: bold;
+  }
+
+  & .medium {
+    font-size: 1.5em;
   }
 
   & .unknown {
     color: var(--color-foreground-dark);
   }
 
-  & .start {
-    justify-self: start;
-  }
-
-  & .end {
-    justify-self: end;
-  }
-
-  & .center {
-    grid-column-start: 1;
-    grid-column-end: 3;
-  }
-
-  & .positive {
-    color: var(--color-positive);
-  }
-
-  & .negative {
-    color: var(--color-negative);
-  }
-
   & .marker {
-    font-size: 1.5em;
-
     color: var(--color-background-brighter);
 
     &.active {

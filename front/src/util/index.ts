@@ -24,7 +24,7 @@ export const date = {
     `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `,
 
   toLongString: (date: Date) =>
-    `${String(date.getDate()).padStart(2, '0')}-${monthToString(date.getMonth())}-${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+    `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
 };
 
 const monthToString = (month: number) => {

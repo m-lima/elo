@@ -1,5 +1,5 @@
 import { createSignal, createMemo, For, Show } from 'solid-js';
-import { A, Navigator, useNavigate } from '@solidjs/router';
+import { Navigator, useNavigate } from '@solidjs/router';
 
 import { icon } from '.';
 import { type Getter, type EnrichedGame } from '../types';
@@ -42,7 +42,7 @@ const gameRow = (game: EnrichedGame, navigate: Navigator) => (
     <td class='components-games-align-right'>
       {playerName(evt => {
         evt.stopPropagation();
-        navigate(`/game/${game.id}`);
+        navigate(`/player/${game.playerOne}`);
       }, game.playerOneName)}
     </td>
     <td class='components-games-align-right'>{game.scoreOne}</td>

@@ -2,7 +2,7 @@
   display: grid;
 
   grid-template-columns: 1fr 1fr;
-  row-gap: 12px;
+  gap: 12px;
 
   align-items: center;
   justify-items: center;
@@ -25,8 +25,33 @@
     grid-column-end: 3;
   }
 
+  & .routes-game-positive {
+    color: var(--color-positive);
+  }
+
+  & .routes-game-negative {
+    color: var(--color-negative);
+  }
+
   & .routes-game-marker {
+    font-size: 1.5em;
+
+    color: var(--color-background-brighter);
+
+    &.left {
+      justify-self: end;
+    }
+
+    &.right {
+      justify-self: start;
+    }
+
     &.active {
+      color: white;
+
+      & > * {
+        filter: drop-shadow(0 0 4px);
+      }
     }
   }
 }

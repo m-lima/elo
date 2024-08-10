@@ -126,28 +126,26 @@ export const Game = () => {
             <div class='routes-game-player'>{playerName(navigate, playerTwo())}</div>
             <div class='routes-game-score'>{game()?.scoreOne}</div>
             <div class='routes-game-score'>{game()?.scoreTwo}</div>
-            <div>
-              {Maybe.from(game()).then(g => g.ratingOne.toFixed(2))}
-              {game()?.deleted === false ? (
-                <>
-                  {' '}
-                  <icon.Up />{' '}
-                  {Maybe.from(game()).then(g => (g.ratingOne + g.ratingDelta).toFixed(2))}
-                </>
-              ) : undefined}
-            </div>
-            <div>
-              {Maybe.from(game()).then(g => g.ratingTwo.toFixed(2))} <icon.Down />{' '}
-              {Maybe.from(game()).then(g => (g.ratingTwo - g.ratingDelta).toFixed(2))}
-            </div>
+            <div>{Maybe.from(game()).then(g => rating(g.ratingOne, g.ratingDelta))}</div>
+            <div>{Maybe.from(game()).then(g => rating(g.ratingTwo, -g.ratingDelta))}</div>
             <div class='routes-game-center'>
               {Maybe.from(game()).then(g => date.toLongString(new Date(g.millis)))}
             </div>
-            <div classList={{ 'routes-game-marker': true, 'active': game()?.challenge === true }}>
-              <icon.Swords /> Challenge
+            <div
+              classList={{
+                'routes-game-marker': true,
+                'active': game()?.challenge === true,
+              }}
+            >
+              <icon.Swords /> <span>Challenge</span>
             </div>
-            <div classList={{ 'routes-game-marker': true, 'active': game()?.deleted === true }}>
-              <icon.Trash /> Deleted
+            <div
+              classList={{
+                'routes-game-marker': true,
+                'active': game()?.deleted === true,
+              }}
+            >
+              <icon.Trash /> <span>Deleted</span>
             </div>
             <History
               history={history()}
@@ -161,6 +159,24 @@ export const Game = () => {
       </Show>
     </Suspense>
   );
+};
+
+const rating = (rating: number, delta: number) => {
+  if (delta > 0) {
+    return (
+      <span class='routes-game-positive'>
+        {rating.toFixed(2)} <icon.Up /> {(rating + delta).toFixed(2)}
+      </span>
+    );
+  } else if (delta < 0) {
+    return (
+      <span class='routes-game-negative'>
+        {rating.toFixed(2)} <icon.Down /> {(rating + delta).toFixed(2)}
+      </span>
+    );
+  } else {
+    return <>{rating.toFixed(2)}</>;
+  }
 };
 
 const History = (props: {

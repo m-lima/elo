@@ -129,7 +129,7 @@
 
         & > .button {
           color: var(--color-foreground-dark);
-          font-size: 2em;
+          font-size: 2.5em;
           text-align: center;
 
           cursor: pointer;

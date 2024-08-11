@@ -56,7 +56,6 @@ export const Invite = (
       busy={busy}
     >
       <div class='components-prompt-invite'>
-        <b>Name</b>
         <input
           class={invalidName() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'
@@ -73,7 +72,6 @@ export const Invite = (
             }
           }}
         />
-        <b>Email</b>
         <input
           class={invalidEmail() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'

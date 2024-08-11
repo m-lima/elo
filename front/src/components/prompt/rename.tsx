@@ -49,7 +49,6 @@ export const Rename = (
       busy={busy}
     >
       <div class='components-prompt-rename'>
-        <b>Name</b>
         <input
           class={invalid() === CheckResult.Conflict ? 'invalid' : undefined}
           type='text'

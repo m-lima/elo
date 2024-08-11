@@ -3,9 +3,4 @@
 
   align-items: center;
   gap: 12px;
-
-  @media (max-width: 500px) {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }

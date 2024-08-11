@@ -6,9 +6,16 @@
 
   align-items: center;
 
+  & .datepicker {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
+
   & .delete {
     grid-column-start: 1;
     grid-column-end: 3;
+
+    font-size: 1.2rem;
 
     color: var(--color-foreground-dark);
     background-color: var(--color-background-brighter);
@@ -23,5 +30,4 @@
       }
     }
   }
-
 }

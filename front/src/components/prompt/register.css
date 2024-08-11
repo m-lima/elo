@@ -5,4 +5,9 @@
   gap: 12px;
 
   align-items: center;
+
+  & .datepicker {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
 }

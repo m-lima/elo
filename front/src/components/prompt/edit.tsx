@@ -1,7 +1,8 @@
-import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
+import { Accessor, createMemo, createSignal, For, Setter, Show } from 'solid-js';
 
 import { Store } from '../../store';
 import { type Game, type Getter, type Player } from '../../types';
+import { date } from '../../util';
 import { DatePicker, icon } from '..';
 
 import { Prompt, type Props } from './prompt';
@@ -24,7 +25,9 @@ export const Edit = (
   const [opponentScore, setOpponentScore] = createSignal(props.game.scoreTwo);
   const [challenge, setChallenge] = createSignal(props.game.challenge);
   const [deleted, setDeleted] = createSignal(props.game.deleted);
-  const [millis, setMillis] = createSignal(new Date());
+  const [millis, setMillis] = createSignal<Date | undefined>(new Date(props.game.millis));
+
+  const [datepickerVisible, setDatepickerVisible] = createSignal(false);
 
   const players = createMemo(() =>
     props
@@ -121,6 +124,16 @@ export const Edit = (
           invalid={invalidScores}
           deleted={deleted}
         />
+        <span
+          classList={{ datepicker: true, active: datepickerVisible(), disabled: deleted() }}
+          onClick={() => {
+            if (!deleted()) {
+              setDatepickerVisible(v => !v);
+            }
+          }}
+        >
+          {date.toLongString(millis() ?? new Date())}
+        </span>
         <label
           for='challenge'
           classList={{
@@ -154,7 +167,13 @@ export const Edit = (
           <span> Delete</span>
         </button>
       </div>
-      <DatePicker getter={millis} setter={setMillis} />
+      <Show when={datepickerVisible()}>
+        <DatePicker
+          getter={() => millis() ?? new Date(props.game.millis)}
+          setter={setMillis}
+          hide={() => setDatepickerVisible(false)}
+        />
+      </Show>
     </Prompt>
   );
 };

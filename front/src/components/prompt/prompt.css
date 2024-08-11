@@ -34,7 +34,7 @@
         padding: 24px;
 
         & .checkbox-label {
-          text-align: right;
+          justify-self: end;
           font-weight: 700;
           cursor: pointer;
 
@@ -45,7 +45,8 @@
         }
 
         & input,
-        & select {
+        & select,
+        & .datepicker {
           appearance: none;
 
           color: var(--color-background);
@@ -76,6 +77,21 @@
           }
 
           &:disabled {
+            color: var(--color-background-bright);
+            background: var(--color-foreground);
+            border-color: var(--color-foreground-dark);
+            cursor: unset;
+          }
+        }
+
+        & .datepicker {
+          cursor: default;
+
+          &.active {
+            border-color: var(--color-accent-brighter);
+          }
+
+          &.disabled {
             color: var(--color-background-bright);
             background: var(--color-foreground);
             border-color: var(--color-foreground-dark);

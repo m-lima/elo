@@ -1,7 +1,9 @@
-import { Accessor, createMemo, createSignal, For, Setter } from 'solid-js';
+import { Accessor, createMemo, createSignal, For, Setter, Show } from 'solid-js';
 
 import { Store } from '../../store';
 import { type Getter, type Player } from '../../types';
+import { date } from '../../util';
+import { DatePicker } from '..';
 
 import { Prompt, type Props } from './prompt';
 
@@ -23,7 +25,9 @@ export const Register = (
   const [score, setScore] = createSignal(11);
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
-  const [millis, setMillis] = createSignal(new Date());
+  const [millis, setMillis] = createSignal<Date | undefined>();
+
+  const [datepickerVisible, setDatepickerVisible] = createSignal(false);
 
   const players = createMemo(() =>
     props
@@ -79,9 +83,18 @@ export const Register = (
 
         setTimeout(() => setBusy(busy => busy ?? true), 200);
         props.store
-          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge(), millis())
+          .registerGame(
+            playerInner,
+            opponentInner,
+            score(),
+            opponentScore(),
+            challenge(),
+            millis() ?? new Date(),
+          )
           .then(r => {
             if (r) {
+              setDatepickerVisible(false);
+              setMillis();
               props.hide();
             }
           })
@@ -91,6 +104,8 @@ export const Register = (
           });
       }}
       cancel={() => {
+        setDatepickerVisible(false);
+        setMillis();
         props.hide();
       }}
       disabled={() =>
@@ -103,6 +118,12 @@ export const Register = (
         <Score get={score} set={setScore} invalid={invalidScores} />
         <PlayerList get={opponent} set={setOpponent} players={players} invalid={invalidPlayers} />
         <Score get={opponentScore} set={setOpponentScore} invalid={invalidScores} />
+        <span
+          classList={{ datepicker: true, active: datepickerVisible() }}
+          onClick={() => setDatepickerVisible(v => !v)}
+        >
+          {date.toLongString(millis() ?? new Date())}
+        </span>
         <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
           Challenge
         </label>
@@ -113,6 +134,13 @@ export const Register = (
           name='challenge'
         />
       </div>
+      <Show when={datepickerVisible()}>
+        <DatePicker
+          getter={() => millis() ?? new Date()}
+          setter={setMillis}
+          hide={() => setDatepickerVisible(false)}
+        />
+      </Show>
     </Prompt>
   );
 };

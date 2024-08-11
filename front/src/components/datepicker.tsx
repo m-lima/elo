@@ -1,11 +1,15 @@
-import { Accessor, createEffect, createSignal, For, Setter } from 'solid-js';
+import { Accessor, createEffect, createSignal, For, onCleanup, onMount, Setter } from 'solid-js';
 
 import { icon } from '.';
 import { date } from '../util';
 
 import './datepicker.css';
 
-export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date> }) => {
+export const DatePicker = (props: {
+  getter: Accessor<Date>;
+  setter: Setter<Date | undefined>;
+  hide: () => void;
+}) => {
   const now = new Date();
 
   const [month, setMonth] = createSignal(props.getter().getMonth());
@@ -17,6 +21,33 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
   createEffect(() => {
     hourRef()?.scrollIntoView({ behavior: 'instant', block: 'center' });
     minuteRef()?.scrollIntoView({ behavior: 'instant', block: 'center' });
+  });
+
+  onMount(() => {
+    const listener = (evt: MouseEvent) => {
+      let element: unknown = evt.target;
+      while (
+        element !== null &&
+        typeof element === 'object' &&
+        'className' in element &&
+        'parentNode' in element
+      ) {
+        if (element.className === 'components-datepicker') {
+          return;
+        }
+        element = element.parentNode;
+      }
+
+      props.hide();
+    };
+
+    setTimeout(() => {
+      window.addEventListener('click', listener);
+    }, 0);
+
+    onCleanup(() => {
+      window.removeEventListener('click', listener);
+    });
   });
 
   return (
@@ -67,14 +98,14 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
                 selected: sameDay(d, props.getter()),
                 disabled: d.getMonth() !== month(),
               }}
-              onClick={() =>
-                props.setter(old => {
+              onClick={() => {
+                props.setter(() => {
                   const newDate = new Date(d);
-                  newDate.setHours(old.getHours());
-                  newDate.setMinutes(old.getMinutes());
+                  newDate.setHours(props.getter().getHours());
+                  newDate.setMinutes(props.getter().getMinutes());
                   return newDate;
-                })
-              }
+                });
+              }}
             >
               {d.getDate()}
             </span>
@@ -91,15 +122,15 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
                 now: now.getHours() === h,
                 selected: props.getter().getHours() === h,
               }}
-              onClick={() =>
-                props.setter(old => {
-                  const newDate = new Date(old);
+              onClick={() => {
+                props.setter(() => {
+                  const newDate = new Date(props.getter());
                   newDate.setHours(h);
                   newDate.setSeconds(0);
                   newDate.setMilliseconds(0);
                   return newDate;
-                })
-              }
+                });
+              }}
               ref={props.getter().getHours() === h ? setHourRef : undefined}
             >
               {String(h).padStart(2, '0')}
@@ -117,15 +148,15 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
                 now: now.getMinutes() === m,
                 selected: props.getter().getMinutes() === m,
               }}
-              onClick={() =>
-                props.setter(old => {
-                  const newDate = new Date(old);
+              onClick={() => {
+                props.setter(() => {
+                  const newDate = new Date(props.getter());
                   newDate.setMinutes(m);
                   newDate.setSeconds(0);
                   newDate.setMilliseconds(0);
                   return newDate;
-                })
-              }
+                });
+              }}
               ref={props.getter().getMinutes() === m ? setMinuteRef : undefined}
             >
               {String(m).padStart(2, '0')}

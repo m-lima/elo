@@ -367,13 +367,10 @@ class Resource<T> {
 }
 
 const upsert = <T extends Ided>(data: T[], datum: T) => {
-  console.debug('Upserting', datum);
   const idx = data.findIndex(d => d.id === datum.id);
   if (idx < 0) {
-    console.debug('Insert');
     data.push(datum);
   } else {
-    console.debug('Update');
     data[idx] = datum;
   }
   return data;

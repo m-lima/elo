@@ -95,6 +95,8 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
                 props.setter(old => {
                   const newDate = new Date(old);
                   newDate.setHours(h);
+                  newDate.setSeconds(0);
+                  newDate.setMilliseconds(0);
                   return newDate;
                 })
               }
@@ -119,6 +121,8 @@ export const DatePicker = (props: { getter: Accessor<Date>; setter: Setter<Date>
                 props.setter(old => {
                   const newDate = new Date(old);
                   newDate.setMinutes(m);
+                  newDate.setSeconds(0);
+                  newDate.setMilliseconds(0);
                   return newDate;
                 })
               }

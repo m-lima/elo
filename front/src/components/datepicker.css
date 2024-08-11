@@ -1,12 +1,17 @@
 .components-datepicker {
   position: absolute;
+  z-index: 100;
 
   display: grid;
   grid-template-columns: 1fr auto auto;
 
-  height: 268px;
+  height: 233px;
+  width: 372px;
+
+  font-size: 0.75em;
 
   border: solid 1px var(--color-background-brighter);
+  border-radius: 8px;
   background-color: var(--color-background-dark);
 
   cursor: default;
@@ -15,10 +20,11 @@
     grid-column-start: 1;
     grid-column-end: 4;
 
-    display: flex;
+    display: grid;
 
-    justify-content: space-around;
-    align-items: stretch;
+    grid-template-columns: repeat(7, 1fr);
+    place-items: stretch;
+    text-align: center;
 
     background-color: var(--color-background-bright);
     border-bottom: solid 1px var(--color-background-brighter);
@@ -38,7 +44,6 @@
     display: flex;
     flex-direction: column;
 
-    justify-self: start;
     overflow-y: auto;
 
     border-left: solid 1px var(--color-background-brighter);
@@ -48,7 +53,6 @@
     display: flex;
     flex-direction: column;
 
-    justify-self: start;
     overflow-y: auto;
 
     border-left: solid 1px var(--color-background-brighter);
@@ -63,8 +67,8 @@
     text-align: center;
 
     & .item {
-      border-radius: 12px;
-      width: 36px;
+      border-radius: 0.5em;
+      width: 1.5em;
 
       &.disabled {
         color: var(--color-foreground-dark);

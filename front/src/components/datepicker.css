@@ -11,29 +11,6 @@
 
   cursor: default;
 
-  & .pickable {
-    padding: 8px;
-    text-align: center;
-
-    & .item {
-      border-radius: 12px;
-      width: 36px;
-
-      &.disabled {
-        color: var(--color-foreground-dark);
-      }
-
-      &.now {
-        background-color: var(--color-background-brighter);
-      }
-
-      &.selected {
-        color: var(--color-background-dark);
-        background-color: var(--color-accent-dark);
-      }
-    }
-  }
-
   & .header {
     grid-column-start: 1;
     grid-column-end: 4;
@@ -81,8 +58,30 @@
     cursor: pointer;
   }
 
+  & .pickable {
+    padding: 8px;
+    text-align: center;
+
+    & .item {
+      border-radius: 12px;
+      width: 36px;
+
+      &.disabled {
+        color: var(--color-foreground-dark);
+      }
+
+      &.now {
+        background-color: var(--color-background-brighter);
+      }
+
+      &.selected {
+        color: var(--color-background-dark);
+        background-color: var(--color-accent-dark);
+      }
+    }
+  }
+
   & .reset {
     color: var(--color-accent);
   }
 }
-

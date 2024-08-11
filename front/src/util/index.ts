@@ -17,43 +17,43 @@ export const getCookie = (name: string) => {
 };
 
 export const date = {
-  toString: (date: Date) =>
-    `${String(date.getDate()).padStart(2, '0')}-${monthToString(date.getMonth())} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+  monthToString: (month: number) => {
+    switch (month) {
+      case 0:
+        return 'Jan';
+      case 1:
+        return 'Feb';
+      case 2:
+        return 'Mar';
+      case 3:
+        return 'Apr';
+      case 4:
+        return 'May';
+      case 5:
+        return 'Jun';
+      case 6:
+        return 'Jul';
+      case 7:
+        return 'Aug';
+      case 8:
+        return 'Sep';
+      case 9:
+        return 'Oct';
+      case 10:
+        return 'Nov';
+      case 11:
+        return 'Dec';
+    }
+  },
 
-  toShortString: (date: Date) =>
-    `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${String(date.getFullYear() % 1000).padStart(2, '0')} `,
+  toString: (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}-${date.monthToString(d.getMonth())} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
 
-  toLongString: (date: Date) =>
-    `${String(date.getDate()).padStart(2, '0')}/${monthToString(date.getMonth())}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
-};
+  toShortString: (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}/${date.monthToString(d.getMonth())}/${String(d.getFullYear() % 1000).padStart(2, '0')} `,
 
-const monthToString = (month: number) => {
-  switch (month) {
-    case 0:
-      return 'Jan';
-    case 1:
-      return 'Feb';
-    case 2:
-      return 'Mar';
-    case 3:
-      return 'Apr';
-    case 4:
-      return 'May';
-    case 5:
-      return 'Jun';
-    case 6:
-      return 'Jul';
-    case 7:
-      return 'Aug';
-    case 8:
-      return 'Sep';
-    case 9:
-      return 'Oct';
-    case 10:
-      return 'Nov';
-    case 11:
-      return 'Dec';
-  }
+  toLongString: (d: Date) =>
+    `${String(d.getDate()).padStart(2, '0')}/${date.monthToString(d.getMonth())}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
 };
 
 export class Maybe<T> {

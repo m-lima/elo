@@ -25,7 +25,9 @@ export const Register = (
   const [score, setScore] = createSignal(11);
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
-  const [millis, setMillis] = createSignal<Date | undefined>();
+  const [maybeMillis, setMillis] = createSignal<Date | undefined>();
+
+  const millis = () => maybeMillis() ?? new Date();
 
   const [datepickerVisible, setDatepickerVisible] = createSignal(false);
 
@@ -83,14 +85,7 @@ export const Register = (
 
         setTimeout(() => setBusy(busy => busy ?? true), 200);
         props.store
-          .registerGame(
-            playerInner,
-            opponentInner,
-            score(),
-            opponentScore(),
-            challenge(),
-            millis() ?? new Date(),
-          )
+          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge(), millis())
           .then(r => {
             if (r) {
               setDatepickerVisible(false);
@@ -122,7 +117,7 @@ export const Register = (
           classList={{ datepicker: true, active: datepickerVisible() }}
           onClick={() => setDatepickerVisible(v => !v)}
         >
-          {date.toLongString(millis() ?? new Date())}
+          {date.toLongString(millis())}
         </span>
         <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
           Challenge
@@ -135,11 +130,7 @@ export const Register = (
         />
       </div>
       <Show when={datepickerVisible()}>
-        <DatePicker
-          getter={() => millis() ?? new Date()}
-          setter={setMillis}
-          hide={() => setDatepickerVisible(false)}
-        />
+        <DatePicker getter={millis} setter={setMillis} hide={() => setDatepickerVisible(false)} />
       </Show>
     </Prompt>
   );

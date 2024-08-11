@@ -1,4 +1,4 @@
-import { Accessor, createEffect, createSignal, For, onCleanup, onMount, Setter } from 'solid-js';
+import { Accessor, createEffect, createSignal, For, onCleanup, onMount } from 'solid-js';
 
 import { icon } from '.';
 import { date } from '../util';
@@ -7,7 +7,10 @@ import './datepicker.css';
 
 export const DatePicker = (props: {
   getter: Accessor<Date>;
-  setter: Setter<Date | undefined>;
+  setter: {
+    (value: Date): void;
+    (value: () => Date): void;
+  };
   hide: () => void;
 }) => {
   const now = new Date();

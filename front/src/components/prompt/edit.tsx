@@ -25,7 +25,7 @@ export const Edit = (
   const [opponentScore, setOpponentScore] = createSignal(props.game.scoreTwo);
   const [challenge, setChallenge] = createSignal(props.game.challenge);
   const [deleted, setDeleted] = createSignal(props.game.deleted);
-  const [millis, setMillis] = createSignal<Date | undefined>(new Date(props.game.millis));
+  const [millis, setMillis] = createSignal(new Date(props.game.millis));
 
   const [datepickerVisible, setDatepickerVisible] = createSignal(false);
 
@@ -81,6 +81,7 @@ export const Edit = (
               scoreOne: score(),
               scoreTwo: opponentScore(),
               challenge: challenge(),
+              millis: millis().getTime(),
               deleted: false,
             };
 
@@ -132,7 +133,7 @@ export const Edit = (
             }
           }}
         >
-          {date.toLongString(millis() ?? new Date())}
+          {date.toLongString(millis())}
         </span>
         <label
           for='challenge'
@@ -168,11 +169,7 @@ export const Edit = (
         </button>
       </div>
       <Show when={datepickerVisible()}>
-        <DatePicker
-          getter={() => millis() ?? new Date(props.game.millis)}
-          setter={setMillis}
-          hide={() => setDatepickerVisible(false)}
-        />
+        <DatePicker getter={millis} setter={setMillis} hide={() => setDatepickerVisible(false)} />
       </Show>
     </Prompt>
   );

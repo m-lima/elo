@@ -19,10 +19,9 @@ export default defineConfig({
         background_color: '#333333',
         icons: [
           {
-            src: '/logo.svg',
+            src: 'logo.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any',
           },
         ],
       },

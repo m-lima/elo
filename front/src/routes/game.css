@@ -1,5 +1,4 @@
 .routes-game {
-
   & .wrap {
     white-space: wrap;
   }
@@ -25,7 +24,6 @@
     & .negative {
       color: var(--color-negative);
     }
-
   }
 
   & .version {

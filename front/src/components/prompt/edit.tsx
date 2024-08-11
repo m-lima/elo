@@ -67,18 +67,18 @@ export const Edit = (
         setTimeout(() => setBusy(busy => busy ?? true), 200);
         const change = deleted()
           ? {
-            ...props.game,
-            deleted: true,
-          }
+              ...props.game,
+              deleted: true,
+            }
           : {
-            ...props.game,
-            playerOne: player(),
-            playerTwo: opponent(),
-            scoreOne: score(),
-            scoreTwo: opponentScore(),
-            challenge: challenge(),
-            deleted: false,
-          };
+              ...props.game,
+              playerOne: player(),
+              playerTwo: opponent(),
+              scoreOne: score(),
+              scoreTwo: opponentScore(),
+              challenge: challenge(),
+              deleted: false,
+            };
 
         props.store
           .editGame(change)

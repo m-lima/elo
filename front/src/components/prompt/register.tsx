@@ -23,6 +23,7 @@ export const Register = (
   const [score, setScore] = createSignal(11);
   const [opponentScore, setOpponentScore] = createSignal(0);
   const [challenge, setChallenge] = createSignal(false);
+  const [millis, setMillis] = createSignal(new Date());
 
   const players = createMemo(() =>
     props
@@ -78,7 +79,7 @@ export const Register = (
 
         setTimeout(() => setBusy(busy => busy ?? true), 200);
         props.store
-          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge())
+          .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge(), millis())
           .then(r => {
             if (r) {
               props.hide();

@@ -185,6 +185,7 @@ export class Store {
     score: number,
     opponentScore: number,
     challenge: boolean,
+    millis: Date,
   ) {
     return this.request({
       game: {
@@ -194,7 +195,7 @@ export class Store {
           score,
           opponentScore,
           challenge,
-          millis: new Date().getTime(),
+          millis: millis.getTime(),
         },
       },
     });

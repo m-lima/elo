@@ -113,12 +113,23 @@ export const Register = (
         <Score get={score} set={setScore} invalid={invalidScores} />
         <PlayerList get={opponent} set={setOpponent} players={players} invalid={invalidPlayers} />
         <Score get={opponentScore} set={setOpponentScore} invalid={invalidScores} />
-        <span
-          classList={{ datepicker: true, active: datepickerVisible() }}
-          onClick={() => setDatepickerVisible(v => !v)}
-        >
-          {date.toLongString(millis())}
-        </span>
+        <div class='datepicker-holder'>
+          <span
+            classList={{ datepicker: true, active: datepickerVisible() }}
+            onClick={() => setDatepickerVisible(v => !v)}
+          >
+            {date.toLongString(millis())}
+          </span>
+          <Show when={datepickerVisible()}>
+            <div>
+              <DatePicker
+                getter={millis}
+                setter={setMillis}
+                hide={() => setDatepickerVisible(false)}
+              />
+            </div>
+          </Show>
+        </div>
         <label for='challenge' class='checkbox-label' onClick={() => setChallenge(c => !c)}>
           Challenge
         </label>
@@ -129,9 +140,6 @@ export const Register = (
           name='challenge'
         />
       </div>
-      <Show when={datepickerVisible()}>
-        <DatePicker getter={millis} setter={setMillis} hide={() => setDatepickerVisible(false)} />
-      </Show>
     </Prompt>
   );
 };

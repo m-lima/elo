@@ -125,16 +125,31 @@ export const Edit = (
           invalid={invalidScores}
           deleted={deleted}
         />
-        <span
-          classList={{ datepicker: true, active: datepickerVisible(), disabled: deleted() }}
-          onClick={() => {
-            if (!deleted()) {
-              setDatepickerVisible(v => !v);
-            }
-          }}
-        >
-          {date.toLongString(millis())}
-        </span>
+        <div class='datepicker-holder'>
+          <span
+            classList={{
+              datepicker: true,
+              active: datepickerVisible(),
+              disabled: deleted(),
+            }}
+            onClick={() => {
+              if (!deleted()) {
+                setDatepickerVisible(v => !v);
+              }
+            }}
+          >
+            {date.toLongString(millis())}
+          </span>
+          <Show when={datepickerVisible()}>
+            <div>
+              <DatePicker
+                getter={millis}
+                setter={setMillis}
+                hide={() => setDatepickerVisible(false)}
+              />
+            </div>
+          </Show>
+        </div>
         <label
           for='challenge'
           classList={{
@@ -168,9 +183,6 @@ export const Edit = (
           <span> Delete</span>
         </button>
       </div>
-      <Show when={datepickerVisible()}>
-        <DatePicker getter={millis} setter={setMillis} hide={() => setDatepickerVisible(false)} />
-      </Show>
     </Prompt>
   );
 };

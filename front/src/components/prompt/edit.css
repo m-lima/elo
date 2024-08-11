@@ -6,9 +6,12 @@
 
   align-items: center;
 
-  & .datepicker {
+  & .datepicker-holder {
     grid-column-start: 1;
     grid-column-end: 3;
+
+    display: flex;
+    flex-direction: column;
   }
 
   & .delete {

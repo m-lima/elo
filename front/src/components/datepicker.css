@@ -5,10 +5,10 @@
   display: grid;
   grid-template-columns: 1fr auto auto;
 
-  height: 233px;
-  width: 372px;
+  width: 365px;
+  height: 231px;
 
-  font-size: 0.75em;
+  font-size: 1.1rem;
 
   border: solid 1px var(--color-background-brighter);
   border-radius: 8px;
@@ -25,6 +25,8 @@
     grid-template-columns: repeat(7, 1fr);
     place-items: stretch;
     text-align: center;
+
+    font-size: 1.2rem;
 
     background-color: var(--color-background-bright);
     border-bottom: solid 1px var(--color-background-brighter);

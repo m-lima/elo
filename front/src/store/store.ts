@@ -109,12 +109,11 @@ export class Store {
           return false;
         }
 
-        if (this.dataVersion === undefined) {
-          this.dataVersion = version.data;
-        } else {
-          if (version.data !== this.dataVersion) {
+        if (version.data !== this.dataVersion) {
+          if (this.dataVersion !== undefined) {
             this.refresh();
           }
+          this.dataVersion = version.data;
         }
 
         return true;

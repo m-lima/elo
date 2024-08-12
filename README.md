@@ -40,7 +40,9 @@ $ cargo r --features local -- -p 3333 -vvv -d <DB>
 
 > `DB`: Path to the database initialized in the last step
 
-When launching with `--features local`, the user will default to **test@email.com** unless overridden by the `X-USER` header
+> [!NOTE]
+>
+> When launching with `--features local`, the user will default to **test@email.com** unless overridden by the `X-USER` header
 
 ### Launch frontend
 

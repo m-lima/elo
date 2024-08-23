@@ -19,7 +19,7 @@ jobs:
         working-directory: ./back
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
       - name: Format
@@ -48,7 +48,7 @@ jobs:
         working-directory: ./front
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install deps
         run: yarn
       - name: Format

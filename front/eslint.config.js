@@ -1,12 +1,14 @@
 import javascript from '@eslint/js';
-import prettier from 'eslint-plugin-prettier/recommended';
+import prettier from 'eslint-config-prettier';
 import typescript from 'typescript-eslint';
 
 export default typescript.config(
+  {
+    ignores: ['**/dist/', '**/dev-dist/', 'vite.config.ts'],
+  },
   javascript.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['vite.config.ts'],
 
     extends: typescript.configs.strictTypeChecked,
     rules: {

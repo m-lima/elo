@@ -1,7 +1,11 @@
 return {
-  ['rust-analyzer'] = {
-    cargo = {
-      features = { 'local' },
+  rust_analyzer = {
+    settings = {
+      ['rust-analyzer'] = {
+        cargo = {
+          features = { 'local' },
+        },
+      },
     },
   },
 }

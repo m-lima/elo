@@ -61,7 +61,7 @@ export const Player = () => {
     const player = enrichedPlayers.find(p => p.id === id());
     if (player !== undefined) {
       const inviteCount =
-        (players().filter(p => p.inviter !== undefined && p.inviter === id()).length ?? 0) +
+        players().filter(p => p.inviter !== undefined && p.inviter === id()).length +
         (invites()?.filter(p => p.inviter === id()).length ?? 0);
 
       return { invites: inviteCount, ...player };

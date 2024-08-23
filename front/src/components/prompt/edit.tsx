@@ -85,7 +85,7 @@ export const Edit = (
               deleted: false,
             };
 
-        props.store
+        void props.store
           .editGame(change)
           .then(r => {
             if (r) {

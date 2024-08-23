@@ -32,7 +32,7 @@ export const Invite = (
     }
 
     setTimeout(() => setBusy(busy => busy ?? true), 200);
-    props.store
+    void props.store
       .invitePlayer(name().trim(), cleanEmail(email()))
       .then(r => {
         if (r) {

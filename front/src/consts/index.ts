@@ -6,12 +6,12 @@ export const host = {
   ws:
     import.meta.env.VITE_HOST_WS === undefined
       ? `ws://${location.hostname}:3333/ws/binary`
-      : import.meta.env.VITE_HOST_WS,
+      : (import.meta.env.VITE_HOST_WS as string),
   check:
     import.meta.env.VITE_HOST_CHECK === undefined
       ? `http://${location.hostname}:3333/check`
-      : import.meta.env.VITE_HOST_CHECK,
-  login: import.meta.env.VITE_HOST_LOGIN,
+      : (import.meta.env.VITE_HOST_CHECK as string),
+  login: import.meta.env.VITE_HOST_LOGIN as string,
 };
 
 export const colors = {

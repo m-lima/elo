@@ -8,8 +8,8 @@ import './datepicker.css';
 export const DatePicker = (props: {
   getter: Accessor<Date>;
   setter: {
-    (value: Date): void;
-    (value: () => Date): void;
+    // (value: Date): void;
+    (value: Date | (() => Date)): void;
   };
   hide: () => void;
 }) => {

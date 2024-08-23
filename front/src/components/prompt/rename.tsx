@@ -26,7 +26,7 @@ export const Rename = (
     }
 
     setTimeout(() => setBusy(busy => busy ?? true), 200);
-    props.store
+    void props.store
       .renamePlayer(name().trim())
       .then(r => {
         if (r) {

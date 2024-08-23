@@ -84,7 +84,7 @@ export const Register = (
         }
 
         setTimeout(() => setBusy(busy => busy ?? true), 200);
-        props.store
+        void props.store
           .registerGame(playerInner, opponentInner, score(), opponentScore(), challenge(), millis())
           .then(r => {
             if (r) {

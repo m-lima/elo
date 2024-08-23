@@ -1,6 +1,6 @@
 # EloPong
 
-[![Github](https://github.com/m-lima/elo/workflows/build/badge.svg)](https://github.com/m-lima/elo/actions?workflow=build)
+[![Github](https://github.com/m-lima/elo/actions/workflows/check.yml/badge.svg)](https://github.com/m-lima/elo/actions?workflow=check)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 An elo scoring system for table tennis

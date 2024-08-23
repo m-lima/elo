@@ -1,8 +1,11 @@
 use super::{super::model, *};
 
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::SqlitePoolOptions;
+
 #[sqlx::test]
-async fn id(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn id(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     handler
         .call(model::Request::Player(model::request::Player::Id), false)
@@ -37,8 +40,8 @@ async fn id(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn list(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -62,8 +65,8 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn rename(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn rename(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
         .await
@@ -161,8 +164,8 @@ async fn rename(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn invalid_input(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler
         .call(
@@ -184,8 +187,8 @@ async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn repeated_input(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -256,8 +259,8 @@ async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
-    let (_, store, mut handler) = init!(pool);
+async fn forbidden(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (_, store, mut handler, _) = init!(pool, conn);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     let mut handler = framework::Handler::pending(&invited.email, &store)

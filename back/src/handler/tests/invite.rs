@@ -1,9 +1,12 @@
 use super::{super::model, *};
 use crate::{mailbox, smtp};
 
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::SqlitePoolOptions;
+
 #[sqlx::test]
-async fn list(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     handler
         .call(model::Request::Invite(model::request::Invite::List), false)
@@ -66,8 +69,8 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn ok(pool: sqlx::sqlite::SqlitePool) {
-    let (player, _, mut handler) = init!(pool);
+async fn ok(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, _, mut handler, _) = init!(pool, conn);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     assert_eq!(invited.name, INVITED_NAME);
@@ -76,8 +79,8 @@ async fn ok(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn normalization(pool: sqlx::sqlite::SqlitePool) {
-    let (player, _, mut handler) = init!(pool);
+async fn normalization(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, _, mut handler, _) = init!(pool, conn);
     let model::Push::Player(model::push::Player::Invited(invited)) = handler
         .call(
             model::Request::Invite(model::request::Invite::Player {
@@ -105,8 +108,8 @@ async fn normalization(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn accept(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn accept(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
         .await
@@ -118,8 +121,8 @@ async fn accept(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn reject(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn reject(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     let mut handler = framework::Handler::pending(&invited.email, &store)
@@ -153,8 +156,8 @@ async fn reject(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn cancel(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn cancel(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     let model::Push::Player(model::push::Player::Uninvited(uninvited)) = handler
@@ -177,8 +180,8 @@ async fn cancel(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn cancel_not_found(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn cancel_not_found(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler
         .call(
@@ -191,8 +194,8 @@ async fn cancel_not_found(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn invalid_input(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler
         .call(
@@ -248,8 +251,8 @@ async fn invalid_input(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn repeated_input(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
@@ -303,8 +306,8 @@ async fn repeated_input(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn forbidden_regular(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn forbidden_regular(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler
         .call(
@@ -326,8 +329,8 @@ async fn forbidden_regular(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
-    let (_, store, mut handler) = init!(pool);
+async fn forbidden(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (_, store, mut handler, _) = init!(pool, conn);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     let mut handler = framework::Handler::pending(&invited.email, &store)

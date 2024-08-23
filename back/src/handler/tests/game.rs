@@ -1,9 +1,12 @@
 use super::{super::model, *};
 use crate::types;
 
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::SqlitePoolOptions;
+
 #[sqlx::test]
-async fn list(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     handler
         .call(model::Request::Game(model::request::Game::List), false)
@@ -55,8 +58,8 @@ async fn list(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -119,8 +122,8 @@ async fn register(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_to_other_players(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted_one = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -188,8 +191,8 @@ async fn register_to_other_players(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_many(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register_many(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -236,8 +239,8 @@ async fn register_many(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_not_found(pool: sqlx::sqlite::SqlitePool) {
-    let mut handler = init!(pool).2;
+async fn register_not_found(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let mut handler = init!(pool, conn).2;
 
     handler
         .call(
@@ -257,8 +260,8 @@ async fn register_not_found(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_same_player(pool: sqlx::sqlite::SqlitePool) {
-    let (player, _, mut handler) = init!(pool);
+async fn register_same_player(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, _, mut handler, _) = init!(pool, conn);
 
     handler
         .call(
@@ -280,8 +283,8 @@ async fn register_same_player(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register_good_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -372,8 +375,8 @@ async fn register_good_score(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_bad_score(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register_bad_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -423,8 +426,8 @@ async fn register_bad_score(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -542,8 +545,8 @@ async fn register_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn edit_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted_one = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -660,9 +663,9 @@ async fn edit_challenge_daily_limit(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
+async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     // Prepare players
-    let (player, store, mut handler) = init!(pool);
+    let (player, store, mut handler, pool) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -798,7 +801,7 @@ async fn delete_game(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
+async fn random_updates(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     struct ModifiableGame {
         player_one: types::Id,
         player_two: types::Id,
@@ -862,7 +865,7 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
     println!("Using seed: {seed}");
 
     // Prepare players
-    let (player_one, store, mut handler) = init!(pool);
+    let (player_one, store, mut handler, pool) = init!(pool, conn);
 
     let player_two = handler
         .invite_full(&player_one, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -1015,8 +1018,8 @@ async fn random_updates(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn creation_time_does_not_matter(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, pool) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -1113,8 +1116,8 @@ async fn creation_time_does_not_matter(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn history(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn history(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -1218,8 +1221,8 @@ async fn history(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
-    let (player, store, mut handler) = init!(pool);
+async fn history_only_when_relevant(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
         .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
@@ -1335,8 +1338,8 @@ async fn history_only_when_relevant(pool: sqlx::sqlite::SqlitePool) {
 }
 
 #[sqlx::test]
-async fn forbidden(pool: sqlx::sqlite::SqlitePool) {
-    let (_, store, mut handler) = init!(pool);
+async fn forbidden(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (_, store, mut handler, _) = init!(pool, conn);
     let invited = handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
 
     let mut handler = framework::Handler::pending(&invited.email, &store)

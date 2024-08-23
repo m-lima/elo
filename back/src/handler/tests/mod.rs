@@ -1,12 +1,18 @@
 mod framework;
 
 macro_rules! init {
-    ($pool: ident) => {{
-        let (player, store) = crate::handler::tests::init(&$pool).await.unwrap();
+    ($pool: ident, $conn: ident) => {{
+        let options = $conn.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal);
+        let pool = $pool
+            .max_connections(1)
+            .connect_with(options)
+            .await
+            .unwrap();
+        let (player, store) = crate::handler::tests::init(&pool).await.unwrap();
         let handler = crate::handler::tests::framework::Handler::new(&player.email, &store)
             .await
             .unwrap();
-        (player, store, handler)
+        (player, store, handler, pool)
     }};
 }
 

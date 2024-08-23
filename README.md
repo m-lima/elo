@@ -1,5 +1,8 @@
 # EloPong
 
+[![Github](https://github.com/m-lima/elo/workflows/build/badge.svg)](https://github.com/m-lima/elo/actions?workflow=build)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An elo scoring system for table tennis
 
 ## Build
@@ -12,6 +15,7 @@ $ cargo build --release
 ```
 
 ### Frontend
+
 ```
 $ cd front
 $ yarn
@@ -62,14 +66,15 @@ $ yarn dev --host
 If SMTP parameters are provided, **PongElo** will use them to send out emails, such as invitations and other notifications.
 
 These parameters can be passed in the command line, or through the environment variables:
-* `ELO_LINK`: Link to use in emails that point to where **PongElo** is deployed
-    * E.g.: `https://pongelo.com`
-* `ELO_FROM`: Canonical mailbox to send the emails from
-    * E.g.: `PongElo <noreply-pongelo@email.com>`
-* `ELO_SMTP`: Address to the SMTP server
-    * E.g.: `smtp://smtp-relay.gmail.com:587?tls=required`
 
-There is a [Dockerfile](./back/Dockerfile) provided that will run the backend on port 80. Additionally there is a [build script](./back/build.sh) that will generate the image with the above SMTP parameters and generate *systemd* unit files
+- `ELO_LINK`: Link to use in emails that point to where **PongElo** is deployed
+  - E.g.: `https://pongelo.com`
+- `ELO_FROM`: Canonical mailbox to send the emails from
+  - E.g.: `PongElo <noreply-pongelo@email.com>`
+- `ELO_SMTP`: Address to the SMTP server
+  - E.g.: `smtp://smtp-relay.gmail.com:587?tls=required`
+
+There is a [Dockerfile](./back/Dockerfile) provided that will run the backend on port 80. Additionally there is a [build script](./back/build.sh) that will generate the image with the above SMTP parameters and generate _systemd_ unit files
 
 ### Frontend
 

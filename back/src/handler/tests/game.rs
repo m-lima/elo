@@ -819,34 +819,34 @@ async fn random_updates(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
 
         (0..50)
             .map(|_| {
-                let player_one = ids[rand.gen_range(0..3)];
+                let player_one = ids[rand.random_range(0..3)];
                 let player_two = {
-                    let mut id = ids[rand.gen_range(0..3)];
+                    let mut id = ids[rand.random_range(0..3)];
                     while id == player_one {
-                        id = ids[rand.gen_range(0..3)];
+                        id = ids[rand.random_range(0..3)];
                     }
                     id
                 };
 
                 let (score_one, score_two) = {
-                    let winner_score = if rand.gen_bool(0.8) { 11 } else { 12 };
+                    let winner_score = if rand.random_bool(0.8) { 11 } else { 12 };
                     let loser_score = if winner_score == 12 {
                         10
                     } else {
-                        rand.gen_range(0..10)
+                        rand.random_range(0..10)
                     };
 
-                    if rand.gen_bool(0.5) {
+                    if rand.random_bool(0.5) {
                         (winner_score, loser_score)
                     } else {
                         (loser_score, winner_score)
                     }
                 };
 
-                let challenge = rand.gen_bool(0.3);
-                let deleted = rand.gen_bool(0.2);
+                let challenge = rand.random_bool(0.3);
+                let deleted = rand.random_bool(0.2);
                 let millis =
-                    types::Millis::from(i64::from(rand.gen::<u16>()) * 12 * 60 * 60 * 1000);
+                    types::Millis::from(i64::from(rand.random::<u16>()) * 12 * 60 * 60 * 1000);
 
                 ModifiableGame {
                     player_one,

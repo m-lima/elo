@@ -134,9 +134,5 @@ fn rating_updater(one: f64, two: f64, won: bool, challenge: bool) -> f64 {
         &skillratings::elo::EloConfig::new(),
     );
     let delta = ratings.0.rating - one;
-    if challenge {
-        delta * 3.0
-    } else {
-        delta
-    }
+    if challenge { delta * 3.0 } else { delta }
 }

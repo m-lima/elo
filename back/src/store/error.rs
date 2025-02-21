@@ -15,10 +15,10 @@ pub enum Error {
 impl From<sqlx::Error> for Error {
     fn from(error: sqlx::Error) -> Self {
         match error {
-            sqlx::Error::Database(e) if e.code().map_or(false, |c| c == "2067") => {
+            sqlx::Error::Database(e) if e.code().is_some_and(|c| c == "2067") => {
                 Error::AlreadyExists
             }
-            sqlx::Error::Database(e) if e.code().map_or(false, |c| c == "787") => Error::NotFound,
+            sqlx::Error::Database(e) if e.code().is_some_and(|c| c == "787") => Error::NotFound,
             sqlx::Error::RowNotFound => Error::NotFound,
             e => Error::Query(e),
         }

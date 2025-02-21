@@ -16,7 +16,7 @@ pub enum Error {
     #[error("Expected more users, but the list of names is empty")]
     WrongCount,
     #[error("Could not build distribution: {0:?}")]
-    Distribution(#[from] rand::distributions::WeightedError),
+    Distribution(#[from] rand::distr::weighted::Error),
     #[error("Could not receive push: {0:?}")]
     Push(#[from] tokio::sync::broadcast::error::RecvError),
 }
@@ -154,13 +154,13 @@ async fn populate_games(
     };
 
     let distribution =
-        rand::distributions::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
+        rand::distr::weighted::WeightedIndex::new((0..players.len()).map(|i| 1 + i / 4))?;
 
     let millis = {
         let initial = 1_706_702_400_000_i64; // 2024-01-31 12:00:00
         let mut millis = (0..players.len() * usize::from(count))
             .scan(initial, |acc, _| {
-                *acc -= rand.gen_range((2 * 60 * 1000)..(2 * 60 * 60 * 1000));
+                *acc -= rand.random_range((2 * 60 * 1000)..(2 * 60 * 60 * 1000));
                 Some(*acc)
             })
             .collect::<Vec<_>>();
@@ -182,20 +182,20 @@ async fn populate_games(
             (&players[one], &players[two])
         };
 
-        let winner_score = if rand.gen_bool(0.1) { 12 } else { 11 };
+        let winner_score = if rand.random_bool(0.1) { 12 } else { 11 };
         let loser_score = if winner_score == 12 {
             10
         } else {
-            rand.gen_range(0..10)
+            rand.random_range(0..10)
         };
 
-        let (user_score, opponent_score) = if rand.gen_bool(0.5) {
+        let (user_score, opponent_score) = if rand.random_bool(0.5) {
             (winner_score, loser_score)
         } else {
             (loser_score, winner_score)
         };
 
-        let challenge = rand.gen_bool(0.1);
+        let challenge = rand.random_bool(0.1);
 
         let mut handler = handler::Handler::new(
             get_registered_user(auth, &user.2).await?,

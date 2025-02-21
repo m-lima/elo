@@ -335,14 +335,14 @@ impl Equal {
             Ok(())
         } else {
             eprintln!(
-                r#"Values differ
+                "Values differ
 {value}
-{expected}"#
+{expected}"
             );
             Err(Error::NotEqual(format!(
-                r#"Values differ
+                "Values differ
 {value}
-{expected}"#
+{expected}"
             )))
         }
     }

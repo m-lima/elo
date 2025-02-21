@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<'a, S> Player<'a, access::Regular, S>
+impl<S> Player<'_, access::Regular, S>
 where
     S: smtp::Smtp,
 {
@@ -62,7 +62,7 @@ where
     }
 }
 
-impl<'a, S> Player<'a, access::Pending, S>
+impl<S> Player<'_, access::Pending, S>
 where
     S: smtp::Smtp,
 {

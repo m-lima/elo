@@ -132,13 +132,13 @@ impl Worker {
                                 lettre::message::SinglePart::builder()
                                     .header(lettre::message::header::ContentType::TEXT_PLAIN)
                                     .body(format!(
-                                        r#"Hi {name}!
+                                        "Hi {name}!
 
 You have been invited to join {elo}!
 Try it out at {link}
 
 Happy gaming!
-"#
+"
                                     )),
                             )
                             .singlepart(
@@ -196,12 +196,12 @@ Happy gaming!
                     .to(recipient.into())
                     .subject(format!("Invitation {outcome} by {invitee}"))
                     .body(format!(
-                        r#"Hi {name}!
+                        "Hi {name}!
 
 The user {invitee} has {outcome} your invitation to join {elo}.
 
 Happy gaming!
-"#
+"
                     ))
                     .map_err(BuildError::Lettre);
 

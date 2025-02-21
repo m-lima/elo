@@ -323,9 +323,10 @@ mod constraints {
             .unwrap()
         );
 
-        assert!(sqlx::query_as!(
-            types::Invite,
-            r#"
+        assert!(
+            sqlx::query_as!(
+                types::Invite,
+                r#"
             SELECT
                 id,
                 inviter,
@@ -335,11 +336,12 @@ mod constraints {
             FROM
                 invites
             "#,
-        )
-        .fetch_all(&pool)
-        .await
-        .unwrap()
-        .is_empty());
+            )
+            .fetch_all(&pool)
+            .await
+            .unwrap()
+            .is_empty()
+        );
     }
 
     #[sqlx::test]

@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<'a, S> Invite<'a, access::Regular, S>
+impl<S> Invite<'_, access::Regular, S>
 where
     S: smtp::Smtp,
 {
@@ -72,7 +72,7 @@ where
     }
 }
 
-impl<'a, S> Invite<'a, access::Pending, S>
+impl<S> Invite<'_, access::Pending, S>
 where
     S: smtp::Smtp,
 {

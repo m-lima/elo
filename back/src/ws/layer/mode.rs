@@ -35,7 +35,7 @@ pub(crate) mod sealed {
             T: serde::Serialize,
         {
             serde_json::to_string(&payload).map(|p| {
-                let len = p.as_bytes().len();
+                let len = p.len();
                 (axum::extract::ws::Message::Text(p), len)
             })
         }

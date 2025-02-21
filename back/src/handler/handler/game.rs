@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<'a, S> Game<'a, access::Regular, S>
+impl<S> Game<'_, access::Regular, S>
 where
     S: smtp::Smtp,
 {
@@ -93,7 +93,7 @@ where
     }
 }
 
-impl<'a, S> Game<'a, access::Pending, S>
+impl<S> Game<'_, access::Pending, S>
 where
     S: smtp::Smtp,
 {

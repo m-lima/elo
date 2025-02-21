@@ -192,7 +192,7 @@ mod tests {
     mod request {
         use super::{
             super::{message::Request, try_extract_id},
-            Payload, OBJ, STR,
+            OBJ, Payload, STR,
         };
 
         #[test]

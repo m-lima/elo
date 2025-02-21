@@ -10,7 +10,7 @@ local = ["dep:tower-http"]
 
 [dependencies]
 axum = { version = "0.8.1", features = ["ws"] }
-boile-rs = { git = "https://github.com/m-lima/boile-rs", version = "0.1.1", features = ["log", "rt-shutdown"] }
+boile-rs = { git = "https://github.com/m-lima/boile-rs", version = "0.1.2", features = ["log", "rt-shutdown"] }
 clap = { version = "4.5.30", features = ["derive"] }
 hyper = { version = "1.6.0", default-features = false }
 lettre = { version = "0.11.13", default-features = false, features = ["tracing", "smtp-transport", "pool", "hostname", "builder", "tokio1-rustls-tls"] }

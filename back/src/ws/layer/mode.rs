@@ -36,7 +36,10 @@ pub(crate) mod sealed {
         {
             serde_json::to_string(&payload).map(|p| {
                 let len = p.len();
-                (axum::extract::ws::Message::Text(p), len)
+                (
+                    axum::extract::ws::Message::Text(axum::extract::ws::Utf8Bytes::from(p)),
+                    len,
+                )
             })
         }
 
@@ -65,7 +68,10 @@ pub(crate) mod sealed {
         {
             rmp_serde::to_vec_named(&payload).map(|p| {
                 let len = p.len();
-                (axum::extract::ws::Message::Binary(p), len)
+                (
+                    axum::extract::ws::Message::Binary(hyper::body::Bytes::from(p)),
+                    len,
+                )
             })
         }
 

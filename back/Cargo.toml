@@ -6,11 +6,10 @@ edition = "2024"
 [features]
 default = []
 log-spans = ["boile-rs/log-spans"]
-local = []
-tower-http = ["dep:tower-http"]
+local = ["dep:tower-http"]
 
 [dependencies]
-axum = { version = "0.7.5", features = ["ws"] }
+axum = { version = "0.8.1", features = ["ws"] }
 boile-rs = { git = "https://github.com/m-lima/boile-rs", version = "0.1.1", features = ["log", "rt-shutdown"] }
 clap = { version = "4.5.30", features = ["derive"] }
 hyper = { version = "1.6.0", default-features = false }

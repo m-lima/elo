@@ -2,7 +2,7 @@ use super::error::Error;
 use super::payload::Payload;
 use crate::mailbox;
 
-pub trait Smtp: Clone + Send + 'static {
+pub trait Smtp: Clone + Sync + Send + 'static {
     fn send(&mut self, payload: Payload) -> impl std::future::Future<Output = ()> + Send;
 }
 

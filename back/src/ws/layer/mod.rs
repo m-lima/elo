@@ -94,7 +94,7 @@ where
         tracing::debug!("Sending heartbeat");
         if let Err(error) = self
             .socket
-            .send(axum::extract::ws::Message::Ping(Vec::new()))
+            .send(axum::extract::ws::Message::Ping(hyper::body::Bytes::new()))
             .await
         {
             tracing::warn!(%error, "Failed to send heartbeat");
@@ -129,7 +129,7 @@ where
             }
 
             // Payload messages
-            axum::extract::ws::Message::Text(text) => text.into_bytes(),
+            axum::extract::ws::Message::Text(text) => text.into(),
             axum::extract::ws::Message::Binary(binary) => binary,
         };
 
@@ -187,7 +187,8 @@ mod tests {
         name: "name_value",
         count: 8855,
     };
-    const STR: &str = r#"{"name":"name_value","count":8855}"#;
+    const STR: axum::extract::ws::Utf8Bytes =
+        axum::extract::ws::Utf8Bytes::from_static(r#"{"name":"name_value","count":8855}"#);
 
     mod request {
         use super::{
@@ -251,7 +252,7 @@ mod tests {
 
             let output = String::serialize(payload).unwrap().0;
 
-            let expected = axum::extract::ws::Message::Text(format!(r#"{{"push":{STR}}}"#));
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"push":{STR}}}"#).into());
 
             assert_eq!(output, expected);
         }
@@ -269,7 +270,8 @@ mod tests {
 
             let output = String::serialize(payload).unwrap().0;
 
-            let expected = axum::extract::ws::Message::Text(format!(r#"{{"id":27,"ok":{STR}}}"#,));
+            let expected =
+                axum::extract::ws::Message::Text(format!(r#"{{"id":27,"ok":{STR}}}"#).into());
 
             assert_eq!(output, expected);
         }
@@ -290,7 +292,7 @@ mod tests {
             let output = String::serialize(payload).unwrap().0;
 
             let expected =
-                axum::extract::ws::Message::Text(format!(r#"{{"id":27,"error":{STR}}}"#,));
+                axum::extract::ws::Message::Text(format!(r#"{{"id":27,"error":{STR}}}"#).into());
 
             assert_eq!(output, expected);
         }
@@ -304,7 +306,7 @@ mod tests {
 
             let output = String::serialize(payload).unwrap().0;
 
-            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":{STR}}}"#,));
+            let expected = axum::extract::ws::Message::Text(format!(r#"{{"error":{STR}}}"#).into());
 
             assert_eq!(output, expected);
         }

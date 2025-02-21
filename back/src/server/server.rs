@@ -3,7 +3,12 @@ use super::layer;
 use crate::{handler, smtp, store, ws};
 
 pub struct Server {
-    server: axum::serve::WithGracefulShutdown<axum::Router, axum::Router, boile_rs::rt::Shutdown>,
+    server: axum::serve::WithGracefulShutdown<
+        tokio::net::TcpListener,
+        axum::Router,
+        axum::Router,
+        boile_rs::rt::Shutdown,
+    >,
 }
 
 impl Server {

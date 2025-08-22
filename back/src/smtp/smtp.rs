@@ -32,11 +32,11 @@ impl Sender {
 
 impl Smtp for Sender {
     async fn send(&mut self, payload: Payload) {
-        if let Some(tx) = self.tx.as_ref() {
-            if tx.send(payload).await.is_err() {
-                tracing::error!("SMTP channel closed");
-                self.tx = None;
-            }
+        if let Some(tx) = self.tx.as_ref()
+            && tx.send(payload).await.is_err()
+        {
+            tracing::error!("SMTP channel closed");
+            self.tx = None;
         }
     }
 }

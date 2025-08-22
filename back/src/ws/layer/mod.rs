@@ -53,6 +53,7 @@ where
 
         let mut broadcast = self.service.subscribe();
 
+        #[allow(clippy::needless_continue)]
         loop {
             tokio::select! {
                 () = tokio::time::sleep(std::time::Duration::from_secs(30)) => self.heartbeat().await,

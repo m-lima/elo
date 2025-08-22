@@ -92,15 +92,15 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
     }
 
     #[cfg(not(feature = "local"))]
-    if args.init && !args.db.exists() {
-        if let Err(error) = std::fs::OpenOptions::new()
+    if args.init
+        && !args.db.exists()
+        && let Err(error) = std::fs::OpenOptions::new()
             .create_new(true)
             .write(true)
             .open(&args.db)
-        {
-            tracing::error!(?error, db = ?args.db, "Failed to create new database file");
-            return std::process::ExitCode::FAILURE;
-        }
+    {
+        tracing::error!(?error, db = ?args.db, "Failed to create new database file");
+        return std::process::ExitCode::FAILURE;
     }
 
     let store = match store::Store::new(&args.db).await {

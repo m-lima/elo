@@ -235,7 +235,7 @@ async fn populate_games(
                 };
             }
             Err(err) => return Err(err.into()),
-        };
+        }
     }
 
     Ok(())

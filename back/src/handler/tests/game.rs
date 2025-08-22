@@ -991,7 +991,7 @@ async fn random_updates(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
             assert_eq!(game.id, exising.id);
         } else {
             panic!();
-        };
+        }
     }
 
     // Check that the output matches the one created without edits

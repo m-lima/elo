@@ -28,7 +28,7 @@ impl Server {
         #[cfg(feature = "local")]
         let router = router.layer(tower_http::cors::CorsLayer::very_permissive());
 
-        let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::new(0, 0, 0, 0), port);
+        let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::UNSPECIFIED, port);
         let listener = tokio::net::TcpListener::bind(address).await?;
         let shutdown = boile_rs::rt::Shutdown::new()?;
         let server = axum::serve(listener, router).with_graceful_shutdown(shutdown);

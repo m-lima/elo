@@ -4,6 +4,7 @@ pub trait Service {
     type Error: Into<Error>;
     type Push: Clone + serde::Serialize;
 
+    fn user(&self) -> &str;
     fn subscribe(&self) -> tokio::sync::broadcast::Receiver<Self::Push>;
     fn call(
         &mut self,

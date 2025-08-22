@@ -88,6 +88,10 @@ where
     type Error = model::Error;
     type Push = model::Push;
 
+    fn user(&self) -> &str {
+        self.user.email()
+    }
+
     fn subscribe(&self) -> tokio::sync::broadcast::Receiver<Self::Push> {
         self.broadcaster.subscribe()
     }
@@ -100,13 +104,13 @@ where
 
         match result {
             Ok(_) => {
-                tracing::info!(user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+                tracing::info!(latency = ?start.elapsed(), "{message}");
             }
             Err(ref error) if error.is_warn() => {
-                tracing::warn!(%error, user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+                tracing::warn!(%error, latency = ?start.elapsed(), "{message}");
             }
             Err(ref error) => {
-                tracing::error!(%error, user = %self.user.email(), latency = ?start.elapsed(), "{message}");
+                tracing::error!(%error, latency = ?start.elapsed(), "{message}");
             }
         }
 

@@ -39,7 +39,7 @@ where
         }
     }
 
-    #[tracing::instrument(skip_all, fields(ws = %self.id, mode = %M::mode()))]
+    #[tracing::instrument(skip_all, fields(user = self.service.user(), ws = %self.id, mode = %M::mode()))]
     pub async fn serve(mut self) {
         macro_rules! flow {
             ($flow_control: expr) => {

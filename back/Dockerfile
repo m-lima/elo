@@ -1,5 +1,5 @@
 # Build
-FROM docker.io/rust:1.79.0-bookworm as rust
+FROM docker.io/rust:1.89.0-bookworm as rust
 WORKDIR /src
 
 COPY . .

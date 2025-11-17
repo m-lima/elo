@@ -426,7 +426,7 @@ async fn register_bad_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions)
 }
 
 #[sqlx::test]
-async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+async fn register_challenge_weeklylimit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted = handler
@@ -434,7 +434,7 @@ async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteCon
         .await
         .unwrap();
 
-    let millis = 1_704_070_861_000_i64; // 2024-01-01 01:01:01
+    let millis = 1_735_693_261_000_i64; // 2024-01-01 01:01:01 Wednesday
 
     let model::Push::Game(model::push::Game::Registered { .. }) = handler
         .call(
@@ -496,11 +496,11 @@ async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteCon
         )
         .await
         .err(model::Error::Store(store::Error::InvalidValue(
-            "Players cannot challenge each other more than once a day",
+            "Players cannot challenge each other more than once a week",
         )))
         .unwrap();
 
-    let millis = 1_704_153_599_999_i64; // 2024-01-01 23:59:59.999
+    let millis = 1_736_121_599_999_i64; // 2025-01-05 23:59:59.999 Sunday
 
     handler
         .call(
@@ -516,7 +516,7 @@ async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteCon
         )
         .await
         .err(model::Error::Store(store::Error::InvalidValue(
-            "Players cannot challenge each other more than once a day",
+            "Players cannot challenge each other more than once a week",
         )))
         .unwrap();
 
@@ -545,7 +545,7 @@ async fn register_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteCon
 }
 
 #[sqlx::test]
-async fn edit_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+async fn edit_challenge_weekly_limit(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     let (player, store, mut handler, _) = init!(pool, conn);
 
     let accepted_one = handler
@@ -643,7 +643,7 @@ async fn edit_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnect
         )
         .await
         .err(model::Error::Store(store::Error::InvalidValue(
-            "Players cannot challenge each other more than once a day",
+            "Players cannot challenge each other more than once a week",
         )))
         .unwrap();
 
@@ -657,7 +657,7 @@ async fn edit_challenge_daily_limit(pool: SqlitePoolOptions, conn: SqliteConnect
         )
         .await
         .err(model::Error::Store(store::Error::InvalidValue(
-            "Players cannot challenge each other more than once a day",
+            "Players cannot challenge each other more than once a week",
         )))
         .unwrap();
 }

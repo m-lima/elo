@@ -465,7 +465,7 @@ impl Games<'_> {
         E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
     {
         let millis = i64::from(millis);
-        let challenged_today = if let Some(ignore) = ignore {
+        let challenged_this_week = if let Some(ignore) = ignore {
             sqlx::query!(
                 r#"
                 SELECT
@@ -477,7 +477,7 @@ impl Games<'_> {
                     AND NOT deleted
                     AND player_one IN ($1, $2)
                     AND player_two IN ($1, $2)
-                    AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+                    AND STRFTIME('%Y%W', $3 / 1000, 'unixepoch') = STRFTIME('%Y%W', millis / 1000, 'unixepoch')
                     AND id <> $4
                 "#,
                 player_one,
@@ -500,7 +500,7 @@ impl Games<'_> {
                     AND NOT deleted
                     AND player_one IN ($1, $2)
                     AND player_two IN ($1, $2)
-                    AND STRFTIME('%Y%m%d', $3 / 1000, 'unixepoch') = STRFTIME('%Y%m%d', millis / 1000, 'unixepoch')
+                    AND STRFTIME('%Y%W', $3 / 1000, 'unixepoch') = STRFTIME('%Y%W', millis / 1000, 'unixepoch')
                 "#,
                 player_one,
                 player_two,
@@ -511,9 +511,9 @@ impl Games<'_> {
             .is_some()
         };
 
-        if challenged_today {
+        if challenged_this_week {
             return Err(Error::InvalidValue(
-                "Players cannot challenge each other more than once a day",
+                "Players cannot challenge each other more than once a week",
             ));
         }
 

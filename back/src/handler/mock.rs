@@ -218,7 +218,7 @@ async fn populate_games(
             Ok(model::Response::Done) => {}
             Ok(_) => unreachable!("Unexpected response"),
             Err(model::Error::Store(store::Error::InvalidValue(
-                "Players cannot challenge each other more than once a day",
+                "Players cannot challenge each other more than once a week",
             ))) if challenge => {
                 let model::Response::Done = handler
                     .call(model::Request::Game(model::request::Game::Register {

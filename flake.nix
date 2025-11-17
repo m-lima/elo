@@ -38,6 +38,7 @@
               ./back/db
               ./back/.env
             ];
+            devPackages = pkgs: [ pkgs.git-crypt ];
           }).outputs;
         prefixCheck =
           prefix: check:
@@ -143,7 +144,10 @@
         devShells = {
           back = back.devShells.default;
           front = pkgs.mkShell {
-            buildInputs = [ pkgs.yarn ];
+            buildInputs = [
+              pkgs.yarn
+              pkgs.git-crypt
+            ];
           };
         };
       }

@@ -34,6 +34,7 @@ export default typescript.config(
 
     languageOptions: {
       parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
         project: true,
       },
     },

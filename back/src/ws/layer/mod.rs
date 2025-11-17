@@ -53,6 +53,8 @@ where
 
         let mut broadcast = self.service.subscribe();
 
+        // allow(clippy::needless_continue): Need to `continue` so nothing is returned. Only
+        // affects `flow!` in final statement locations
         #[allow(clippy::needless_continue)]
         loop {
             tokio::select! {

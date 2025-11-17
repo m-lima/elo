@@ -3,12 +3,12 @@ name: Check
 on:
   push:
     branches:
-      - "**"
+      - '**'
     tags-ignore:
       - v*
 
 env:
-  RUSTFLAGS: "-Dwarnings"
+  RUSTFLAGS: '-Dwarnings'
 
 jobs:
   server:

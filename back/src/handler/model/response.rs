@@ -13,6 +13,7 @@ pub enum Response {
         pending: Option<bool>,
     },
     Players(Vec<types::PlayerTuple>),
+    Ratings(Vec<types::RatingTuple>),
     Games(Vec<types::GameTuple>),
     History(Vec<types::HistoryTuple>),
     Invites(Vec<types::InviteTuple>),

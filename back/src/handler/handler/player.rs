@@ -40,6 +40,11 @@ where
                 .await
                 .map_err(model::Error::Store)
                 .map(|r| model::Response::Players(r.into_iter().map(Into::into).collect())),
+            model::request::Player::Ratings => players
+                .ratings()
+                .await
+                .map_err(model::Error::Store)
+                .map(|r| model::Response::Ratings(r.into_iter().map(Into::into).collect())),
             model::request::Player::Rename(name) => {
                 let player = players
                     .rename(self.handler.user.id(), &name)

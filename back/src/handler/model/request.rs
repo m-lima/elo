@@ -16,6 +16,7 @@ impl std::fmt::Display for Request {
             Self::Player(resource) => match resource {
                 Player::Id => f.write_str("Player::Id"),
                 Player::List => f.write_str("Player::List"),
+                Player::Ratings => f.write_str("Player::Ratings"),
                 Player::Rename(_) => f.write_str("Player::Renmae"),
             },
             Self::Invite(resource) => match resource {
@@ -40,6 +41,7 @@ impl std::fmt::Display for Request {
 pub enum Player {
     Id,
     List,
+    Ratings,
     Rename(String),
 }
 

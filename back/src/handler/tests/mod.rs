@@ -29,6 +29,7 @@ const INVITED_EMAIL: &str = "invited@email.com";
 const ACCEPTED_NAME: &str = "accepted";
 const ACCEPTED_EMAIL: &str = "accepted@email.com";
 const WHITE_SPACE: &str = " 	\n	 ";
+const DEFAULT_RATING: f64 = <crate::rating::Elo as crate::rating::Config>::DEFAULT_VALUE;
 
 async fn init(pool: &sqlx::SqlitePool) -> sqlx::Result<(types::Player, store::Store)> {
     let player = add_test_user(pool).await?;
@@ -61,12 +62,14 @@ async fn add_test_user(pool: &sqlx::sqlite::SqlitePool) -> sqlx::Result<types::P
     .await
 }
 
-fn now() -> types::Millis {
-    // allow(clippy::cast_possible_truncation): This is just a test
-    #[allow(clippy::cast_possible_truncation)]
-    let millis = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as i64;
-    types::Millis::from(millis)
+fn default_rating_delta() -> f64 {
+    skillratings::elo::elo(
+        &skillratings::elo::EloRating::new(),
+        &skillratings::elo::EloRating::new(),
+        &skillratings::Outcomes::WIN,
+        &skillratings::elo::EloConfig::new(),
+    )
+    .0
+    .rating
+        - skillratings::elo::EloRating::new().rating
 }

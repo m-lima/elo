@@ -72,6 +72,11 @@ where
     }
 
     #[tracing::instrument(skip(self))]
+    pub async fn ratings(&self) -> Result<Vec<types::Rating>> {
+        super::games::Games::<'_, R>::ratings_at(types::Millis::now(), &self.store.pool, true).await
+    }
+
+    #[tracing::instrument(skip(self))]
     pub async fn rename(&self, id: types::Id, name: &str) -> Result<types::Player> {
         let name = name.trim();
         if name.is_empty() {

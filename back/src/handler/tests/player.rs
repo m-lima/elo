@@ -65,6 +65,117 @@ async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
 }
 
 #[sqlx::test]
+async fn ratings(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    let (player, store, mut handler, _) = init!(pool, conn);
+    handler.invite(INVITED_NAME, INVITED_EMAIL).await.unwrap();
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    // Check with no games
+    handler
+        .call(
+            model::Request::Player(model::request::Player::Ratings),
+            false,
+        )
+        .await
+        .ok(model::Response::Ratings(Vec::new()))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    // Check with a game a long time ago
+    handler
+        .call(
+            model::Request::Game(model::request::Game::Register {
+                player: player.id,
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+                millis: types::Millis::from(0),
+            }),
+            true,
+        )
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap();
+
+    handler
+        .call(
+            model::Request::Player(model::request::Player::Ratings),
+            false,
+        )
+        .await
+        .ok(model::Response::Ratings(vec![
+            types::RatingTuple(player.id, 1000.0, types::Millis::from(0)),
+            types::RatingTuple(accepted.id, 1000.0, types::Millis::from(0)),
+        ]))
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+
+    // Check with a game just now
+    let now = types::Millis::now();
+
+    handler
+        .call(
+            model::Request::Game(model::request::Game::Register {
+                player: player.id,
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+                millis: now,
+            }),
+            true,
+        )
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap();
+
+    handler
+        .call(
+            model::Request::Player(model::request::Player::Ratings),
+            false,
+        )
+        .await
+        .map_ok(
+            |response| {
+                let model::Response::Ratings(mut list) = response else {
+                    panic!()
+                };
+                for t in &mut list {
+                    t.1 = t.1.round();
+                }
+                list
+            },
+            vec![
+                types::RatingTuple(player.id, DEFAULT_RATING + default_rating_delta(), now),
+                types::RatingTuple(accepted.id, DEFAULT_RATING - default_rating_delta(), now),
+            ],
+        )
+        .unwrap()
+        .none()
+        .unwrap()
+        .none()
+        .unwrap();
+}
+
+#[sqlx::test]
 async fn rename(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     let (player, store, mut handler, _) = init!(pool, conn);
     let accepted = handler

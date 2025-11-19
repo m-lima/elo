@@ -82,6 +82,34 @@ impl From<InviteTuple> for Invite {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Rating {
+    pub player: Id,
+    #[allow(clippy::struct_field_names)]
+    pub rating: f64,
+    pub last_game: Millis,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct RatingTuple(pub Id, pub f64, pub Millis);
+
+impl From<Rating> for RatingTuple {
+    fn from(value: Rating) -> Self {
+        Self(value.player, value.rating, value.last_game)
+    }
+}
+
+impl From<RatingTuple> for Rating {
+    fn from(value: RatingTuple) -> Self {
+        Self {
+            player: value.0,
+            rating: value.1,
+            last_game: value.2,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Game {
@@ -232,6 +260,19 @@ impl From<HistoryTuple> for History {
 #[repr(transparent)]
 #[sqlx(transparent)]
 pub(crate) struct Millis(i64);
+
+impl Millis {
+    pub fn now() -> Self {
+        Self(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .try_into()
+                .unwrap_or(i64::MAX),
+        )
+    }
+}
 
 impl From<i64> for Millis {
     fn from(value: i64) -> Self {

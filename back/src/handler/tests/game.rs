@@ -4,20 +4,6 @@ use crate::{macros::f64, types};
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::sqlite::SqlitePoolOptions;
 
-const DEFAULT_RATING: f64 = <crate::rating::Elo as crate::rating::Config>::DEFAULT_VALUE;
-
-fn default_rating() -> f64 {
-    skillratings::elo::elo(
-        &skillratings::elo::EloRating::new(),
-        &skillratings::elo::EloRating::new(),
-        &skillratings::Outcomes::WIN,
-        &skillratings::elo::EloConfig::new(),
-    )
-    .0
-    .rating
-        - skillratings::elo::EloRating::new().rating
-}
-
 #[sqlx::test]
 async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     let (player, store, mut handler, _) = init!(pool, conn);
@@ -45,7 +31,7 @@ async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -88,7 +74,7 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -111,7 +97,7 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     assert_eq!(game.score_two, 0);
     assert!(f64!(eq game.rating_one, DEFAULT_RATING));
     assert!(f64!(eq game.rating_two, DEFAULT_RATING));
-    assert!(f64!(eq game.rating_delta, default_rating()));
+    assert!(f64!(eq game.rating_delta, default_rating_delta()));
     assert!(!game.challenge);
 
     handler
@@ -147,7 +133,7 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -170,7 +156,7 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
     assert_eq!(game.score_two, 0);
     assert!(f64!(eq game.rating_one, DEFAULT_RATING));
     assert!(f64!(eq game.rating_two, DEFAULT_RATING));
-    assert!(f64!(eq game.rating_delta, default_rating()));
+    assert!(f64!(eq game.rating_delta, default_rating_delta()));
     assert!(!game.challenge);
 
     handler
@@ -203,7 +189,7 @@ async fn register_many(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: 0,
                     challenge: false,
-                    millis: super::now(),
+                    millis: types::Millis::now(),
                 }),
                 true,
             )
@@ -244,7 +230,7 @@ async fn register_not_found(pool: SqlitePoolOptions, conn: SqliteConnectOptions)
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             false,
         )
@@ -265,7 +251,7 @@ async fn register_same_player(pool: SqlitePoolOptions, conn: SqliteConnectOption
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             false,
         )
@@ -294,7 +280,7 @@ async fn register_good_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions
                     score: 11,
                     opponent_score: score,
                     challenge: false,
-                    millis: super::now(),
+                    millis: types::Millis::now(),
                 }),
                 true,
             )
@@ -314,7 +300,7 @@ async fn register_good_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions
                     score,
                     opponent_score: 11,
                     challenge: false,
-                    millis: super::now(),
+                    millis: types::Millis::now(),
                 }),
                 true,
             )
@@ -335,7 +321,7 @@ async fn register_good_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions
                 score: 12,
                 opponent_score: 10,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -355,7 +341,7 @@ async fn register_good_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions
                 score: 10,
                 opponent_score: 12,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -397,7 +383,7 @@ async fn register_bad_score(pool: SqlitePoolOptions, conn: SqliteConnectOptions)
                     score,
                     opponent_score,
                     challenge,
-                    millis: super::now(),
+                    millis: types::Millis::now(),
                 }),
                 false,
             )
@@ -798,7 +784,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
 async fn rating_decay(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     // allow(clippy::cast_possible_truncation): It's only a test
     #[allow(clippy::cast_possible_truncation)]
-    let full_decay = (default_rating() / crate::rating::Elo::DECAY_PER_MS) as i64;
+    let full_decay = (default_rating_delta() / crate::rating::Elo::DECAY_PER_MS) as i64;
 
     // Prepare players
     let (player, store, mut handler, _) = init!(pool, conn);
@@ -1041,7 +1027,7 @@ async fn random_updates(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: 0,
                     challenge: false,
-                    millis: now(),
+                    millis: types::Millis::now(),
                 }),
                 true,
             )
@@ -1227,7 +1213,7 @@ async fn history(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                 score: 11,
                 opponent_score: 0,
                 challenge: true,
-                millis: now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -1332,7 +1318,7 @@ async fn history_only_when_relevant(pool: SqlitePoolOptions, conn: SqliteConnect
                 score: 11,
                 opponent_score: 0,
                 challenge: true,
-                millis: now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -1357,7 +1343,7 @@ async fn history_only_when_relevant(pool: SqlitePoolOptions, conn: SqliteConnect
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: now(),
+                millis: types::Millis::now(),
             }),
             true,
         )
@@ -1455,7 +1441,7 @@ async fn forbidden(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                 score: 0,
                 opponent_score: 0,
                 challenge: false,
-                millis: super::now(),
+                millis: types::Millis::now(),
             }),
             false,
         )

@@ -261,6 +261,84 @@ where
 
         Ok(games)
     }
+
+    pub async fn ratings_at<'c, 'e, E>(
+        at: types::Millis,
+        executor: E,
+        decay: bool,
+    ) -> Result<Vec<types::Rating>>
+    where
+        'c: 'e,
+        E: 'e + sqlx::Executor<'c, Database = sqlx::Sqlite>,
+    {
+        let millis = if decay {
+            types::Millis::from(i64::MAX)
+        } else {
+            at
+        };
+
+        sqlx::query_as!(
+            types::Rating,
+            r#"
+            WITH
+                ratings AS (
+                    SELECT
+                        player_one,
+                        player_two,
+                        rating_one + rating_delta AS rating_one,
+                        rating_two - rating_delta AS rating_two,
+                        MAX(millis) AS millis
+                    FROM
+                        games
+                    WHERE
+                        NOT deleted
+                        AND millis < $1
+                    GROUP BY
+                        player_one,
+                        player_two
+                ),
+                unified AS (
+                    SELECT
+                        player_one AS player,
+                        rating_one AS rating,
+                        millis
+                    FROM
+                        ratings
+                    UNION
+                        SELECT
+                            player_two AS player,
+                            rating_two AS rating,
+                            millis
+                        FROM
+                            ratings
+                )
+            SELECT
+                player AS "player!: types::Id",
+                rating AS "rating!: f64",
+                MAX(millis) AS "last_game!: types::Millis"
+            FROM
+                unified
+            GROUP BY
+                player
+            ORDER BY
+                player
+            "#,
+            millis,
+        )
+        .map(|r| {
+            if decay {
+                types::Rating {
+                    rating: R::decayer(r.last_game, at, r.rating),
+                    ..r
+                }
+            } else {
+                r
+            }
+        })
+        .fetch_all(executor)
+        .await
+        .map_err(Error::from)
+    }
 }
 
 impl<R> Games<'_, R>
@@ -296,15 +374,20 @@ where
         Ok(updates
             .into_iter()
             .filter_map(|game| {
-                let decay = |(rating, last)| R::decayer(last, game.millis, rating);
+                let decay = |r: &types::Rating| R::decayer(r.last_game, game.millis, r.rating);
 
-                let rating_one = last_ratings
-                    .get(&game.player_one)
-                    .copied()
+                let rating_one_idx =
+                    last_ratings.binary_search_by_key(&game.player_one, |r| r.player);
+                let rating_two_idx =
+                    last_ratings.binary_search_by_key(&game.player_two, |r| r.player);
+
+                let rating_one = rating_one_idx
+                    .ok()
+                    .and_then(|i| last_ratings.get(i))
                     .map_or(R::DEFAULT_VALUE, decay);
-                let rating_two = last_ratings
-                    .get(&game.player_two)
-                    .copied()
+                let rating_two = rating_two_idx
+                    .ok()
+                    .and_then(|i| last_ratings.get(i))
                     .map_or(R::DEFAULT_VALUE, decay);
 
                 let rating_delta = if game.deleted {
@@ -318,8 +401,47 @@ where
                     )
                 };
 
-                last_ratings.insert(game.player_one, (rating_one + rating_delta, game.millis));
-                last_ratings.insert(game.player_two, (rating_two - rating_delta, game.millis));
+                let rating_two_idx = match rating_one_idx {
+                    Ok(i) => {
+                        let r = &mut last_ratings[i];
+                        r.rating = rating_one + rating_delta;
+                        r.last_game = game.millis;
+                        rating_two_idx
+                    }
+                    Err(i) => {
+                        last_ratings.insert(
+                            i,
+                            types::Rating {
+                                player: game.player_one,
+                                rating: rating_one + rating_delta,
+                                last_game: game.millis,
+                            },
+                        );
+                        if game.player_one < game.player_two {
+                            rating_two_idx.map(|i| i + 1).map_err(|i| i + 1)
+                        } else {
+                            rating_two_idx
+                        }
+                    }
+                };
+
+                match rating_two_idx {
+                    Ok(i) => {
+                        let r = &mut last_ratings[i];
+                        r.rating = rating_two - rating_delta;
+                        r.last_game = game.millis;
+                    }
+                    Err(i) => {
+                        last_ratings.insert(
+                            i,
+                            types::Rating {
+                                player: game.player_two,
+                                rating: rating_two - rating_delta,
+                                last_game: game.millis,
+                            },
+                        );
+                    }
+                }
 
                 (f64!(ne rating_one, game.rating_one)
                     || f64!(ne rating_two, game.rating_two)
@@ -337,10 +459,7 @@ where
     async fn prepare_updates(
         from: Option<types::Millis>,
         tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
-    ) -> Result<(
-        Vec<types::Game>,
-        std::collections::HashMap<types::Id, (f64, types::Millis)>,
-    )> {
+    ) -> Result<(Vec<types::Game>, Vec<types::Rating>)> {
         if let Some(from) = from {
             let updates = sqlx::query_as!(
                 types::Game,
@@ -370,62 +489,13 @@ where
             .fetch_all(tx.as_mut())
             .await?;
 
-            let last_ratings = sqlx::query!(
-                r#"
-                WITH
-                    ratings AS (
-                        SELECT
-                            player_one,
-                            player_two,
-                            rating_one + rating_delta AS rating_one,
-                            rating_two - rating_delta AS rating_two,
-                            MAX(millis) AS millis
-                        FROM
-                            games
-                        WHERE
-                            millis < $1
-                            AND NOT deleted
-                        GROUP BY
-                            player_one,
-                            player_two
-                    ),
-                    unified AS (
-                        SELECT
-                            player_one AS player,
-                            rating_one AS rating,
-                            millis
-                        FROM
-                            ratings
-                        UNION
-                            SELECT
-                                player_two AS player,
-                                rating_two AS rating,
-                                millis
-                            FROM
-                                ratings
-                    )
-                SELECT
-                    player AS "player!: types::Id",
-                    rating AS "rating!: f64",
-                    MAX(millis) AS "millis!: types::Millis"
-                FROM
-                    unified
-                GROUP BY
-                    player
-                "#,
-                from,
-            )
-            .map(|r| (r.player, (r.rating, r.millis)))
-            .fetch_all(tx.as_mut())
-            .await?
-            .into_iter()
-            .collect();
+            let last_ratings = Self::ratings_at(from, tx.as_mut(), false).await?;
 
             Ok((updates, last_ratings))
         } else {
             Self::list_games(tx.as_mut())
                 .await
-                .map(|games| (games, std::collections::HashMap::default()))
+                .map(|games| (games, Vec::new()))
         }
     }
 

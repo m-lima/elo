@@ -667,7 +667,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: i,
                     challenge: false,
-                    millis: types::Millis::from(i64::from(i) * 3600),
+                    millis: types::Millis::from(i64::from(i)),
                 }),
                 true,
             )
@@ -708,7 +708,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: i,
                     challenge: false,
-                    millis: types::Millis::from(i64::from(i) * 3600),
+                    millis: types::Millis::from(i64::from(i)),
                 }),
                 true,
             )
@@ -784,7 +784,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
 async fn rating_decay(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     // allow(clippy::cast_possible_truncation): It's only a test
     #[allow(clippy::cast_possible_truncation)]
-    let full_decay = (default_rating_delta() / crate::rating::Elo::DECAY_PER_MS) as i64;
+    let full_decay = (default_rating_delta() / crate::rating::Elo::DECAY_PER_SEC) as i64 * 1000;
 
     // Prepare players
     let (player, store, mut handler, _) = init!(pool, conn);

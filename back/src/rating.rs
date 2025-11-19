@@ -9,7 +9,7 @@ pub trait Config: 'static + Copy + Send + Sync + std::fmt::Debug {
 pub struct Elo;
 
 impl Elo {
-    pub const DECAY_PER_MS: f64 = 1.0 / (1000.0 * 60.0 * 60.0 * 24.0);
+    pub const DECAY_PER_SEC: f64 = 1.0 / (60.0 * 60.0 * 24.0);
 }
 
 impl Config for Elo {
@@ -31,9 +31,9 @@ impl Config for Elo {
     }
 
     fn decayer(last: crate::types::Millis, curr: crate::types::Millis, rating: f64) -> f64 {
-        let Ok(decay) = i32::try_from(i64::from(curr) - i64::from(last))
+        let Ok(decay) = i32::try_from(i64::from(curr) / 1000 - i64::from(last) / 1000)
             .map(f64::from)
-            .map(|diff| diff * Self::DECAY_PER_MS)
+            .map(|diff| diff * Self::DECAY_PER_SEC)
         else {
             return Self::DEFAULT_VALUE;
         };

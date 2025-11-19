@@ -12,11 +12,13 @@ import {
   historyFromTuple,
   inviteFromTuple,
   playerFromTuple,
+  ratingFromTuple,
   type EnrichedGame,
   type EnrichedPlayer,
   type Game,
   type Invite,
   type Player,
+  type Rating,
   type User,
 } from '../types';
 import { type Message, type Request, type Ided, type PushPlayer, type PushGame } from './message';
@@ -30,6 +32,7 @@ export class Store {
 
   private readonly self: Resource<User>;
   private readonly players: Resource<Player[]>;
+  private readonly ratings: Resource<Rating[]>;
   private readonly games: Resource<Game[]>;
   private readonly invites: Resource<Invite[]>;
 
@@ -77,6 +80,13 @@ export class Store {
       const id = newRequestId();
       return this.socket.request({ id, do: { player: 'list' } }, message =>
         validateMessage(id, 'players', message)?.players.map(playerFromTuple),
+      );
+    });
+
+    this.ratings = new Resource(() => {
+      const id = newRequestId();
+      return this.socket.request({ id, do: { player: 'ratings' } }, message =>
+        validateMessage(id, 'ratings', message)?.ratings.map(ratingFromTuple),
       );
     });
 
@@ -141,7 +151,8 @@ export class Store {
   public useEnrichedPlayers() {
     const players = this.players.get();
     const games = this.games.get();
-    return createMemo(() => enrichPlayers(players(), games()));
+    const ratings = this.ratings.get();
+    return createMemo(() => enrichPlayers(players(), ratings(), games()));
   }
 
   public useEnrichedGames() {
@@ -379,13 +390,16 @@ const upsert = <T extends Ided>(data: T[], datum: T) => {
 
 type Subscriber = (message: string, error: boolean) => void;
 
-const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlayer[] => {
+const enrichPlayers = (
+  players: Player[] = [],
+  ratings: Rating[] = [],
+  games: Game[] = [],
+): EnrichedPlayer[] => {
   const enrichedPlayers = new Map(
     players.map(p => [
       p.id,
       {
         ...p,
-        rating: 0,
         games: 0,
         wins: 0,
         losses: 0,
@@ -393,7 +407,6 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
         challengesLost: 0,
         pointsWon: 0,
         pointsLost: 0,
-        lastGame: 0,
       },
     ]),
   );
@@ -401,7 +414,6 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
   for (const game of games.filter(g => !g.deleted)) {
     const playerOne = enrichedPlayers.get(game.playerOne);
     if (playerOne !== undefined) {
-      playerOne.rating = game.ratingOne + game.ratingDelta;
       playerOne.games += 1;
       playerOne.pointsWon += game.scoreOne;
       playerOne.pointsLost += game.scoreTwo;
@@ -416,12 +428,10 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
           playerOne.challengesLost += 1;
         }
       }
-      playerOne.lastGame = game.millis;
     }
 
     const playerTwo = enrichedPlayers.get(game.playerTwo);
     if (playerTwo !== undefined) {
-      playerTwo.rating = game.ratingTwo - game.ratingDelta;
       playerTwo.games += 1;
       playerTwo.pointsLost += game.scoreOne;
       playerTwo.pointsWon += game.scoreTwo;
@@ -436,18 +446,40 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
           playerTwo.challengesLost += 1;
         }
       }
-      playerTwo.lastGame = game.millis;
     }
   }
 
+  const minAge = new Date().getTime() - consts.limit.gameAge;
+
   return Array.from(enrichedPlayers.values())
+    .map(p => {
+      let rating = 0;
+      let lastGame = 0;
+
+      const maybeRating = ratings.find(r => r.player === p.id);
+      if (maybeRating !== undefined && maybeRating.lastGame >= minAge) {
+        rating = maybeRating.rating;
+        lastGame = maybeRating.lastGame;
+      }
+
+      return {
+        ...p,
+        rating,
+        lastGame,
+      };
+    })
     .sort((a, b) => {
       const rating = b.rating - a.rating;
       if (rating !== 0) {
         return rating;
       }
 
-      return b.createdMs - a.createdMs;
+      const pointsDelta = b.pointsWon - b.pointsLost - (a.pointsWon - a.pointsLost);
+      if (pointsDelta !== 0) {
+        return pointsDelta;
+      }
+
+      return a.createdMs - b.createdMs;
     })
     .map((p, i) => {
       return {

@@ -6,6 +6,7 @@ import {
   type InviteTuple,
   type Player,
   type PlayerTuple,
+  type RatingTuple,
   type User,
 } from '../types';
 
@@ -14,7 +15,7 @@ export type Ided = {
 };
 
 export type Request = Ided & { do: 'version' | RequestPlayer | RequestGame | RequestInvite };
-export type RequestPlayer = { player: 'id' | 'list' | { rename: string } };
+export type RequestPlayer = { player: 'id' | 'list' | 'ratings' | { rename: string } };
 export type RequestGame = {
   game:
     | 'list'
@@ -51,6 +52,7 @@ export type OkResponse = {
   version: { server: number; data: number };
   user: User;
   players: PlayerTuple[];
+  ratings: RatingTuple[];
   games: GameTuple[];
   invites: InviteTuple[];
   history: HistoryTuple[];

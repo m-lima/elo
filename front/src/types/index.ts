@@ -23,6 +23,22 @@ export const playerFromTuple = ([id, name, email, inviter, createdMs]: PlayerTup
   };
 };
 
+export type Rating = {
+  readonly player: number;
+  readonly rating: number;
+  readonly lastGame: number;
+};
+
+export type RatingTuple = [number, number, number];
+
+export const ratingFromTuple = ([player, rating, lastGame]: RatingTuple): Rating => {
+  return {
+    player,
+    rating,
+    lastGame,
+  };
+};
+
 export type Game = {
   readonly id: number;
   readonly playerOne: number;
@@ -170,6 +186,7 @@ export type EnrichedPlayer = Player & {
   readonly challengesLost: number;
   readonly pointsWon: number;
   readonly pointsLost: number;
+  readonly lastGame: number;
 };
 
 export type EnrichedGame = Game & {

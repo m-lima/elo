@@ -24,6 +24,7 @@ export const colors = {
 };
 
 export const limit = {
+  gameAge: 1000 * 60 * 60 * 24 * 90,
   gameList: 100,
   chart: 50,
 };

@@ -8,13 +8,22 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use crate::rating;
+
 #[derive(Debug, Clone)]
-pub struct Store {
+pub struct Store<R>
+where
+    R: rating::Config,
+{
     pool: sqlx::sqlite::SqlitePool,
     version: std::sync::Arc<std::sync::atomic::AtomicU32>,
+    _rating_config: std::marker::PhantomData<R>,
 }
 
-impl Store {
+impl<R> Store<R>
+where
+    R: rating::Config,
+{
     pub async fn new<P>(path: P) -> Result<Self, sqlx::Error>
     where
         P: AsRef<std::path::Path>,
@@ -31,7 +40,11 @@ impl Store {
 
         let version = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(rand::random()));
 
-        Ok(Self { pool, version })
+        Ok(Self {
+            pool,
+            version,
+            _rating_config: std::marker::PhantomData,
+        })
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::migrate::MigrateError> {
@@ -44,17 +57,17 @@ impl Store {
     }
 
     #[must_use]
-    pub fn invites(&self) -> invites::Invites<'_> {
+    pub fn invites(&self) -> invites::Invites<'_, R> {
         invites::Invites::from(self)
     }
 
     #[must_use]
-    pub fn games(&self) -> games::Games<'_> {
+    pub fn games(&self) -> games::Games<'_, R> {
         games::Games::from(self)
     }
 
     #[must_use]
-    pub fn players(&self) -> players::Players<'_> {
+    pub fn players(&self) -> players::Players<'_, R> {
         players::Players::from(self)
     }
 
@@ -65,10 +78,17 @@ impl Store {
 }
 
 #[cfg(test)]
-impl From<sqlx::SqlitePool> for Store {
+impl<R> From<sqlx::SqlitePool> for Store<R>
+where
+    R: rating::Config,
+{
     fn from(pool: sqlx::SqlitePool) -> Self {
         let version = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(rand::random()));
-        Self { pool, version }
+        Self {
+            pool,
+            version,
+            _rating_config: std::marker::PhantomData,
+        }
     }
 }
 

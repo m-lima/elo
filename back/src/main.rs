@@ -3,7 +3,9 @@
 mod args;
 mod consts;
 mod handler;
+mod macros;
 mod mailbox;
+mod rating;
 mod server;
 mod smtp;
 mod store;

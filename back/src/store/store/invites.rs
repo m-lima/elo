@@ -1,19 +1,28 @@
 use super::super::error::Error;
-use crate::types;
+use crate::{rating, types};
 
 type Result<T = ()> = std::result::Result<T, Error>;
 
-pub struct Invites<'a> {
-    store: &'a super::Store,
+pub struct Invites<'a, R>
+where
+    R: rating::Config,
+{
+    store: &'a super::Store<R>,
 }
 
-impl<'a> From<&'a super::Store> for Invites<'a> {
-    fn from(store: &'a super::Store) -> Self {
+impl<'a, R> From<&'a super::Store<R>> for Invites<'a, R>
+where
+    R: rating::Config,
+{
+    fn from(store: &'a super::Store<R>) -> Self {
         Self { store }
     }
 }
 
-impl Invites<'_> {
+impl<R> Invites<'_, R>
+where
+    R: rating::Config,
+{
     pub async fn auth(&self, email: &str) -> Result<Option<types::User>> {
         let email = email.trim().to_lowercase();
         if email.is_empty() {

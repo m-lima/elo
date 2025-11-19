@@ -1,8 +1,22 @@
 use super::{super::model, *};
-use crate::types;
+use crate::{macros::f64, types};
 
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::sqlite::SqlitePoolOptions;
+
+const DEFAULT_RATING: f64 = <crate::rating::Elo as crate::rating::Config>::DEFAULT_VALUE;
+
+fn default_rating() -> f64 {
+    skillratings::elo::elo(
+        &skillratings::elo::EloRating::new(),
+        &skillratings::elo::EloRating::new(),
+        &skillratings::Outcomes::WIN,
+        &skillratings::elo::EloConfig::new(),
+    )
+    .0
+    .rating
+        - skillratings::elo::EloRating::new().rating
+}
 
 #[sqlx::test]
 async fn list(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
@@ -91,23 +105,13 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
 
     assert_eq!(updates.len(), 0);
 
-    let rating_delta = skillratings::elo::elo(
-        &skillratings::elo::EloRating::new(),
-        &skillratings::elo::EloRating::new(),
-        &skillratings::Outcomes::WIN,
-        &skillratings::elo::EloConfig::new(),
-    )
-    .0
-    .rating
-        - skillratings::elo::EloRating::new().rating;
-
     assert_eq!(game.player_one, player.id);
     assert_eq!(game.player_two, accepted.id);
     assert_eq!(game.score_one, 11);
     assert_eq!(game.score_two, 0);
-    assert!((game.rating_one - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
-    assert!((game.rating_two - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
-    assert!((game.rating_delta - rating_delta).abs() <= f64::EPSILON);
+    assert!(f64!(eq game.rating_one, DEFAULT_RATING));
+    assert!(f64!(eq game.rating_two, DEFAULT_RATING));
+    assert!(f64!(eq game.rating_delta, default_rating()));
     assert!(!game.challenge);
 
     handler
@@ -160,23 +164,13 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
 
     assert_eq!(updates.len(), 0);
 
-    let rating_delta = skillratings::elo::elo(
-        &skillratings::elo::EloRating::new(),
-        &skillratings::elo::EloRating::new(),
-        &skillratings::Outcomes::WIN,
-        &skillratings::elo::EloConfig::new(),
-    )
-    .0
-    .rating
-        - skillratings::elo::EloRating::new().rating;
-
     assert_eq!(game.player_one, accepted_one.id);
     assert_eq!(game.player_two, accepted_two.id);
     assert_eq!(game.score_one, 11);
     assert_eq!(game.score_two, 0);
-    assert!((game.rating_one - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
-    assert!((game.rating_two - skillratings::elo::EloRating::new().rating).abs() <= f64::EPSILON);
-    assert!((game.rating_delta - rating_delta).abs() <= f64::EPSILON);
+    assert!(f64!(eq game.rating_one, DEFAULT_RATING));
+    assert!(f64!(eq game.rating_two, DEFAULT_RATING));
+    assert!(f64!(eq game.rating_delta, default_rating()));
     assert!(!game.challenge);
 
     handler
@@ -687,7 +681,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: i,
                     challenge: false,
-                    millis: types::Millis::from(i64::from(i)),
+                    millis: types::Millis::from(i64::from(i) * 3600),
                 }),
                 true,
             )
@@ -728,7 +722,7 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                     score: 11,
                     opponent_score: i,
                     challenge: false,
-                    millis: types::Millis::from(i64::from(i)),
+                    millis: types::Millis::from(i64::from(i) * 3600),
                 }),
                 true,
             )
@@ -798,6 +792,107 @@ async fn delete_game(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
         .unwrap()
         .none()
         .unwrap();
+}
+
+#[sqlx::test]
+async fn rating_decay(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
+    // allow(clippy::cast_possible_truncation): It's only a test
+    #[allow(clippy::cast_possible_truncation)]
+    let full_decay = (default_rating() / crate::rating::Elo::DECAY_PER_MS) as i64;
+
+    // Prepare players
+    let (player, store, mut handler, _) = init!(pool, conn);
+
+    let accepted = handler
+        .invite_full(&player, &store, ACCEPTED_NAME, ACCEPTED_EMAIL)
+        .await
+        .unwrap();
+
+    let model::Push::Game(model::push::Game::Registered {
+        game: original_game,
+        ..
+    }) = handler
+        .call(
+            model::Request::Game(model::request::Game::Register {
+                player: player.id,
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+                millis: types::Millis::from(0),
+            }),
+            true,
+        )
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    let model::Push::Game(model::push::Game::Registered {
+        game: no_change, ..
+    }) = handler
+        .call(
+            model::Request::Game(model::request::Game::Register {
+                player: player.id,
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+                millis: types::Millis::from(full_decay),
+            }),
+            true,
+        )
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(original_game.score_one, no_change.score_one);
+    assert_eq!(original_game.score_two, no_change.score_two);
+    assert!(f64!(eq original_game.rating_one, no_change.rating_one));
+    assert!(f64!(eq original_game.rating_two, no_change.rating_two));
+    assert!(f64!(eq original_game.rating_delta, no_change.rating_delta));
+
+    let model::Push::Game(model::push::Game::Registered { game: half_way, .. }) = handler
+        .call(
+            model::Request::Game(model::request::Game::Register {
+                player: player.id,
+                opponent: accepted.id,
+                score: 11,
+                opponent_score: 0,
+                challenge: false,
+                millis: types::Millis::from(full_decay / 2),
+            }),
+            true,
+        )
+        .await
+        .done()
+        .unwrap()
+        .none()
+        .unwrap()
+        .some()
+        .unwrap()
+    else {
+        panic!()
+    };
+
+    assert_eq!(original_game.score_one, half_way.score_one);
+    assert_eq!(original_game.score_two, half_way.score_two);
+    assert!(original_game.rating_one < half_way.rating_one);
+    assert!(original_game.rating_two > half_way.rating_two);
+    assert!(original_game.rating_delta > half_way.rating_delta);
 }
 
 #[sqlx::test]

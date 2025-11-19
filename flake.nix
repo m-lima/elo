@@ -38,7 +38,10 @@
               ./back/db
               ./back/.env
             ];
-            devPackages = pkgs: [ pkgs.git-crypt ];
+            devPackages = pkgs: [
+              pkgs.git-crypt
+              (pkgs.writeShellScriptBin "sqlite" ''exec ${pkgs.sqlite}/bin/sqlite3 -init ${pkgs.writeText "sqliteconfig" ".mode columns"} $@'')
+            ];
           }).outputs;
         prefixCheck =
           prefix: check:

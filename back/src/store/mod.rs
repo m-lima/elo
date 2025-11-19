@@ -2,4 +2,5 @@ mod error;
 mod store;
 
 pub use error::Error;
-pub use store::Store;
+
+pub type Store = store::Store<crate::rating::Elo>;

@@ -393,6 +393,7 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
         challengesLost: 0,
         pointsWon: 0,
         pointsLost: 0,
+        lastGame: 0,
       },
     ]),
   );
@@ -415,6 +416,7 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
           playerOne.challengesLost += 1;
         }
       }
+      playerOne.lastGame = game.millis;
     }
 
     const playerTwo = enrichedPlayers.get(game.playerTwo);
@@ -434,6 +436,7 @@ const enrichPlayers = (players: Player[] = [], games: Game[] = []): EnrichedPlay
           playerTwo.challengesLost += 1;
         }
       }
+      playerTwo.lastGame = game.millis;
     }
   }
 

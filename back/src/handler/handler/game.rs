@@ -50,8 +50,6 @@ where
                         (score, opponent_score),
                         challenge,
                         millis,
-                        skillratings::elo::EloRating::new().rating,
-                        super::rating_updater,
                     )
                     .await
                     .map_err(model::Error::Store)?;
@@ -66,14 +64,7 @@ where
                 Ok(model::Response::Done)
             }
             model::request::Game::Update(game) => {
-                let (game, updates) = games
-                    .update(
-                        game,
-                        skillratings::elo::EloRating::new().rating,
-                        super::rating_updater,
-                    )
-                    .await
-                    .map_err(model::Error::Store)?;
+                let (game, updates) = games.update(game).await.map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster

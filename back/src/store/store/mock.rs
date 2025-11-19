@@ -1,7 +1,10 @@
 use super::Store;
-use crate::types;
+use crate::{rating, types};
 
-impl Store {
+impl<R> Store<R>
+where
+    R: rating::Config,
+{
     pub async fn initialize(&self) -> Result<types::Player, sqlx::Error> {
         self.migrate().await?;
 

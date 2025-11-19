@@ -1,19 +1,28 @@
 use super::super::error::Error;
-use crate::types;
+use crate::{rating, types};
 
 type Result<T = ()> = std::result::Result<T, Error>;
 
-pub struct Games<'a> {
-    store: &'a super::Store,
+pub struct Games<'a, R>
+where
+    R: rating::Config,
+{
+    store: &'a super::Store<R>,
 }
 
-impl<'a> From<&'a super::Store> for Games<'a> {
-    fn from(store: &'a super::Store) -> Self {
+impl<'a, R> From<&'a super::Store<R>> for Games<'a, R>
+where
+    R: rating::Config,
+{
+    fn from(store: &'a super::Store<R>) -> Self {
         Self { store }
     }
 }
 
-impl Games<'_> {
+impl<R> Games<'_, R>
+where
+    R: rating::Config,
+{
     // TODO: This would allow the front end to not have to fetch all games
     // TODO: This would also mean moving the EnrichedPlayer to the backend, so not all games need
     // to be loaded
@@ -22,19 +31,14 @@ impl Games<'_> {
         Self::list_games(&self.store.pool).await
     }
 
-    #[tracing::instrument(skip(self, rating_updater))]
-    pub async fn register<F>(
+    #[tracing::instrument(skip(self,))]
+    pub async fn register(
         &self,
         (player_one, player_two): (types::Id, types::Id),
         (score_one, score_two): (u8, u8),
         challenge: bool,
         millis: types::Millis,
-        default_rating: f64,
-        rating_updater: F,
-    ) -> Result<(types::Game, Vec<types::Game>)>
-    where
-        F: Copy + Fn(f64, f64, bool, bool) -> f64,
-    {
+    ) -> Result<(types::Game, Vec<types::Game>)> {
         validate_game(player_one, player_two, score_one, score_two)?;
 
         let mut tx = self.store.pool.begin().await?;
@@ -91,8 +95,7 @@ impl Games<'_> {
         .fetch_one(tx.as_mut())
         .await?;
 
-        let mut updates =
-            Self::execute_refresh(Some(millis), default_rating, rating_updater, &mut tx).await?;
+        let mut updates = Self::execute_refresh(Some(millis), &mut tx).await?;
 
         let game = match updates.iter().position(|g| g.id == game.id) {
             Some(idx) => updates.swap_remove(idx),
@@ -106,16 +109,8 @@ impl Games<'_> {
         Ok((game, updates))
     }
 
-    #[tracing::instrument(skip(self, rating_updater))]
-    pub async fn update<F>(
-        &self,
-        game: types::Game,
-        default_rating: f64,
-        rating_updater: F,
-    ) -> Result<(types::Game, Vec<types::Game>)>
-    where
-        F: Copy + Fn(f64, f64, bool, bool) -> f64,
-    {
+    #[tracing::instrument(skip(self))]
+    pub async fn update(&self, game: types::Game) -> Result<(types::Game, Vec<types::Game>)> {
         validate_game(
             game.player_one,
             game.player_two,
@@ -178,13 +173,7 @@ impl Games<'_> {
         .fetch_one(tx.as_mut())
         .await?;
 
-        let mut updates = Self::execute_refresh(
-            Some(old_millis.min(new_millis)),
-            default_rating,
-            rating_updater,
-            &mut tx,
-        )
-        .await?;
+        let mut updates = Self::execute_refresh(Some(old_millis.min(new_millis)), &mut tx).await?;
 
         let game = match updates.iter().position(|g| g.id == game.id) {
             Some(idx) => updates.swap_remove(idx),
@@ -260,17 +249,10 @@ impl Games<'_> {
         .map_err(Error::from)
     }
 
-    #[tracing::instrument(skip(self, rating_updater))]
-    pub async fn refresh<F>(
-        &self,
-        default_rating: f64,
-        rating_updater: F,
-    ) -> Result<Vec<types::Game>>
-    where
-        F: Copy + Fn(f64, f64, bool, bool) -> f64,
-    {
+    #[tracing::instrument(skip(self))]
+    pub async fn refresh(&self) -> Result<Vec<types::Game>> {
         let mut tx = self.store.pool.begin().await?;
-        let games = Self::execute_refresh(None, default_rating, rating_updater, &mut tx).await?;
+        let games = Self::execute_refresh(None, &mut tx).await?;
         tx.commit().await?;
 
         if !games.is_empty() {
@@ -281,17 +263,15 @@ impl Games<'_> {
     }
 }
 
-impl Games<'_> {
-    async fn execute_refresh<F>(
+impl<R> Games<'_, R>
+where
+    R: rating::Config,
+{
+    async fn execute_refresh(
         from: Option<types::Millis>,
-        default_rating: f64,
-        rating_updater: F,
         tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
-    ) -> Result<Vec<types::Game>>
-    where
-        F: Copy + Fn(f64, f64, bool, bool) -> f64,
-    {
-        let updates = Self::build_updates(from, default_rating, rating_updater, tx).await?;
+    ) -> Result<Vec<types::Game>> {
+        let updates = Self::build_updates(from, tx).await?;
 
         if let Some(mut query) = build_update_query(&updates) {
             query
@@ -305,39 +285,32 @@ impl Games<'_> {
         }
     }
 
-    async fn build_updates<F>(
+    async fn build_updates(
         from: Option<types::Millis>,
-        default_rating: f64,
-        rating_updater: F,
         tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
-    ) -> Result<Vec<RatingUpdate>>
-    where
-        F: Copy + Fn(f64, f64, bool, bool) -> f64,
-    {
-        macro_rules! f64_ne {
-            ($one: expr, $two: expr) => {
-                ($one - $two).abs() > f64::EPSILON
-            };
-        }
+    ) -> Result<Vec<RatingUpdate>> {
+        use crate::macros::f64;
 
         let (updates, mut last_ratings) = Self::prepare_updates(from, tx).await?;
 
         Ok(updates
             .into_iter()
             .filter_map(|game| {
+                let decay = |(rating, last)| R::decayer(last, game.millis, rating);
+
                 let rating_one = last_ratings
                     .get(&game.player_one)
                     .copied()
-                    .unwrap_or(default_rating);
+                    .map_or(R::DEFAULT_VALUE, decay);
                 let rating_two = last_ratings
                     .get(&game.player_two)
                     .copied()
-                    .unwrap_or(default_rating);
+                    .map_or(R::DEFAULT_VALUE, decay);
 
                 let rating_delta = if game.deleted {
                     0.0
                 } else {
-                    rating_updater(
+                    R::updater(
                         rating_one,
                         rating_two,
                         game.score_one > game.score_two,
@@ -345,12 +318,12 @@ impl Games<'_> {
                     )
                 };
 
-                last_ratings.insert(game.player_one, rating_one + rating_delta);
-                last_ratings.insert(game.player_two, rating_two - rating_delta);
+                last_ratings.insert(game.player_one, (rating_one + rating_delta, game.millis));
+                last_ratings.insert(game.player_two, (rating_two - rating_delta, game.millis));
 
-                (f64_ne!(rating_one, game.rating_one)
-                    || f64_ne!(rating_two, game.rating_two)
-                    || f64_ne!(rating_delta, game.rating_delta))
+                (f64!(ne rating_one, game.rating_one)
+                    || f64!(ne rating_two, game.rating_two)
+                    || f64!(ne rating_delta, game.rating_delta))
                 .then_some(RatingUpdate {
                     id: game.id,
                     rating_one,
@@ -364,7 +337,10 @@ impl Games<'_> {
     async fn prepare_updates(
         from: Option<types::Millis>,
         tx: &mut sqlx::Transaction<'static, sqlx::Sqlite>,
-    ) -> Result<(Vec<types::Game>, std::collections::HashMap<types::Id, f64>)> {
+    ) -> Result<(
+        Vec<types::Game>,
+        std::collections::HashMap<types::Id, (f64, types::Millis)>,
+    )> {
         if let Some(from) = from {
             let updates = sqlx::query_as!(
                 types::Game,
@@ -439,7 +415,7 @@ impl Games<'_> {
                 "#,
                 from,
             )
-            .map(|r| (r.player, r.rating))
+            .map(|r| (r.player, (r.rating, r.millis)))
             .fetch_all(tx.as_mut())
             .await?
             .into_iter()

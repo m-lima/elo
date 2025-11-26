@@ -283,6 +283,7 @@ export class Store {
       message.registered.updates.map(gameFromTuple).forEach(game => {
         this.games.set(games => upsert(games, game));
       });
+      this.ratings.set(_ => message.registered.ratings.map(ratingFromTuple));
 
       const players = this.players.raw()?.latest;
       if (players === undefined) {
@@ -315,6 +316,7 @@ export class Store {
       message.updated.updates.map(gameFromTuple).forEach(game => {
         this.games.set(games => upsert(games, game));
       });
+      this.ratings.set(_ => message.updated.ratings.map(ratingFromTuple));
     }
   }
 }

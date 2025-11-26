@@ -73,4 +73,5 @@ export type PushGame = { registered: PushGamePayload } | { updated: PushGamePayl
 export type PushGamePayload = {
   game: Game;
   updates: GameTuple[];
+  ratings: RatingTuple[];
 };

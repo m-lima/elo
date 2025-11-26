@@ -43,9 +43,11 @@ pub enum Game {
     Registered {
         game: types::Game,
         updates: Vec<types::GameTuple>,
+        ratings: Vec<types::RatingTuple>,
     },
     Updated {
         game: types::Game,
         updates: Vec<types::GameTuple>,
+        ratings: Vec<types::RatingTuple>,
     },
 }

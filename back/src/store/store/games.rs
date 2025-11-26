@@ -38,7 +38,7 @@ where
         (score_one, score_two): (u8, u8),
         challenge: bool,
         millis: types::Millis,
-    ) -> Result<(types::Game, Vec<types::Game>)> {
+    ) -> Result<(types::Game, Vec<types::Game>, Vec<types::Rating>)> {
         validate_game(player_one, player_two, score_one, score_two)?;
 
         let mut tx = self.store.pool.begin().await?;
@@ -102,15 +102,20 @@ where
             None => game,
         };
 
+        let ratings = Self::ratings_at(types::Millis::now(), tx.as_mut(), true).await?;
+
         tx.commit().await?;
 
         self.store.update_version();
 
-        Ok((game, updates))
+        Ok((game, updates, ratings))
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn update(&self, game: types::Game) -> Result<(types::Game, Vec<types::Game>)> {
+    pub async fn update(
+        &self,
+        game: types::Game,
+    ) -> Result<(types::Game, Vec<types::Game>, Vec<types::Rating>)> {
         validate_game(
             game.player_one,
             game.player_two,
@@ -180,11 +185,13 @@ where
             None => game,
         };
 
+        let ratings = Self::ratings_at(types::Millis::now(), tx.as_mut(), true).await?;
+
         tx.commit().await?;
 
         self.store.update_version();
 
-        Ok((game, updates))
+        Ok((game, updates, ratings))
     }
 
     #[tracing::instrument(skip(self))]

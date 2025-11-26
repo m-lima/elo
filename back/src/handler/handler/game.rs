@@ -44,7 +44,7 @@ where
                 challenge,
                 millis,
             } => {
-                let (game, updates) = games
+                let (game, updates, ratings) = games
                     .register(
                         (player, opponent),
                         (score, opponent_score),
@@ -59,18 +59,21 @@ where
                     .send(model::Push::Game(model::push::Game::Registered {
                         game,
                         updates: updates.into_iter().map(Into::into).collect(),
+                        ratings: ratings.into_iter().map(Into::into).collect(),
                     }));
 
                 Ok(model::Response::Done)
             }
             model::request::Game::Update(game) => {
-                let (game, updates) = games.update(game).await.map_err(model::Error::Store)?;
+                let (game, updates, ratings) =
+                    games.update(game).await.map_err(model::Error::Store)?;
 
                 self.handler
                     .broadcaster
                     .send(model::Push::Game(model::push::Game::Updated {
                         game,
                         updates: updates.into_iter().map(Into::into).collect(),
+                        ratings: ratings.into_iter().map(Into::into).collect(),
                     }));
 
                 Ok(model::Response::Done)

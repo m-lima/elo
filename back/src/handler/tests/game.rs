@@ -66,7 +66,13 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let now = types::Millis::now();
+
+    let model::Push::Game(model::push::Game::Registered {
+        game,
+        updates,
+        ratings,
+    }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: player.id,
@@ -74,7 +80,7 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: types::Millis::now(),
+                millis: now,
             }),
             true,
         )
@@ -99,6 +105,35 @@ async fn register(pool: SqlitePoolOptions, conn: SqliteConnectOptions) {
     assert!(f64!(eq game.rating_two, DEFAULT_RATING));
     assert!(f64!(eq game.rating_delta, default_rating_delta()));
     assert!(!game.challenge);
+
+    assert_eq!(ratings.len(), 2);
+    let (Some(rating_one), Some(rating_two)) =
+        ratings
+            .into_iter()
+            .map(types::Rating::from)
+            .fold((None, None), |acc, curr| {
+                if acc.0.is_none() {
+                    (Some(curr), None)
+                } else {
+                    (acc.0, Some(curr))
+                }
+            })
+    else {
+        panic!()
+    };
+
+    assert_eq!(rating_one.player, player.id);
+    assert!(f64!(eq
+        rating_one.rating,
+        DEFAULT_RATING + default_rating_delta()
+    ));
+    assert_eq!(rating_one.last_game, now);
+    assert_eq!(rating_two.player, accepted.id);
+    assert!(f64!(eq
+        rating_two.rating,
+        DEFAULT_RATING - default_rating_delta()
+    ));
+    assert_eq!(rating_two.last_game, now);
 
     handler
         .call(model::Request::Game(model::request::Game::List), false)
@@ -125,7 +160,13 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
         .await
         .unwrap();
 
-    let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+    let now = types::Millis::now();
+
+    let model::Push::Game(model::push::Game::Registered {
+        game,
+        updates,
+        ratings,
+    }) = handler
         .call(
             model::Request::Game(model::request::Game::Register {
                 player: accepted_one.id,
@@ -133,7 +174,7 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
                 score: 11,
                 opponent_score: 0,
                 challenge: false,
-                millis: types::Millis::now(),
+                millis: now,
             }),
             true,
         )
@@ -158,6 +199,35 @@ async fn register_to_other_players(pool: SqlitePoolOptions, conn: SqliteConnectO
     assert!(f64!(eq game.rating_two, DEFAULT_RATING));
     assert!(f64!(eq game.rating_delta, default_rating_delta()));
     assert!(!game.challenge);
+
+    assert_eq!(ratings.len(), 2);
+    let (Some(rating_one), Some(rating_two)) =
+        ratings
+            .into_iter()
+            .map(types::Rating::from)
+            .fold((None, None), |acc, curr| {
+                if acc.0.is_none() {
+                    (Some(curr), None)
+                } else {
+                    (acc.0, Some(curr))
+                }
+            })
+    else {
+        panic!()
+    };
+
+    assert_eq!(rating_one.player, accepted_one.id);
+    assert!(f64!(eq
+        rating_one.rating,
+        DEFAULT_RATING + default_rating_delta()
+    ));
+    assert_eq!(rating_one.last_game, now);
+    assert_eq!(rating_two.player, accepted_two.id);
+    assert!(f64!(eq
+        rating_two.rating,
+        DEFAULT_RATING - default_rating_delta()
+    ));
+    assert_eq!(rating_two.last_game, now);
 
     handler
         .call(model::Request::Game(model::request::Game::List), false)
@@ -1109,7 +1179,7 @@ async fn creation_time_does_not_matter(pool: SqlitePoolOptions, conn: SqliteConn
 
     let mut expected = Vec::with_capacity(9);
     for i in 1..9 {
-        if let model::Push::Game(model::push::Game::Registered { game, updates }) = handler
+        if let model::Push::Game(model::push::Game::Registered { game, updates, .. }) = handler
             .call(
                 model::Request::Game(model::request::Game::Register {
                     player: player.id,

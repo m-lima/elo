@@ -1,6 +1,6 @@
 export const name = 'EloPong';
 
-export const version = 3;
+export const version = 4;
 
 export const host = {
   ws:

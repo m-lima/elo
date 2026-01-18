@@ -46,7 +46,7 @@ $ cargo r --features local -- -p 3333 -vvv -d <DB>
 
 > [!NOTE]
 >
-> When launching with `--features local`, the user will default to **test@email.com** unless overridden by the `X-USER` header
+> When launching with `--features local`, the user will default to **test@email.com** unless overridden by the `X-EMAIL` header
 
 ### Launch frontend
 
@@ -80,4 +80,4 @@ There is a [Dockerfile](./back/Dockerfile) provided that will run the backend on
 
 Neither the frontend nor the backend projects serve webpages. That means that, after [building](#frontend) the frontend, there needs to be a server to host the files and provide the header injection for authetication.
 
-The recommended server is [nginx](https://nginx.org/) with SSL termination and an [OpenIDC](https://www.openidc.com/) layer to inject the `X-USER` header. But other servers can be used such as [caddy](https://caddyserver.com/)
+The recommended server is [nginx](https://nginx.org/) with SSL termination and an [OpenIDC](https://www.openidc.com/) layer to inject the `X-EMAIL` header. But other servers can be used such as [caddy](https://caddyserver.com/)

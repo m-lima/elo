@@ -16,7 +16,7 @@ mod ws;
 compile_error!("Cannot enable feature `local` on a production build");
 
 #[allow(clippy::declare_interior_mutable_const)]
-const X_USER: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-user");
+const X_EMAIL: hyper::header::HeaderName = hyper::header::HeaderName::from_static("x-email");
 
 // TODO: Rating change for not playing for a week and for playing every day of the week
 fn setup_tracing(

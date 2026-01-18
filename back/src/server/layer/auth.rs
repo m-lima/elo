@@ -46,7 +46,7 @@ where
 
         #[cfg(feature = "local")]
         let user = {
-            let header = crate::X_USER;
+            let header = crate::X_EMAIL;
             request
                 .headers()
                 .get(&header)
@@ -56,7 +56,7 @@ where
 
         #[cfg(not(feature = "local"))]
         let user = {
-            let header = crate::X_USER;
+            let header = crate::X_EMAIL;
 
             let Some(user_header) = request.headers().get(&header) else {
                 forbid!(%header, "Header is missing");

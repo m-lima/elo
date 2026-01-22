@@ -319,7 +319,7 @@ const Charts = (props: { games: Accessor<EnrichedGame[]> }) => {
                 pointStyle: false,
                 segment: {
                   borderColor: (ctx: ScriptableLineSegmentContext) =>
-                    ctx.p0.parsed.y > ctx.p1.parsed.y ? consts.colors.red : consts.colors.green,
+                    (ctx.p0.parsed.y ?? 0) > (ctx.p1.parsed.y ?? 0) ? consts.colors.red : consts.colors.green,
                 },
               },
               {

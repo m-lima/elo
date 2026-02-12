@@ -67,7 +67,7 @@ export class Socket<Request, Message> {
   private state: state.State;
   private attempts: number;
 
-  public constructor(url: string | URL, checkUrl?: string | URL, loginUrl?: string | URL) {
+  public constructor(url: string | URL, loginUrl?: string | URL) {
     this.requests = [];
     this.awaitingRequests = [];
     this.handlers = [];
@@ -77,25 +77,25 @@ export class Socket<Request, Message> {
 
     this.state = state.Disconnected.Closed;
     this.attempts = 0;
-    this.socket = this.connect(url, checkUrl, loginUrl);
+    this.socket = this.connect(url, loginUrl);
   }
 
-  private connect(url: string | URL, checkUrl?: string | URL, loginUrl?: string | URL) {
+  private connect(url: string | URL, loginUrl?: string | URL) {
     this.setState(state.Disconnected.Connecting);
 
     const socket = new WebSocket(url);
 
     socket.onerror = () => {
       // Check only in the first failure
-      if (this.attempts === 0 && checkUrl !== undefined) {
-        void fetch(checkUrl, { credentials: 'include', redirect: 'manual' }).then(r => {
-          if ((r.status >= 300 && r.status < 400) || r.status === 401) {
+      if (this.attempts === 0) {
+        const checkUrl = typeof url === 'string' ? new URL(url) : url;
+        checkUrl.protocol = checkUrl.protocol === 'wss:' ? 'https:' : 'http:';
+        void fetch(checkUrl, { credentials: 'include'}).then(r => {
+          if (r.status === 401) {
             if (loginUrl !== undefined) {
-              if (typeof loginUrl === 'string') {
-                window.location.href = loginUrl;
-              } else {
-                window.location.href = loginUrl.href;
-              }
+              const url = typeof loginUrl === 'string' ? new URL(loginUrl) : loginUrl;
+              url.searchParams.set('redirect', window.location.href);
+              window.location.href = url.href;
             } else {
               this.setState(state.Disconnected.Unauthorized);
             }
@@ -113,7 +113,7 @@ export class Socket<Request, Message> {
         this.setState(state.Disconnected.Closed);
       }
 
-      this.tryReconnect(url, checkUrl);
+      this.tryReconnect(url);
     };
 
     socket.onopen = () => {
@@ -146,7 +146,7 @@ export class Socket<Request, Message> {
     }
   }
 
-  private tryReconnect(url: string | URL, checkUrl?: string | URL) {
+  private tryReconnect(url: string | URL) {
     const timeout = this.nextAttempt();
 
     if (timeout === undefined) {
@@ -158,7 +158,7 @@ export class Socket<Request, Message> {
     setTimeout(() => {
       // Unauthorized is always fatal
       if (this.state !== state.Disconnected.Unauthorized) {
-        this.connect(url, checkUrl);
+        this.connect(url);
       }
     }, timeout);
   }

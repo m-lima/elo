@@ -40,10 +40,9 @@ export class Store {
 
   public static makeSocket(
     url: string | URL,
-    checkUrl?: string | URL,
     loginUrl?: string | URL,
   ): Socket<Request, Message> {
-    return new Socket(url, checkUrl, loginUrl);
+    return new Socket(url, loginUrl);
   }
 
   public constructor(socket: Socket<Request, Message>) {

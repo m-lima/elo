@@ -36,10 +36,10 @@ where
         I: tower_service::Service<hyper::Request<B>, Response = axum::response::Response>,
     {
         macro_rules! forbid {
-            ($($arg: tt)*) => {
+            ($status: ident, $($arg: tt)*) => {
                 tracing::warn!($($arg)*);
                 return Ok(axum::response::IntoResponse::into_response(
-                    hyper::StatusCode::FORBIDDEN,
+                    hyper::StatusCode::$status,
                 ));
             };
         }
@@ -59,13 +59,13 @@ where
             let header = crate::X_EMAIL;
 
             let Some(user_header) = request.headers().get(&header) else {
-                forbid!(%header, "Header is missing");
+                forbid!(UNAUTHORIZED, %header, "Header is missing");
             };
 
             match user_header.to_str() {
                 Ok(user) => user,
                 Err(error) => {
-                    forbid!(%header, %error, "Header is not parseable as a String");
+                    forbid!(UNAUTHORIZED, %header, %error, "Header is not parseable as a String");
                 }
             }
         };
@@ -75,10 +75,10 @@ where
                 request.extensions_mut().insert(user);
             }
             Ok(None) => {
-                forbid!(%user, "User is not authorized");
+                forbid!(FORBIDDEN, %user, "User is not authorized");
             }
             Err(error) => {
-                forbid!(%user, %error, "Could not query for user");
+                forbid!(FORBIDDEN, %user, %error, "Could not query for user");
             }
         }
 

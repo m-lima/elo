@@ -90,7 +90,7 @@ export class Socket<Request, Message> {
       if (this.attempts === 0) {
         const checkUrl = typeof url === 'string' ? new URL(url) : url;
         checkUrl.protocol = checkUrl.protocol === 'wss:' ? 'https:' : 'http:';
-        void fetch(checkUrl, { credentials: 'include'}).then(r => {
+        void fetch(checkUrl, { credentials: 'include' }).then(r => {
           if (r.status === 401) {
             if (loginUrl !== undefined) {
               const url = typeof loginUrl === 'string' ? new URL(loginUrl) : loginUrl;

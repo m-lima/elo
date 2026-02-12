@@ -38,10 +38,7 @@ export class Store {
 
   private dataVersion?: number;
 
-  public static makeSocket(
-    url: string | URL,
-    loginUrl?: string | URL,
-  ): Socket<Request, Message> {
+  public static makeSocket(url: string | URL, loginUrl?: string | URL): Socket<Request, Message> {
     return new Socket(url, loginUrl);
   }
 

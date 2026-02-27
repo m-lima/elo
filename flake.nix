@@ -110,7 +110,6 @@
                 ./front/eslint.config.js
                 ./front/index.html
                 ./front/package.json
-                ./front/package.json
                 ./front/public
                 ./front/src
                 ./front/tsconfig.json

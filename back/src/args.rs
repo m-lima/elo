@@ -7,7 +7,7 @@ pub fn parse() -> Args {
 #[derive(Debug)]
 pub struct Args {
     pub verbosity: Verbosity,
-    pub port: u16,
+    pub socket: Socket,
     pub db: std::path::PathBuf,
     #[cfg(not(feature = "local"))]
     pub init: bool,
@@ -22,6 +22,32 @@ pub struct Verbosity {
     pub internal: bool,
 }
 
+#[derive(Debug, Clone)]
+pub enum Socket {
+    Port(u16),
+    Unix(std::path::PathBuf),
+}
+
+impl std::fmt::Display for Socket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Socket::Port(port) => port.fmt(f),
+            Socket::Unix(path) => path.display().fmt(f),
+        }
+    }
+}
+
+fn parse_socket(input: &str) -> Result<Socket, &'static str> {
+    if let Some(path) = input.strip_prefix("unix:") {
+        Ok(Socket::Unix(std::path::PathBuf::from(path)))
+    } else {
+        match input.parse() {
+            Ok(port @ 1..) => Ok(Socket::Port(port)),
+            _ => Err("Invalid port"),
+        }
+    }
+}
+
 #[derive(Debug, clap::Parser)]
 struct Inner {
     /// Verbosity level
@@ -31,6 +57,13 @@ struct Inner {
     /// Port on which to serve
     #[arg(short , long, default_value_t = 80, value_parser = clap::value_parser!(u16).range(1..))]
     port: u16,
+
+    /// Location to serve on either a port for serving on TCP, or a path to a Unix Domain Socket.
+    ///
+    /// If the argument starts with `unix:`, it will be interpreted as a path.
+    /// Otherwise, it will be interpreted as a port
+    #[arg(short, long, default_value_t = Socket::Port(80), value_parser = parse_socket)]
+    socket: Socket,
 
     /// Path to databases directory
     #[arg(short, long)]
@@ -91,7 +124,7 @@ impl From<Inner> for Args {
 
         Self {
             verbosity: value.verbosity.into(),
-            port: value.port,
+            socket: value.socket,
             db: value.db.strip_prefix("sqlite://").map_or_else(
                 || std::path::PathBuf::from(&value.db),
                 std::path::PathBuf::from,

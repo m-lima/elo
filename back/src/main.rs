@@ -138,21 +138,20 @@ async fn async_main(args: args::Args) -> std::process::ExitCode {
         smtp::Sender::empty()
     };
 
-    let server = match server::Server::new(args.port, store, broadcaster, smtp).await {
-        Ok(server) => server,
-        Err(error) => {
-            tracing::error!(?error, "Failed to create server");
-            return std::process::ExitCode::FAILURE;
-        }
-    };
-
     let start = std::time::Instant::now();
 
-    if let Err(error) = server.start().await {
-        tracing::error!(?error, duration = ?start.elapsed(), "Server execution aborted");
-        std::process::ExitCode::FAILURE
-    } else {
-        tracing::info!(duration = ?start.elapsed(), "Server gracefully shutdown");
-        std::process::ExitCode::SUCCESS
+    match server::serve(args.socket, store, broadcaster, smtp).await {
+        Ok(()) => {
+            tracing::info!(duration = ?start.elapsed(), "Server gracefully shutdown");
+            std::process::ExitCode::SUCCESS
+        }
+        Err(server::Error::Run(error)) => {
+            tracing::error!(?error, duration = ?start.elapsed(), "Server execution aborted");
+            std::process::ExitCode::FAILURE
+        }
+        Err(error) => {
+            tracing::error!(?error, "Failed to create server");
+            std::process::ExitCode::FAILURE
+        }
     }
 }

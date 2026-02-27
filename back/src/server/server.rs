@@ -1,44 +1,52 @@
 use super::error::Error;
 use super::layer;
-use crate::{handler, smtp, store, ws};
+use crate::{args, handler, smtp, store, ws};
 
-pub struct Server {
-    server: axum::serve::WithGracefulShutdown<
-        tokio::net::TcpListener,
-        axum::Router,
-        axum::Router,
-        boile_rs::rt::Shutdown,
-    >,
+pub async fn serve<S>(
+    socket: args::Socket,
+    store: store::Store,
+    broadcaster: handler::Broadcaster,
+    smtp: S,
+) -> Result<(), Error>
+where
+    S: smtp::Smtp,
+{
+    let router = route(store.clone(), broadcaster, smtp)
+        .layer(layer::auth::Auth::new(handler::Auth::new(store.clone())))
+        .layer(layer::logger());
+
+    #[cfg(feature = "local")]
+    let router = router.layer(tower_http::cors::CorsLayer::very_permissive());
+
+    let shutdown = boile_rs::rt::Shutdown::new()?;
+
+    match socket {
+        args::Socket::Port(port) => {
+            let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::UNSPECIFIED, port);
+            let listener = tokio::net::TcpListener::bind(address).await?;
+            inner_serve(listener, router, shutdown).await
+        }
+        args::Socket::Unix(path) => {
+            let listener = tokio::net::UnixListener::bind(path)?;
+            inner_serve(listener, router, shutdown).await
+        }
+    }
 }
 
-impl Server {
-    pub async fn new<S>(
-        port: u16,
-        store: store::Store,
-        broadcaster: handler::Broadcaster,
-        smtp: S,
-    ) -> Result<Self, Error>
-    where
-        S: smtp::Smtp,
-    {
-        let router = route(store.clone(), broadcaster, smtp)
-            .layer(layer::auth::Auth::new(handler::Auth::new(store.clone())))
-            .layer(layer::logger());
-
-        #[cfg(feature = "local")]
-        let router = router.layer(tower_http::cors::CorsLayer::very_permissive());
-
-        let address = std::net::SocketAddrV4::new(std::net::Ipv4Addr::UNSPECIFIED, port);
-        let listener = tokio::net::TcpListener::bind(address).await?;
-        let shutdown = boile_rs::rt::Shutdown::new()?;
-        let server = axum::serve(listener, router).with_graceful_shutdown(shutdown);
-
-        Ok(Self { server })
-    }
-
-    pub async fn start(self) -> std::io::Result<()> {
-        self.server.await
-    }
+async fn inner_serve<L>(
+    listener: L,
+    router: axum::Router,
+    shutdown: boile_rs::rt::Shutdown,
+) -> Result<(), Error>
+where
+    L: axum::serve::Listener,
+    axum::serve::WithGracefulShutdown<L, axum::Router, axum::Router, boile_rs::rt::Shutdown>:
+        std::future::IntoFuture<Output = std::io::Result<()>>,
+{
+    axum::serve(listener, router)
+        .with_graceful_shutdown(shutdown)
+        .await
+        .map_err(Error::Run)
 }
 
 fn route<S>(store: store::Store, broadcaster: handler::Broadcaster, smtp: S) -> axum::Router

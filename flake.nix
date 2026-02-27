@@ -40,7 +40,7 @@
             ];
             devPackages = pkgs: [
               pkgs.git-crypt
-              (pkgs.writeShellScriptBin "sqlite" ''exec ${pkgs.sqlite}/bin/sqlite3 -init ${pkgs.writeText "sqliteconfig" ".mode columns"} $@'')
+              (pkgs.writeShellScriptBin "sqlite" "exec ${pkgs.sqlite}/bin/sqlite3 -init ${pkgs.writeText "sqliteconfig" ".mode columns"} $@")
             ];
           }).outputs;
         prefixCheck =
@@ -88,9 +88,10 @@
               ".git-crypt/*"
               ".gitattributes"
               ".gitignore"
-              "front/creation/*.svg"
               "LICENSE"
+              "back/deploy.sh"
               "back/migrations/*"
+              "front/creation/*.svg"
             ];
           };
         };

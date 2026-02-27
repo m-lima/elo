@@ -4,4 +4,6 @@ pub enum Error {
     Bind(#[from] std::io::Error),
     #[error("Failed to create shutdown hook: {0:?}")]
     Shutdown(#[from] boile_rs::rt::shutdown::Error),
+    #[error("Failed to run server: {0:?}")]
+    Run(std::io::Error),
 }

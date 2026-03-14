@@ -93,52 +93,75 @@
             ];
           };
         };
+        sharedFront = {
+          nodejs = pkgs.nodejs;
+
+          src = pkgs.lib.fileset.toSource {
+            root = ./front;
+            fileset = pkgs.lib.fileset.unions [
+              ./front/.env.production
+              ./front/.prettierrc.json
+              ./front/eslint.config.js
+              ./front/index.html
+              ./front/package.json
+              ./front/public
+              ./front/src
+              ./front/tsconfig.json
+              ./front/tsconfig.node.json
+              ./front/vite.config.ts
+              ./front/yarn.lock
+            ];
+          };
+
+          doCheck = true;
+          doDist = false;
+        };
+        frontChecks = {
+          eslint = pkgs.mkYarnPackage (
+            sharedFront
+            // {
+              pname = "front-eslint";
+              dontBuild = true;
+
+              checkPhase = ''
+                runHook preCheck
+                yarn --offline lint:eslint
+                runHook postCheck
+              '';
+
+              installPhase = "mkdir -p $out";
+            }
+          );
+        };
       in
       {
         packages = {
           back = back.packages.default;
-          front = pkgs.mkYarnPackage {
-            nodejs = pkgs.nodejs;
+          front = pkgs.mkYarnPackage (
+            sharedFront
+            // {
+              nativeBuildInputs = [ pkgs.writableTmpDirAsHomeHook ];
 
-            src = pkgs.lib.fileset.toSource {
-              root = ./front;
-              fileset = pkgs.lib.fileset.unions [
-                ./front/.env.production
-                ./front/.prettierrc.json
-                ./front/eslint.config.js
-                ./front/index.html
-                ./front/package.json
-                ./front/public
-                ./front/src
-                ./front/tsconfig.json
-                ./front/tsconfig.node.json
-                ./front/vite.config.ts
-                ./front/yarn.lock
-              ];
-            };
+              buildPhase = ''
+                runHook preBuild
+                yarn --offline build
+                runHook postBuild
+              '';
 
-            nativeBuildInputs = [ pkgs.writableTmpDirAsHomeHook ];
-
-            doDist = false;
-
-            buildPhase = ''
-              runHook preBuild
-              yarn --offline build
-              runHook postBuild
-            '';
-
-            installPhase = ''
-              runHook preInstall
-              mv deps/$pname/dist $out
-              runHook postInstall
-            '';
-          };
+              installPhase = ''
+                runHook preInstall
+                mv deps/$pname/dist $out
+                runHook postInstall
+              '';
+            }
+          );
         };
 
         checks = {
           formatting = (treefmt-nix.lib.evalModule pkgs treeFmt).config.build.check self;
         }
-        // (prefixCheck "back" back.checks);
+        // (prefixCheck "back" back.checks)
+        // (prefixCheck "front" frontChecks);
 
         formatter = (treefmt-nix.lib.evalModule pkgs treeFmt).config.build.wrapper;
 

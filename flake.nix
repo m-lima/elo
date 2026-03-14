@@ -86,8 +86,6 @@
               "*/.gitignore"
               "*/Dockerfile*"
               ".git-crypt/*"
-              ".gitattributes"
-              ".gitignore"
               "LICENSE"
               "back/deploy.sh"
               "back/migrations/*"

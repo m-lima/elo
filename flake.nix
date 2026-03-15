@@ -117,15 +117,16 @@
           doDist = false;
         };
         frontChecks = {
-          eslint = pkgs.mkYarnPackage (
+          lint = pkgs.mkYarnPackage (
             sharedFront
             // {
-              pname = "front-eslint";
+              pname = "front-lint";
               dontBuild = true;
 
               checkPhase = ''
                 runHook preCheck
                 yarn --offline lint:eslint
+                yarn --offline lint:tsc
                 runHook postCheck
               '';
 

@@ -1,7 +1,7 @@
 {
   "name": "elo",
-  "private": true,
   "version": "0.1.5",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint:prettier": "prettier . --list-different",
     "lint:eslint": "eslint .",
+    "lint:tsc": "tsc",
     "fix:prettier": "prettier . --write",
     "fix:eslint": "eslint . --fix"
   },

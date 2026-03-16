@@ -3,9 +3,7 @@ import { Encoder, Decoder } from '@msgpack/msgpack';
 import { state, error } from '.';
 
 type Accept<Response> = (response: Response | PromiseLike<Response>) => void;
-// Allowed to match the Promise signature
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Reject = (reason?: any) => void;
+type Reject = (reason?: unknown) => void;
 type Handler<Message> = (message: Message) => boolean;
 type RequestHandler<Message, Response> = (message: Message) => Response | undefined;
 

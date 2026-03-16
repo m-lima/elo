@@ -8,6 +8,10 @@ export const WithStore = (props: ParentProps<{ store: Store }>) => (
   <StoreContext.Provider value={props.store}>{props.children}</StoreContext.Provider>
 );
 
-// Allowed because if misused, better to throw errors instead of paying for runtime checks
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-export const useStore = () => useContext(StoreContext)!;
+export const useStore = () => {
+  const context = useContext(StoreContext);
+  if (context === undefined) {
+    throw new Error('`useStore` must be used inside a <WithStore>');
+  }
+  return context;
+};

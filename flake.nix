@@ -99,7 +99,6 @@
           src = pkgs.lib.fileset.toSource {
             root = ./front;
             fileset = pkgs.lib.fileset.unions [
-              ./front/.env.production
               ./front/.prettierrc.json
               ./front/eslint.config.js
               ./front/index.html

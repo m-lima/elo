@@ -9,6 +9,8 @@ type Reject = (reason?: any) => void;
 type Handler<Message> = (message: Message) => boolean;
 type RequestHandler<Message, Response> = (message: Message) => Response | undefined;
 
+const HeartbeatMillis = 5000;
+
 interface RequestHandlerInner<Message> {
   handle(message: Message): boolean;
   abort(disconnected: error.Disconnected): void;
@@ -66,6 +68,7 @@ export class Socket<Request, Message> {
   private socket: WebSocket;
   private state: state.State;
   private attempts: number;
+  private heartbeat: Date;
 
   public constructor(url: string | URL, loginUrl?: string | URL) {
     this.requests = [];
@@ -75,17 +78,41 @@ export class Socket<Request, Message> {
     this.encoder = new Encoder();
     this.decoder = new Decoder();
 
+    this.heartbeat = new Date();
     this.state = state.Disconnected.Closed;
     this.attempts = 0;
-    this.socket = this.connect(url, loginUrl);
+    this.socket = this.connect(url, loginUrl, true);
+
+    setInterval(() => {
+      const now = new Date();
+      const noHeartbeat = this.noHeartbeat(now);
+      this.heartbeat = now;
+
+      if (noHeartbeat) {
+        this.state = state.Disconnected.Closed;
+        this.attempts = 0;
+        this.connect(url, loginUrl);
+      }
+    }, HeartbeatMillis);
   }
 
-  private connect(url: string | URL, loginUrl?: string | URL) {
+  private connect(url: string | URL, loginUrl?: string | URL, firstRun: boolean = false) {
     this.setState(state.Disconnected.Connecting);
 
+    if (!firstRun) {
+      this.socket.close();
+      if (this.noHeartbeat()) {
+        return this.socket;
+      }
+    }
     const socket = new WebSocket(url);
+    this.socket = socket;
 
     socket.onerror = () => {
+      if (socket !== this.socket || this.noHeartbeat()) {
+        return;
+      }
+
       // Check only in the first failure
       if (this.attempts === 0) {
         const checkUrl = typeof url === 'string' ? new URL(url) : url;
@@ -109,6 +136,10 @@ export class Socket<Request, Message> {
     };
 
     socket.onclose = () => {
+      if (socket !== this.socket || this.noHeartbeat()) {
+        return;
+      }
+
       if (this.state !== state.Disconnected.Error) {
         this.setState(state.Disconnected.Closed);
       }
@@ -117,6 +148,10 @@ export class Socket<Request, Message> {
     };
 
     socket.onopen = () => {
+      if (socket !== this.socket || this.noHeartbeat()) {
+        return;
+      }
+
       this.attempts = 0;
       this.setState(state.Connected.Open);
     };
@@ -127,8 +162,11 @@ export class Socket<Request, Message> {
 
     socket.binaryType = 'arraybuffer';
 
-    this.socket = socket;
     return socket;
+  }
+
+  private noHeartbeat(now: Date = new Date()) {
+    return now.getTime() - this.heartbeat.getTime() >= 2 * HeartbeatMillis;
   }
 
   private nextAttempt() {

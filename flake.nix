@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     crane.url = "github:ipetkov/crane";
     fenix = {
       url = "github:nix-community/fenix";
@@ -93,33 +93,48 @@
             ];
           };
         };
-        sharedFront = {
-          nodejs = pkgs.nodejs;
+        sharedFront =
+          let
+            package = builtins.fromJSON (builtins.readFile ./front/package.json);
+          in
+          {
+            pname = package.name;
+            version = package.version;
 
-          src = pkgs.lib.fileset.toSource {
-            root = ./front;
-            fileset = pkgs.lib.fileset.unions [
-              ./front/.prettierrc.json
-              ./front/eslint.config.js
-              ./front/index.html
-              ./front/package.json
-              ./front/public
-              ./front/src
-              ./front/tsconfig.json
-              ./front/tsconfig.node.json
-              ./front/vite.config.ts
-              ./front/yarn.lock
+            nativeBuildInputs = [
+              pkgs.nodejs
+              pkgs.yarnConfigHook
+              pkgs.yarnBuildHook
             ];
-          };
 
-          doCheck = true;
-          doDist = false;
-        };
+            src = pkgs.lib.fileset.toSource {
+              root = ./front;
+              fileset = pkgs.lib.fileset.unions [
+                ./front/.prettierrc.json
+                ./front/eslint.config.js
+                ./front/index.html
+                ./front/package.json
+                ./front/public
+                ./front/src
+                ./front/tsconfig.json
+                ./front/tsconfig.node.json
+                ./front/vite.config.ts
+                ./front/yarn.lock
+              ];
+            };
+
+            offlineCache = pkgs.fetchYarnDeps {
+              yarnLock = ./front/yarn.lock;
+              hash = "sha256-7NhwNu4XVHCWHJRsekTMY2MHSUSFrZht2dxNtee2tgg=";
+            };
+
+            doCheck = false;
+          };
         frontChecks = {
-          lint = pkgs.mkYarnPackage (
+          lint = pkgs.stdenvNoCC.mkDerivation (
             sharedFront
             // {
-              pname = "front-lint";
+              doCheck = true;
               dontBuild = true;
 
               checkPhase = ''
@@ -137,20 +152,12 @@
       {
         packages = {
           back = back.packages.default;
-          front = pkgs.mkYarnPackage (
+          front = pkgs.stdenvNoCC.mkDerivation (
             sharedFront
             // {
-              nativeBuildInputs = [ pkgs.writableTmpDirAsHomeHook ];
-
-              buildPhase = ''
-                runHook preBuild
-                yarn --offline build
-                runHook postBuild
-              '';
-
               installPhase = ''
                 runHook preInstall
-                mv deps/$pname/dist $out
+                mv dist $out
                 runHook postInstall
               '';
             }

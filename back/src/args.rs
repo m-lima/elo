@@ -54,10 +54,6 @@ struct Inner {
     #[arg(short, action = clap::ArgAction::Count)]
     verbosity: u8,
 
-    /// Port on which to serve
-    #[arg(short , long, default_value_t = 80, value_parser = clap::value_parser!(u16).range(1..))]
-    port: u16,
-
     /// Location to serve on either a port for serving on TCP, or a path to a Unix Domain Socket.
     ///
     /// If the argument starts with `unix:`, it will be interpreted as a path.
